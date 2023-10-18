@@ -6,7 +6,7 @@ from runs.views.RunDetails import RunDetails, TrainingProgress
 
 urlpatterns = [
     path("", ListRuns.as_view(), name="list"),
-    path("<int:pk>/details", RunDetails.as_view(), name="details"),
+    path("<int:pk>/details/", RunDetails.as_view(), name="details"),
     path(
         "training_progress/<task_id>",
         TrainingProgress.as_view(),

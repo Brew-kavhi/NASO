@@ -4,7 +4,19 @@
 {% load static %}
 
 {% block content %}
+<div class="tabs is-centered">
+    <ul>
+        <li class="tab is-active" onclick="openTab(event,'tensorflow-tab')">
+            <a>Tensorflow</a>
+        </li>
+        <li class="tab" onclick="openTab(event,'autokeras-tab')">
+            <a>Autokeras</a>
+        </li>
+    </ul>
+</div>
 <div class="container pb-5">
+    <div id="tensorflow-tab" class="content-tab">
+        
     {% if form %}
         {% crispy form  %}
     {% elif running_task %}
@@ -15,6 +27,11 @@
             </div>
         </div>
     {% endif %}
+
+    </div>
+    <div id="autokeras-tab" class="content-tab">
+        Autokeras
+    </div>
     
     <script src="{% static 'js/sigma.min.js' %}"></script>
     <script src="{% static 'js/sigma.plugins.dragnodes.js' %}"></script>
@@ -27,6 +44,7 @@
             handleLossChange($('#{{form.loss.auto_id}}'));
             handleMetricChange($('#{{form.metrics.auto_id}}'));
             handleLayerChange($('#{{form.layers.auto_id}}'));
+            openTab({currentTarget:$('.tab.is-active')[0]}, 'tensorflow-tab');
             {% if nodes and edges%}
                 // load the nodes an dedegs into the graph
                 edges = {{edges | safe}};

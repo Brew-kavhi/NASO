@@ -31,12 +31,13 @@ SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG", default=True)
 
 APP_TITLE = config("APP_TITLE", default="NASO")
-APP_VERSION = config("APP_VERSION", default="0.1.0")
+APP_VERSION = config("APP_VERSION", default="0.1.1")
 
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_STORE_ERRORS_EVEN_IF_IGNORED = True
+CELERY_BROKER_URL=config('CELERY_BROKER_URL')
 CELERY_RESULT_BACKEND = "django-db"
 
 ALLOWED_HOSTS = [config("DEFAULT_HOST", default="localhost"), "naso.mariusgoehring.de"]
