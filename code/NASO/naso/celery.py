@@ -4,11 +4,12 @@ import time
 from celery.result import AsyncResult
 
 from celery import Celery
+from decouple  import config
 
 # Set the default Django settings module for the 'celery' program.
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "naso.settings")
 
-app = Celery("naso", backend="rpc://")
+app = Celery("naso", backend=config("CELERY_BROKER_URL"))
 
 # Using a string here means the worker doesn't have to serialize
 # the configuration object to child processes.
