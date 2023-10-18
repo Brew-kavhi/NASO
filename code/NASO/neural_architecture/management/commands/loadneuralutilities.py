@@ -151,40 +151,39 @@ class Command(BaseCommand):
                     self.style.ERROR(f"Class {class_name} has errors: {e}")
                 )
 
-        for module in ["blocks.basic","blocks.heads", "blocks.preprocessing", "blocks.reduction", "nodes"]
-        autokeras_module = importlib.import_module('autokeras')# blocks
-        autokeras_nodes = inspect.getmembers(autokeras_module, inspect.isclass)
-        
-        for class_name, class_obj in layer_classes:
-            constructor = inspect.signature(class_obj.__init__)
-            arguments = []
-            for param_name, param in constructor.parameters.items():
-                if not param_name == "self" and not param_name == "kwargs":
-                    if param.default is not inspect.Parameter.empty:
-                        arguments.append(
-                            {
-                                "name": param_name,
-                                "default": param.default,
-                                "dtype": type(param.default).__name__,
-                            }
-                        )
-                    else:
-                        {
+        for module in ["blocks.basic","blocks.heads", "blocks.preprocessing", "blocks.reduction", "nodes"]:
+            autokeras_module = importlib.import_module('autokeras.' + module)# blocks
+            autokeras_nodes = inspect.getmembers(autokeras_module, inspect.isclass)
+            
+            for class_name, class_obj in layer_classes:
+                constructor = inspect.signature(class_obj.__init__)
+                arguments = []
+                for param_name, param in constructor.parameters.items():
+                    if not param_name == "self" and not param_name == "kwargs":
+                        if param.default is not inspect.Parameter.empty:
                             arguments.append(
-                                {"name": param_name, "default": "", "type": "unknown"}
+                                {
+                                    "name": param_name,
+                                    "default": param.default,
+                                    "dtype": type(param.default).__name__,
+                                }
                             )
-                        }
-            try:
-                _, _ = NetworkLayerType.objects.get_or_create(
-                    module_name="tensorflow.keras.layers",
-                    name=class_name,
-                    keras_native_layer=True,
-                    required_arguments=arguments,
-                )
-            except Exception as e:
-                self.stdout.write(
-                    self.style.ERROR(f"Class {class_name} has errors: {e}")
-                )
+                        else:
+                            {
+                                arguments.append(
+                                    {"name": param_name, "default": "", "type": "unknown"}
+                                )
+                            }
+                try:
+                    _, _ = AutoKerasNodeType.objects.get_or_create(
+                        module_name='autokeras.' + module,
+                        name=class_name,
+                        keras_type = module
+                    )
+                except Exception as e:
+                    self.stdout.write(
+                        self.style.ERROR(f"Class {class_name} has errors: {e}")
+                    )
 
         self.stdout.write(
             self.style.SUCCESS(

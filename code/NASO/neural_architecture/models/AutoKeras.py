@@ -8,7 +8,7 @@ import autokeras
 # that is in these types i just want to save what optimizers are availabel and how to call these classes
 # instantiation with all arguments is done by the actual models, that jsut have this type assigned
 class AutoKerasNodeType(BaseType):
-    keras_type = models.ChoiceField(choices=[()])
+    keras_type = models.CharField(max_length = 100)
     
 
 class AutoKerasNode(TypeInstance):
@@ -34,12 +34,12 @@ class AutoKerasTuner(models.Model):
 
 class AutoKerasModel(models.Model):
     project_name = models.CharField(max_length = 100, default='auto_model')
-    inputs = models.ManyToManyField(AutoKerasNode)
-    outputs = models.ManyToManyField(AutoKerasNode)
+    inputs = models.ManyToManyField(AutoKerasNode, related_name = 'Inputs')
+    outputs = models.ManyToManyField(AutoKerasNode, related_name = 'Outputs')
     max_trials = models.IntegerField(default=100)
     directory = models.CharField(max_length = 100, null = True, default = None)
     objective = models.CharField(max_length = 100, default='val_loss')
-    tuner = models.ForeignKey(AutoKerasTuner, on_delete = models.deletion.SET_NULL)
+    tuner = models.ForeignKey(AutoKerasTuner, null = True, on_delete = models.deletion.SET_NULL)
     max_model_size = models.IntegerField(null = True)
 
     auto_model: autokeras.AutoModel = None
