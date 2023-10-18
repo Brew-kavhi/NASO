@@ -1,0 +1,68 @@
+{% extends 'adminlte/lib/_main_sidebar.html' %}
+
+{% load static %}
+{% load adminlte_helpers %}
+
+{% block logo %}
+<a href="/" class="brand-link text-decoration-none">
+    <img src="{% static 'img/logo.png' %}" alt="AdminLTE Logo" class="brand-image" style="opacity: .8; filter:invert(1)">
+    <span class="brand-text font-weight-light">{{ APP_TITLE}}</span>
+</a>
+{% endblock %}
+
+{% block user_panel %}
+
+{% endblock %}
+{% block nav_header %}
+{% endblock %}
+{% block nav_links %}
+    <li class=" navbar-item d-block has-treeview align-items-start menu-open">
+        <a class="{% add_active 'dashboard:index' %} navbar-link" href="{% url 'dashboard:index' %}">
+            <i class="me-3 fa fa-tachometer-alt"></i> <span class="ml-3">Dashboard</span>
+        </a>
+    </li>
+    <li class=" navbar-item d-block has-treeview align-items-start menu-open">
+        <a class="{% add_active 'runs:list' %} navbar-link" href="{% url 'runs:list' %}">
+            <i class="me-3 fa fa-flask"></i> <span class="ml-3">Runs</span>
+        </a>
+        <ul>
+            <li class="list-group navbar-item has-treeview align-items-start menu-open">
+                <a class="{% add_active 'runs:new' exact_match=True %}" href="{% url 'runs:new' %}">
+                    <i class="me-3 fa fa-flask"></i> <span class="ml-3">Neues Experiment</span>
+                </a>
+            </li>
+
+            <li class="list-group navbar-item has-treeview align-items-start menu-open">
+                <a class="" href="{% url 'runs:list' %}">
+                    <i class="me-3 fa fa-flask"></i> <span class="ml-3">Alle Experimente</span>
+                </a>
+            </li>
+        </ul>
+    </li>
+    <hr>
+    <li class=" navbar-item d-block has-treeview align-items-start menu-open">
+        <a class="{% add_active 'plugins:list' %} navbar-link" href="{% url 'plugins:list' %}">
+            <i class="me-3 fa fa-plug"></i> <span class="ml-3">Plugins</span>
+        </a>
+        <ul>
+            <li class="list-group navbar-item has-treeview align-items-start menu-open">
+                <a class="{% add_active 'plugins:new' exact_match=True %}" href="{% url 'plugins:new' %}">
+                    <i class="me-3 fa fa-plug"></i> <span class="ml-3">Plugin installieren</span>
+                </a>
+            </li>
+
+            <li class="list-group navbar-item has-treeview align-items-start menu-open">
+                <a class="{% add_active 'plugins:list' exact_match=True %}" href="{% url 'plugins:list' %}">
+                    <i class="me-3 fa fa-plug"></i> <span class="ml-3">Plugins</span>
+                </a>
+            </li>
+        </ul>
+    </li>
+
+    <li class="list-group navbar-item has-treeview align-items-start menu-open">
+        <a class="{% add_active 'system:logs' exact_match=True %} navbar-link" href="{% url 'system:logs' %}">
+            <i class="me-3 fa fa-history"></i> <span class="ml-3">Logs</span>
+        </a>
+    </li>
+    
+{% endblock nav_links %}

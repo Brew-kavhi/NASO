@@ -27,7 +27,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+lib/*
+!template/adminlte/lib/
 lib64/
 parts/
 sdist/
