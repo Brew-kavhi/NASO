@@ -1,0 +1,14 @@
+{% load crispy_forms_field %}
+
+<div id="div_{{ field.auto_id }}" class="mb-3 d-flex is-align-items-center">
+  <label for="{{ field.auto_id }}" style='white-space: nowrap'>{{ field.label }}
+  {% if field.field.required %}
+*{% endif %}</label>
+  <div class="ml-3 w-auto">
+    {% if field.errors %}
+      {% crispy_field field 'class' 'input is-invalid' %}
+    {% else %}
+      {% crispy_field field 'class' 'input' %}
+    {% endif %}
+  </div>
+</div>

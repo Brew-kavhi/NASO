@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% load log_filters %}
+{% block content %}
+<div class="container-fluid">
+    <h1>System log</h1>
+    <pre class='bg-gray-dark rounded'><code>{{ log_content|colorize_log|safe }}</code></pre>
+</div>
+{% endblock %}

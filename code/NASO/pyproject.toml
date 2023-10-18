@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "naso"
+version = "0.1.0"
+description = "Neural architecture search and optimizer. A framework to allow for easy and gui configurable neural architecture search as well as optimizatio runs"
+authors = ["Marius Goehring <marius@mariusgoehring.de>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.11, <3.12"
+Django = "^4.2.5"
+networkx = "^3.1"
+matplotlib = "^3.8.0"
+django-simple-history = "^3.4.0"
+mysqlclient = "^2.2.0"
+django-crispy-forms = "^2.0"
+black = "^23.9.1"
+flake8 = "^6.1.0"
+isort = "^5.12.0"
+python-decouple = "^3.8"
+dj-database-url = "^2.1.0"
+crispy-bootstrap5 = "^0.7"
+django-adminlte3 = "^0.1.6"
+celery = "^5.3.4"
+django-celery-results = "^2.5.1"
+loguru = "^0.7.2"
+tensorflow = "2.14.0"
+autokeras = "^1.1.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

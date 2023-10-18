@@ -1,0 +1,19 @@
+
+<div class="modal" id="confirmDeleteModal" >
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <h5 class="modal-card-title" id="confirmDeleteModalLabel">Confirm Delete</h5>
+        <button class="delete" onclick='closeDeleteModal()' aria-label="close"></button>
+      </header>
+      <section class="modal-card-body">
+        
+        Are you sure you want to delete this item with ID <span id="itemToDeleteID"></span>?
+        <input type='hidden' name='action_url' id="delete_action_url">
+      </section>
+      <footer class="modal-card-foot">
+        <button class="button" onclick='closeDeleteModal()'>Cancel</button>
+        <button class="button is-success" id='deleteConfirmBtn'>Delete</button>
+      </footer>
+    </div>
+  </div>

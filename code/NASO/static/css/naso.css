@@ -1,0 +1,16 @@
+.select2-selection {
+    height: auto !important;
+}
+.select2-selection .select2-selection__arrow {
+    height: 100% !important;
+}
+.card-header::after {
+    display:none;
+}
+.active {
+    color: cornflowerblue;
+}
+.navbar-link:hover{
+    background-color: rgba(100, 148, 237, 0.5);
+
+}

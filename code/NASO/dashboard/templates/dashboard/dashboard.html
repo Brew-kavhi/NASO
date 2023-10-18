@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    {% if celery.training_task_id %}
+    <div class="card">
+        <div class="card-header justify-content-between">
+            <strong>
+                Trainiere...
+            </strong>
+            <div id="training-tags" class="d-flex is-align-items-center">
+
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="training-progress-bar">
+                <p id="import_job_state_text">
+                    
+                </p>
+                <div class="progress">
+                    <progress id="customer_import_progress" class="is-link progress progress-bar-animated progress-bar progress-bar-striped" role="progressbar" value="0" min="0" max="100"></progress>
+                </div>
+            </div>
+            <div class='mt-3'>
+                <a class='is-light button is-info' id='training_detail_link' href="Link zu run details">Details...</a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body">
+            Derzeit werden keine Netze trainiert.
+        </div>
+    </div>
+    {% endif %}
+    {% block javascript %}
+    
+        {% if celery.training_task_id %}
+        <script>
+            var progressUrl = '{% url "runs:training_progress" celery.training_task_id %}';  // django template usage
+        </script>
+        {% endif %}
+        {{ block.super }}
+    {% endblock javascript %}
+</div>
+{% endblock %}
