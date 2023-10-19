@@ -9,6 +9,7 @@ from django.views.generic.base import TemplateView
 from naso.celery import get_tasks
 from naso.models.page import PageSetup
 from neural_architecture.autokeras import run_autokeras
+from neural_architecture.models.AutoKeras import AutoKerasModel, AutoKerasNode, AutoKerasTuner
 from neural_architecture.models.Architecture import NetworkConfiguration, NetworkLayer
 from neural_architecture.models.AutoKeras import (
     AutoKerasModel,
@@ -18,7 +19,6 @@ from neural_architecture.models.AutoKeras import (
 )
 from neural_architecture.models.Dataset import Dataset
 from neural_architecture.neural_net import run_neural_net
-from runs.forms.NewRunForm import NewAutoKerasRunForm, NewRunForm
 from runs.models.Training import (
     EvaluationParameters,
     FitParameters,
@@ -28,6 +28,8 @@ from runs.models.Training import (
     NetworkTraining,
     Optimizer,
 )
+from runs.forms.NewRunForm import NewRunForm, NewAutoKerasRunForm
+
 
 
 class NewRun(TemplateView):
@@ -86,9 +88,8 @@ class NewRun(TemplateView):
                     "metrics": [],  # Assuming 'metrics' is the field name
                 }
             )
-
-            if "rerun" in request.GET:
-                print(request.GET)
+            
+            if 'rerun' in request.GET:
                 # this run should be a rerun from an older config, so load the config
                 training_id = request.GET.get("rerun")
                 training = NetworkTraining.objects.get(pk=training_id)
@@ -182,6 +183,8 @@ class NewRun(TemplateView):
                 loss_function, _ = LossFunction.objects.get_or_create(
                     instance_type=loss_type, additional_arguments=loss_arguments
                 )
+
+                print(loss_type)
 
                 # Handle multiple selected metrics
                 selected_metrics = form.cleaned_data["metrics"]
@@ -284,6 +287,7 @@ class NewRun(TemplateView):
 class NewAutoKerasRun(TemplateView):
     template_name = "runs/new_autokeras.html"
     page = PageSetup(title="Autokeras", description="Neu")
+    # page.add_pageaction(reverse_lazy("runs:list"), "Alle Experimente")
     context = {"page": page.get_context()}
 
     def get_typewise_arguments(self, request_params):
@@ -295,7 +299,7 @@ class NewAutoKerasRun(TemplateView):
                 tuner_argument["name"] = argument_name
                 tuner_argument["value"] = value
                 tuner_arguments.append(tuner_argument)
-
+            
         return tuner_arguments
 
     def get(self, request, *args, **kwargs):

@@ -1,7 +1,6 @@
 import importlib
 import inspect
 
-import autokeras
 from django.core.management.base import BaseCommand
 
 from neural_architecture.models.AutoKeras import AutoKerasNodeType, AutoKerasTunerType
