@@ -71,7 +71,6 @@ class AutoKerasModel(models.Model):
         # and ouputs is the other way around
         if not self.directory:
             self.directory = self.project_name
-
         self.auto_model = autokeras.AutoModel(
             inputs=self.inputs,
             outputs=self.outputs,

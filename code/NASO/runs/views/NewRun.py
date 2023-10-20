@@ -88,8 +88,8 @@ class NewRun(TemplateView):
                     "metrics": [],  # Assuming 'metrics' is the field name
                 }
             )
-            
-            if 'rerun' in request.GET:
+
+            if "rerun" in request.GET:
                 # this run should be a rerun from an older config, so load the config
                 training_id = request.GET.get("rerun")
                 training = NetworkTraining.objects.get(pk=training_id)
@@ -299,7 +299,7 @@ class NewAutoKerasRun(TemplateView):
                 tuner_argument["name"] = argument_name
                 tuner_argument["value"] = value
                 tuner_arguments.append(tuner_argument)
-            
+
         return tuner_arguments
 
     def get(self, request, *args, **kwargs):
