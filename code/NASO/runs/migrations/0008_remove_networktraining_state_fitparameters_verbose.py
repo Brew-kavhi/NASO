@@ -13,9 +13,4 @@ class Migration(migrations.Migration):
             model_name="networktraining",
             name="state",
         ),
-        migrations.AddField(
-            model_name="fitparameters",
-            name="verbose",
-            field=models.BinaryField(default=2, max_length=2),
-        ),
     ]
