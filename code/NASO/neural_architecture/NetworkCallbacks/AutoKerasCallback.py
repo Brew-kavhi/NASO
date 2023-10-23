@@ -6,6 +6,7 @@ from loguru import logger
 from helper_scripts.Timer import Timer
 from neural_architecture.models.AutoKeras import AutoKerasRun
 from runs.models.Training import TrainingMetric
+from loguru import logger
 
 
 class AutoKerasCallback(tf.keras.callbacks.Callback):
@@ -38,6 +39,7 @@ class AutoKerasCallback(tf.keras.callbacks.Callback):
                 "autokeras": True,
             },
         )
+        logger.info(f"Aurtokeras epoch {epoch} began.")
 
         # resume the timer here
         self.timer.start()
