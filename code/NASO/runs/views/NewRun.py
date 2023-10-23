@@ -90,6 +90,7 @@ class NewRun(TemplateView):
             )
 
             if "rerun" in request.GET:
+                print(request.GET)
                 # this run should be a rerun from an older config, so load the config
                 training_id = request.GET.get("rerun")
                 training = NetworkTraining.objects.get(pk=training_id)
