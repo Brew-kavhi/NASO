@@ -9,16 +9,28 @@ from django.views.generic.base import TemplateView
 from naso.celery import get_tasks
 from naso.models.page import PageSetup
 from neural_architecture.autokeras import run_autokeras
+<<<<<<< HEAD
 from neural_architecture.models.AutoKeras import AutoKerasModel, AutoKerasNode, AutoKerasTuner
+=======
+>>>>>>> feat(autokeras integration): added list view of autokeras runs
 from neural_architecture.models.Architecture import NetworkConfiguration, NetworkLayer
 from neural_architecture.models.AutoKeras import (
     AutoKerasModel,
     AutoKerasNode,
+<<<<<<< HEAD
     AutoKerasRun,
     AutoKerasTuner,
 )
 from neural_architecture.models.Dataset import Dataset
 from neural_architecture.neural_net import run_neural_net
+=======
+    AutoKerasTuner,
+    AutoKerasRun,
+)
+from neural_architecture.models.Dataset import Dataset
+from neural_architecture.neural_net import run_neural_net
+from runs.forms.NewRunForm import NewAutoKerasRunForm, NewRunForm
+>>>>>>> feat(autokeras integration): added list view of autokeras runs
 from runs.models.Training import (
     EvaluationParameters,
     FitParameters,
@@ -185,8 +197,6 @@ class NewRun(TemplateView):
                     instance_type=loss_type, additional_arguments=loss_arguments
                 )
 
-                print(loss_type)
-
                 # Handle multiple selected metrics
                 selected_metrics = form.cleaned_data["metrics"]
 
@@ -288,7 +298,6 @@ class NewRun(TemplateView):
 class NewAutoKerasRun(TemplateView):
     template_name = "runs/new_autokeras.html"
     page = PageSetup(title="Autokeras", description="Neu")
-    # page.add_pageaction(reverse_lazy("runs:list"), "Alle Experimente")
     context = {"page": page.get_context()}
 
     def get_typewise_arguments(self, request_params):
