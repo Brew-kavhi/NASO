@@ -15,7 +15,6 @@ import re
 from pathlib import Path
 
 from decouple import config
-from dj_database_url import parse as db_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,7 +36,7 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_STORE_ERRORS_EVEN_IF_IGNORED = True
-CELERY_BROKER_URL=config('CELERY_BROKER_URL')
+CELERY_BROKER_URL = config("CELERY_BROKER_URL")
 CELERY_RESULT_BACKEND = "django-db"
 
 ALLOWED_HOSTS = [config("DEFAULT_HOST", default="localhost"), "naso.mariusgoehring.de"]
@@ -110,17 +109,6 @@ WSGI_APPLICATION = "naso.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-DATABASES = {"default": config("DATABASE_URL", cast=db_url)}
-DATABASES["default"]["ENGINE"] = "django.contrib.gis.db.backends.mysql"
-DATABASES["default"]["OPTIONS"] = {"init_command": "SET default_storage_engine=INNODB"}
-
-""" DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-    }
- """
 
 OPEN_URLS = [
     re.compile("^/api/"),

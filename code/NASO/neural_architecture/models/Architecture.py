@@ -1,8 +1,11 @@
 from django.db import models
 
 from neural_architecture.models.Graphs import Graph
-from neural_architecture.models.Types import (ActivationFunctionType,
-                                              NetworkLayerType, TypeInstance)
+from neural_architecture.models.Types import (
+    ActivationFunctionType,
+    NetworkLayerType,
+    TypeInstance,
+)
 from neural_architecture.validators import validate_dtype
 
 
@@ -50,7 +53,7 @@ class NetworkLayer(TypeInstance):
 class NetworkConfiguration(models.Model):
     layers = models.ManyToManyField(NetworkLayer)
     name = models.CharField(max_length=50)
-    connections = models.JSONField(default =dict)
+    connections = models.JSONField(default=dict)
     model = None
     size = models.IntegerField(default=0)
 

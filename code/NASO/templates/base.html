@@ -30,11 +30,12 @@
             $('.select2').select2({
                 placeholder: 'Please choose...',
                 allowClear: true,
-                minimumResultsForSearch: -1,
+                minimumResultsForSearch: 0,
+                width: '100%'
             });
         });
     </script>
-{% endblock %}
+{% endblock javascript %}
 
 
 {% block title %}{{APP_TITLE}}{% endblock %}

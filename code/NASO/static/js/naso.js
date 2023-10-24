@@ -129,3 +129,58 @@ function handleMetricChange(selectElement) {
     }
 
 }
+
+function handleKerasTunerChange(selectElement) {
+    var selectedTunerId = $(selectElement).val();
+    var selectedTuner = kerasTunerOptions.find(function(opt) {
+        return opt.id == selectedTunerId;
+    });
+
+    $('#tuner-arguments').empty();
+    $('#tuner-arguments').removeClass('p-4 mb-3');
+    
+    if (!selectedTuner) {
+        return ;
+    }
+    
+    // Clear existing input fields
+
+    // Display input fields for each argument
+    for (const argumentName of selectedTuner.jsonConfig) {
+        if ('name' in argumentName) {
+            var defaultValue = argumentName['default'];
+            var inputFieldHtml = '<div class="mb-4 row"><label class="col-form-label col-lg-2">' + argumentName['name'] + '</label>' +
+                '<div class="col-lg-10"><input class="form-control" type="text" name="tuner_argument_' + argumentName['name'] + '" value="' + defaultValue + '"></div></div>';
+            $('#tuner-arguments').append(inputFieldHtml);  // Append input fields
+            $('#tuner-arguments').addClass('p-4 mb-3');
+        }
+    }
+}
+
+
+function handleKerasBlockChange(selectElement) {
+    var selectedBlockId = $(selectElement).val();
+    var selectedBlock = kerasBlocksOptions.find(function(opt) {
+        return opt.id == selectedBlockId;
+    });
+
+    $('#layer-arguments').empty();
+    $('#layer-arguments').removeClass('p-4 mb-3');
+    
+    if (!selectedBlock) {
+        return ;
+    }
+    
+    // Clear existing input fields
+
+    // Display input fields for each argument
+    for (const argumentName of selectedBlock.jsonConfig) {
+        if ('name' in argumentName) {
+            var defaultValue = argumentName['default'];
+            var inputFieldHtml = '<div class="mb-4 row"><label class="col-form-label col-lg-2">' + argumentName['name'] + '</label>' +
+                '<div class="col-lg-10"><input class="form-control" type="text" name="layer_argument_' + argumentName['name'] + '" value="' + defaultValue + '"></div></div>';
+            $('#layer-arguments').append(inputFieldHtml);  // Append input fields
+            $('#layer-arguments').addClass('p-4 mb-3');
+        }
+    }
+}

@@ -5,11 +5,15 @@ from django.db import models
 
 from helper_scripts.git import get_current_git_hash
 from helper_scripts.importing import get_callback, get_object
-from naso.settings import APP_VERSION
+from naso.settings_base import APP_VERSION
 from neural_architecture.models.Architecture import NetworkConfiguration
 from neural_architecture.models.Dataset import Dataset
-from neural_architecture.models.Types import (LossType, MetricType,
-                                              OptimizerType, TypeInstance)
+from neural_architecture.models.Types import (
+    LossType,
+    MetricType,
+    OptimizerType,
+    TypeInstance,
+)
 from neural_architecture.validators import validate_dtype
 
 
@@ -115,7 +119,8 @@ class EvaluationParameters(models.Model):
                 or "class_name" not in item
             ):
                 raise ValidationError(
-                    'Each item in the JSON list for EvaluationParameters.callbacks should be an object with a "module_name" attribute and a "class_name" attribute.'
+                    """Each item in the JSON list for EvaluationParameters.callbacks should be 
+                    an object with a "module_name" attribute and a "class_name" attribute."""
                 )
             if "additional_arguments" in item:
                 for argument in item["additional_arguments"]:
@@ -137,7 +142,6 @@ class EvaluationParameters(models.Model):
 class FitParameters(models.Model):
     batch_size = models.IntegerField(null=True)
     epochs = models.IntegerField()
-    verbose = models.BinaryField(max_length=2, default=2)
     callbacks = models.JSONField(null=True)
 
     shuffle = models.BooleanField(default=True)
@@ -174,7 +178,8 @@ class FitParameters(models.Model):
                 or "class_name" not in item
             ):
                 raise ValidationError(
-                    'Each item in the JSON list for FitParameters.callbacks should be an object with a "module_name" attribute and a "class_name" attribute.'
+                    """Each item in the JSON list for FitParameters.callbacks should 
+                    be an object with a "module_name" attribute and a "class_name" attribute."""
                 )
             if "additional_arguments" in item:
                 for argument in item["additional_arguments"]:
@@ -193,12 +198,52 @@ class FitParameters(models.Model):
         super(FitParameters, self).save(*args, **kwargs)
 
 
-class NetworkTraining(models.Model):
+class Run(models.Model):
+    """
+    A base model for training runs.
+
+    Attributes:
+        naso_app_version (str): The version of the NASO app used for the run.
+        git_hash (str): The hash of the Git commit used for the run.
+        dataset (Dataset): The dataset used for the run.
+    """
+
+    naso_app_version = models.CharField(max_length=10, default=APP_VERSION)
+
+    git_hash = models.CharField(max_length=40, blank=True, null=True)
+
+    dataset = models.ForeignKey(
+        Dataset, on_delete=models.deletion.SET_NULL, null=True, blank=True
+    )
+
+    class Meta:
+        abstract = True
+
+    def save(self, *args, **kwargs):
+        """
+        Saves the current instance of the Run model to the database. If the git_hash attribute is not set, it will be
+        set to the current git hash using the get_current_git_hash() function. This method overrides the default save
+        method of the parent model.
+        """
+        if not self.git_hash:
+            self.git_hash = get_current_git_hash()
+        super(Run, self).save(*args, **kwargs)
+
+
+class NetworkTraining(Run):
+    """
+    A class representing a network training run.
+
+    Attributes:
+        network_config (NetworkConfiguration): The configuration of the network being trained.
+        hyper_parameters (NetworkHyperparameters): The hyperparameters used for training the network.
+        evaluation_parameters (EvaluationParameters): The parameters used for evaluating the trained network.
+        fit_parameters (FitParameters): The parameters used for fitting the network to the training data.
+        final_metrics (TrainingMetric): The final metrics obtained after training the network.
+    """
+
     network_config = models.ForeignKey(
         NetworkConfiguration, on_delete=models.deletion.DO_NOTHING
-    )
-    dataset = models.ForeignKey(
-        Dataset, on_delete=models.deletion.DO_NOTHING, null=True, blank=True
     )
     hyper_parameters = models.ForeignKey(
         NetworkHyperparameters, on_delete=models.deletion.CASCADE
@@ -212,27 +257,35 @@ class NetworkTraining(models.Model):
         "TrainingMetric", on_delete=models.deletion.CASCADE, null=True
     )
 
-    naso_app_version = models.CharField(max_length=10, default=APP_VERSION)
-
-    git_hash = models.CharField(max_length=40, blank=True, null=True)
-
-    def save(self, *args, **kwargs):
-        if not self.git_hash:
-            self.git_hash = get_current_git_hash()
-        super(NetworkTraining, self).save(*args, **kwargs)
-
 
 class TrainingMetric(models.Model):
-    # Reference to the neural network model, if needed
-    neural_network = models.ForeignKey(NetworkTraining, on_delete=models.CASCADE)
+    """
+    A model to store training metrics for a neural network model.
 
-    # Epoch number
+    Attributes:
+        neural_network (NetworkTraining): A reference to the neural network model.
+        epoch (int): The epoch number.
+        metrics (dict): A dictionary of metrics names and their corresponding values.
+
+    Methods:
+        validate_json_data(): Validates that the metrics data is in the correct format.
+    """
+
+    neural_network = models.ForeignKey(
+        NetworkTraining, on_delete=models.CASCADE, null=True
+    )
     epoch = models.PositiveIntegerField()
-
-    # JSONField to store metrics as a dictionary
     metrics = models.JSONField()
 
     def validate_json_data(self):
+        """
+        Validates the JSON data for the TrainingMetric object.
+
+        Raises:
+            ValidationError: If the metrics attribute is not a list of objects, or if any item in the list
+                does not have a "metrics" attribute that is a dictionary of metric names and values.
+        """
+
         if not isinstance(self.metrics, list):
             raise ValidationError(
                 "JSON data for TrainingMetric.metrics should be a list of objects."
@@ -241,7 +294,8 @@ class TrainingMetric(models.Model):
         for item in self.metrics:
             if not isinstance(item, dict) or "metrics" not in item:
                 raise ValidationError(
-                    'Each item in the JSON list for TrainingMetric.metrics should be an object with a "metrics" attribute.'
+                    """Each item in the JSON list for TrainingMetric.metrics should be an 
+                    object with a "metrics" attribute."""
                 )
             if not isinstance(item["metrics"], dict):
                 raise ValidationError(

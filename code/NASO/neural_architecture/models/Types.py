@@ -7,12 +7,12 @@ from django.db import models
 # instantiation with all arguments is done by the actual models, taht jsut have this type assigned
 class BaseType(models.Model):
     module_name = models.CharField(max_length=150)
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     required_arguments = models.JSONField()
 
     class Meta:
         abstract = True
-        unique_together = ("module_name", "name")
+        unique_together = (("module_name", "name"),)
 
     def __str__(self):
         return self.name

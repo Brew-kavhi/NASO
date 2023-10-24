@@ -1,20 +1,17 @@
 import tensorflow as tf
-from django.contrib import messages
+import tensorflow_datasets as tfds
 from loguru import logger
 
 from celery import shared_task
 from helper_scripts.importing import get_object
 from neural_architecture.models.Architecture import NetworkConfiguration, NetworkLayer
-from neural_architecture.models.Dataset import load_keras_mist_dataset
-from neural_architecture.models.Types import (LossType, MetricType,
-                                              OptimizerType)
-from neural_architecture.NetworkCallbacks.CeleryUpdateCallback import \
-    CeleryUpdateCallback
-from neural_architecture.NetworkCallbacks.EvaluationBaseCallback import \
-    EvaluationBaseCallback
-from runs.models.Training import (EvaluationParameters, FitParameters,
-                                  LossFunction, Metric, NetworkHyperparameters,
-                                  NetworkTraining, Optimizer, TrainingMetric)
+from neural_architecture.NetworkCallbacks.CeleryUpdateCallback import (
+    CeleryUpdateCallback,
+)
+from neural_architecture.NetworkCallbacks.EvaluationBaseCallback import (
+    EvaluationBaseCallback,
+)
+from runs.models.Training import NetworkTraining, TrainingMetric
 
 logger.add("net.log", backtrace=True, diagnose=True)
 
@@ -28,7 +25,7 @@ def run_neural_net(self, training_id):
     try:
         nn = NeuralNetwork(training)
         nn.run_from_config(training, update_call)
-    except Exception as e: 
+    except Exception as e:
         logger.error("Failure while training the network: " + str(e))
         self.update_state(state="FAILED")
 
@@ -45,20 +42,13 @@ class NeuralNetwork:
 
     def run_from_config(self, config: NetworkTraining, celery_callback):
         self.celery_callback = celery_callback
-        network_config = None
+
         if config:
-            network_config = config.network_config
             self.training_config = config
 
-        # TODO then load the dataset:
-        (train_data, train_labels), (
-            test_data,
-            test_labels,
-        ) = load_keras_mist_dataset()
+        # then load the dataset:
+        self.load_data()
 
-        self.load_data(train_data, train_labels, test_data, test_labels)
-
-        # self.build_model_from_config(network_config)
         self.train()
         self.validate()
 
@@ -72,17 +62,16 @@ class NeuralNetwork:
         x = tf.keras.Input((28, 28))
         layer_inputs["input_node"] = x
         for edge in config.connections:
-            naso_layer = NetworkLayer.objects.get(id=edge['target'])
+            naso_layer = NetworkLayer.objects.get(id=edge["target"])
             tf_layer = get_object(
                 module_name=naso_layer.layer_type.module_name,
                 class_name=naso_layer.layer_type.name,
                 additional_arguments=naso_layer.additional_arguments,
             )
-            x = tf_layer(layer_inputs[edge['source']])
-            layer_inputs[edge['target']] = x
+            x = tf_layer(layer_inputs[edge["source"]])
+            layer_inputs[edge["target"]] = x
             size += tf_layer.count_params()
             # TODO what is the last node?
-            
 
         config.size = size
         config.save()
@@ -90,15 +79,18 @@ class NeuralNetwork:
 
         # TODO: sure this is correct? Here we need objects for metrcs and optimizers i guess
         model.compile(**self.training_config.hyper_parameters.get_as_dict())
-        logger.success('Model is initiated.')
+        logger.success("Model is initiated.")
         self.model = model
 
-    def load_data(self, train_data, train_labels, test_data, test_labels):
+    def load_data(self):
         # TODO this needs to customer adjustable
-        self.train_dataset = tf.data.Dataset.from_tensor_slices(
-            (train_data, train_labels)
+        (self.train_dataset, self.test_dataset) = tfds.load(
+            self.training_config.dataset.name,
+            split=["train", "test"],
+            as_supervised=self.training_config.dataset.as_supervised,
         )
-        self.test_dataset = tf.data.Dataset.from_tensor_slices((test_data, test_labels))
+        self.train_dataset = self.train_dataset.cache()
+        self.train_dataset = self.train_dataset.prefetch(tf.data.AUTOTUNE)
 
     def train(self, training_config: NetworkTraining = None):
         fit_parameters = self.training_config.fit_parameters
@@ -112,7 +104,6 @@ class NeuralNetwork:
             self.train_dataset.shuffle(60000).batch(batch_size),
             epochs=epochs,
             validation_data=self.test_dataset.batch(batch_size),
-            verbose=fit_parameters.verbose,
             callbacks=[self.celery_callback],
             shuffle=fit_parameters.shuffle,
             class_weight=fit_parameters.class_weight,

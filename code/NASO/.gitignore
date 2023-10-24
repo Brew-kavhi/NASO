@@ -9,6 +9,7 @@ neural_architecture/datasets/
 python
 .idea/
 .vscode/
+naso/settings.py
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
@@ -39,6 +40,8 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+auto_model/
+trial*/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

@@ -5,32 +5,48 @@ NAS stands for neural architecture search and optimization. It offers an easy wa
 # Installation
 You need poetry installed.
 ```apt install poetry```
-Poetry handles the virtual environnment, and makes it easy administrate it.
+Poetry handles the virtual environnment, and makes it easy to administrate it.
 
 Then clone this project:
 ```git clone (repo-url)```
-````cd NASO``
+````cd code/NASO``
 Next you need to install all the dependencies with poetry:
 ```poetry install```
-Unfortunately, it is not possible to install tensorflow with poetry. So you need to manually install it:
-```poetry run pip install tensorflow```
-This installs tensorflow in poetrys virtual environment.
 
-Last but not least, we need autokeras:
-```poetry run pip install autokeras```
-
-
+You may need to install tensorflow and autokeras separately by executing:
+```poetry run pip intall tensorflow autokeras```
 For async task io we use celery. This is automatically installed with poetry, but for the backend and message quieing, we need to install an additional server, namely a rabbitmq server. This handles all our task states and everything. Install the message queue with the following command:
 ```sudo apt-get install rabbitmq-server```
-Last step is to configure the environment. This roject uses python-decouple to laod environment variables into the django app. This is important to keep sensitive information local and to have all the config in one place. You can find a sample configuration in the file .envrc. ust copy it to a file named .env and adjust it to yiur needs.
+
+If its not possible to start or install a rabbitmq server. you can ask me (Marius Goehring) for an alternative. This server does not need to run locally, so you can use any other hosted rabbitmq instance. I have one running for this purpose.
+
+## Configuration
+
+Last step is to configure the environment. This roject uses python-decouple to laod environment variables into the django app. This is important to keep sensitive information local and to have all the config in one place. You can find a sample configuration in the file .envrc. just copy it to a file named .env and adjust it to your needs. Here you also need to configure the rabbitmq server instance. This env file also holds the database connection credentials. This is only necessary if you are using something else than sqlite, which is preconfigured in the project settings. So if you are using SQLite, because you might not be able to install a proper SQL-database server, you need to change the database settings in the file naso/settings.py. 
 
 # Execution
+If you are starting it for the first time, you need to migrate the database:
+```poetry run python manage.py migrate```
+After that you need to load all the available layers into the database:
+```poetry run python manage.py loadneuralutilities```
+If you want to have an admin account for more detailed insights, you can create an admin account by exexcuting:
+```poetry run python manage.py createsuperuser```
+After that the database is setup and you are ready to start the server
 Run
 ```´poetry run python manage.py runserver```
-to start the development server.
+to start the development server. For using the local settings append ```--settings=naso.settings_local```. Depending on your working environment you may need to configure port forwarding so you can acces the frontend. This is necessary if you execute it on a remote machine. If you want to run it on a production server run 
+--settings=naso.settings_local--settings=naso.settings_local```poetry run uvicorn naso.asgi:application --host <host> ---port <port>```
+(Development server can only handle a few connections at one time, maybe 5-10 max, while production server can handle way more.)
+
 Furthermore, there needs to be a celery worker running. You can starte one with this command: 
 ```poetry run celery -A naso worker -l INFO```
-If you want to daemonize it, so it starts one every reboot, you can find  more information about it in the celery folder of this project.
-
+If you want to daemonize it, so it starts one every reboot, you can find  more information about it in the celery folder of this project. Now if this server is running on a remote machine that is behind another network, like it is the case with the workstations at IPVS, we need to enable port forwarding. this is done with the following command, to be executedon your home desktop: 
+```ssh -L <local_port>:<remote-machine>:<django-port> <username>@ipvslogin.informatik.uni-stuttgart.de```
 # Documentation
 Add this. We use networkX as the tool to create graphs that describe the networks and search space.
+
+# Development
+Run 
+```poetry run black .``` for formatting and 
+```poetry run isort .``` for sorting the imports
+```poety run flake8 .``` will do a basic code check, but somewhow crashes my server, so maybe needs a better configuration
