@@ -1,3 +1,14 @@
 [flake8]
 max-line-length: 119
-exclude: */migrations/*.py,naso/settings.py,neural_architecture/management/commands/loadneuralutilities.py
+exclude: 
+    .git,
+    */migrations,
+    naso/settings.py,
+    neural_architecture/management/commands/loadneuralutilities.py,
+    */datasets,
+    */__pycache__,
+    auto_model/*,
+    media,
+    naso/static,
+    venv
+

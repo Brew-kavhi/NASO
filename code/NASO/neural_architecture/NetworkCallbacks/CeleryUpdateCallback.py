@@ -8,13 +8,16 @@ from runs.models.Training import NetworkTraining, TrainingMetric
 
 
 class CeleryUpdateCallback(tf.keras.callbacks.Callback):
+    additional_callbacks = None
+
     def __init__(self, celery_task, run: NetworkTraining):
         super().__init__()
         self.celery_task = celery_task
         self.run = run
         # i need the epochs here from the run.
         self.timer = Timer()
-        self.additional_callbacks = run.fit_parameters.get_callbacks()
+        if run:
+            self.additional_callbacks = run.fit_parameters.get_callbacks()
 
     def get_total_time(self):
         return round(self.timer.get_total_time(), 2)
@@ -26,12 +29,19 @@ class CeleryUpdateCallback(tf.keras.callbacks.Callback):
             if not math.isnan(logs[key]):
                 metrics[key] = logs[key]
 
+        epochs = epoch
+        if self.run:
+            epochs = self.run.fit_parameters.epochs
+        run_id = 0
+        if self.run:
+            run_id = self.run.id
+
         self.celery_task.update_state(
             state="PROGRESS",
             meta={
                 "current": (epoch + 1),
-                "total": self.run.fit_parameters.epochs,
-                "run_id": self.run.id,
+                "total": epochs,
+                "run_id": run_id,
                 "metrics": metrics,
             },
         )
@@ -56,20 +66,21 @@ class CeleryUpdateCallback(tf.keras.callbacks.Callback):
             if not math.isnan(logs[key]):
                 metrics[key] = logs[key]
 
-        metric = TrainingMetric(
-            neural_network=self.run,
-            epoch=epoch,
-            metrics=[
-                {
-                    "current": epoch,
-                    "total": self.run.fit_parameters.epochs,
-                    "run_id": self.run.id,
-                    "metrics": metrics,
-                    "time": self.timer.get_total_time(),
-                },
-            ],
-        )
-        metric.save()
+        if self.run:
+            metric = TrainingMetric(
+                neural_network=self.run,
+                epoch=epoch,
+                metrics=[
+                    {
+                        "current": epoch,
+                        "total": self.run.fit_parameters.epochs,
+                        "run_id": self.run.id,
+                        "metrics": metrics,
+                        "time": self.timer.get_total_time(),
+                    },
+                ],
+            )
+            metric.save()
         if self.additional_callbacks:
             for callback in self.additional_callbacks:
                 try:

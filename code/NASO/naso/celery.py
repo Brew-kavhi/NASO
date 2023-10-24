@@ -2,12 +2,15 @@ import os
 import time
 
 from celery.result import AsyncResult
+from decouple import config
 
 from celery import Celery
-from decouple  import config
 
 # Set the default Django settings module for the 'celery' program.
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "naso.settings")
+os.environ.setdefault(
+    "DJANGO_SETTINGS_MODULE",
+    config("DJANGO_SETTINGS_MODULE", default="naso.settings_production"),
+)
 
 app = Celery("naso", backend=config("CELERY_BROKER_URL"))
 

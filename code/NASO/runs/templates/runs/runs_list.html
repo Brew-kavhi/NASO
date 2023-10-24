@@ -4,162 +4,281 @@
 
 {% block content %}
 
-<div class="container">
-    <div class="row">
-        <h2>Filtering</h2>
-    </div>
-    <div class="row mb-3">
-        <div class="col-3 d-flex">
-            <label>Optimizer:</label>
+<div class="tabs is-centered is-toggle is-toggle-round">
+    <ul>
+        <li class="tab is-active" onclick="openTab(event,'tensorflow')">
+            <a>Tensorflow</a>
+        </li>
+        <li class="tab" onclick="openTab(event,'autokeras')">
+            <a >Autokeras</a>
+        </li>
+    </ul>
+</div>
+<div class="container content-tab" id="tensorflow">
+    <div class="align-items-center row mb-3">
+        <h3>Filtering</h3>
+        <div class="align-items-center col-3 d-flex">
+            <label class="column">Optimizer:</label>
             <input id='filterOptimizer' class="input" type="text">
         </div>
         <button class='button is-light is-info' id="sortButton">Sort by time <span class="sort-icon ml-3"></span></button>
     </div>
-</div>
-<div class="container" id="runs_list">
-    {% for network_training in network_training_data %}
-        <div class="accordion" id="accordion{{ network_training.id }}" data-app-version='{{network_training.naso_app_version}}' data-optimizer='{{network_training.hyper_parameters.optimizer.instance_type.name}}' data-time="{% get_metric network_training.final_metrics.metrics 'time' %}">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between is-align-items-center" id="heading{{ network_training.id }}">
-                    <h2 class="mb-0">
-                        <button class="btn" type="button" data-toggle="collapse" data-target="#collapse{{ network_training.id }}" aria-expanded="true" aria-controls="collapse{{ network_training.id }}">
-                            {{ network_training.network_config.name }}
-                        </button>
-                    </h2>
-                    <div class='d-flex is-align-items-center'>
-                        {% for metric in network_training.final_metrics.metrics %}
-                            {% for attr_name in metric.metrics %}
-                                <span class="mx-1 tag is-info is-light">{{ attr_name }}: {% get_attribute_tag metric.metrics attr_name %}</span>
-                            {% endfor %}
+    <div class="container" id="runs_list">
 
-                            {% if 'time' in metric %}
-                                <span class="mx-1 tag is-primary is-light">time: {% get_attribute_tag metric 'time' %}</span>
-                            {% endif %}
-                        
-                        {% endfor %}
-                        <a class="button is-info ml-2 has-tooltip-arrow has-tooltip-left" href="{% url 'runs:new' %}?rerun={{network_training.id}}" data-tooltip='Dieses Experiment neu starten'>
-                            <i class="fas fa-redo"></i>
-                        </a>
-                        <button class="button is-danger ml-2 delete-btn" data-target="#confirmDeleteModal" data-action="{% url 'runs:delete' network_training.id %}" data-item-id="{{ network_training.id }}">
-                            <i class="fas fa-trash"></i>
-                        </button>
+        {% for network_training in network_training_data %}
+            <div class="accordion" id="accordion{{ network_training.id }}" data-app-version='{{network_training.naso_app_version}}' data-optimizer='{{network_training.hyper_parameters.optimizer.instance_type.name}}' data-time="{% get_metric network_training.final_metrics.metrics 'time' %}">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between is-align-items-center" id="heading{{ network_training.id }}">
+                        <h2 class="mb-0">
+                            <button class="btn" type="button" data-toggle="collapse" data-target="#collapse{{ network_training.id }}" aria-expanded="true" aria-controls="collapse{{ network_training.id }}">
+                                {{ network_training.network_config.name }}
+                            </button>
+                        </h2>
+                        <div class='d-flex is-align-items-center'>
+                            {% for metric in network_training.final_metrics.metrics %}
+                                {% for attr_name in metric.metrics %}
+                                    <span class="mx-1 tag is-info is-light">{{ attr_name }}: {% get_attribute_tag metric.metrics attr_name %}</span>
+                                {% endfor %}
+
+                                {% if 'time' in metric %}
+                                    <span class="mx-1 tag is-primary is-light">time: {% get_attribute_tag metric 'time' %}</span>
+                                {% endif %}
                             
+                            {% endfor %}
+                            <a class="button is-info ml-2 has-tooltip-arrow has-tooltip-left" href="{% url 'runs:new' %}?rerun={{network_training.id}}" data-tooltip='Dieses Experiment neu starten'>
+                                <i class="fas fa-redo"></i>
+                            </a>
+                            <button class="button is-danger ml-2 delete-btn" data-target="#confirmDeleteModal" data-action="{% url 'runs:delete' network_training.id %}" data-item-id="{{ network_training.id }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                                
+                        </div>
                     </div>
-                </div>
 
-                <div id="collapse{{ network_training.id }}" class="collapse" aria-labelledby="heading{{ network_training.id }}" data-parent="#accordion{{ network_training.id }}">
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-8">
-                                <canvas class='h-100 w-100' id="chart{{ network_training.id }}"></canvas>
-                            </div>
-                            <div class="col-4 border-left p-5">
-                                <div>
-                                    <p>
-                                        <span class='has-text-weight-bold'>Epochen:</span>
-                                        {{ network_training.fit_parameters.epochs }}
-                                    </p>
-                                    <p>
-                                        <span class='has-text-weight-bold'>Batch Size:</span>
-                                        {{ network_training.fit_parameters.batch_size }}
-                                    </p>
-                                    <p>
-                                        <span class='has-text-weight-bold'>Optimizer:</span>
-                                        {{ network_training.hyper_parameters.optimizer.instance_type.name }}
-                                    </p>
-                                    <p>
-                                        <span class='has-text-weight-bold'>Loss:</span>
-                                        {{ network_training.hyper_parameters.loss.instance_type.name }}
-                                    </p>
-                                    <p>
-                                        <span class='has-text-weight-bold'>NASO Version:</span>
-                                        {{ network_training.naso_app_version }}
-                                    </p>
+                    <div id="collapse{{ network_training.id }}" class="collapse" aria-labelledby="heading{{ network_training.id }}" data-parent="#accordion{{ network_training.id }}">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-8">
+                                    <canvas class='h-100 w-100' id="chart{{ network_training.id }}"></canvas>
                                 </div>
-                                <div>
-                                    <a href="{% url 'runs:details' network_training.id %}"  class='mt-3 is-light button is-info'>Details</a>
+                                <div class="col-4 border-left p-5">
+                                    <div>
+                                        <p>
+                                            <span class='has-text-weight-bold'>Epochen:</span>
+                                            {{ network_training.fit_parameters.epochs }}
+                                        </p>
+                                        <p>
+                                            <span class='has-text-weight-bold'>Batch Size:</span>
+                                            {{ network_training.fit_parameters.batch_size }}
+                                        </p>
+                                        <p>
+                                            <span class='has-text-weight-bold'>Optimizer:</span>
+                                            {{ network_training.hyper_parameters.optimizer.instance_type.name }}
+                                        </p>
+                                        <p>
+                                            <span class='has-text-weight-bold'>Loss:</span>
+                                            {{ network_training.hyper_parameters.loss.instance_type.name }}
+                                        </p>
+                                        <p>
+                                            <span class='has-text-weight-bold'>NASO Version:</span>
+                                            {{ network_training.naso_app_version }}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <a href="{% url 'runs:details' network_training.id %}"  class='mt-3 is-light button is-info'>Details</a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-            <script>
-                document.addEventListener("DOMContentLoaded", () => {
-                    
-                    var ctx{{ network_training.id }} = document.getElementById('chart{{ network_training.id }}').getContext('2d');
-                    var data{{ network_training.id }} = [
-                        // Define your chart data here based on network_training and its TrainingMetric objects
-                        {% for training_metric in network_training.trainingmetric_set.all %}
-                            {%  for metric in training_metric.metrics %}
-                                {% if 'current' in metric %}
-                                    // {"epoch": {% get_metric metric 'current' %}, 
-                                    {"epoch": {{metric.current }} , 
-                                    {% for metric_name in metric.metrics %}
-                                        
-                                        "{{metric_name}}":{% get_metric metric.metrics metric_name %},
-                                        
-                                    {% endfor %}
+                <script>
+                    document.addEventListener("DOMContentLoaded", () => {
+                        
+                        var ctx{{ network_training.id }} = document.getElementById('chart{{ network_training.id }}').getContext('2d');
+                        var data{{ network_training.id }} = [
+                            // Define your chart data here based on network_training and its TrainingMetric objects
+                            {% for training_metric in network_training.trainingmetric_set.all %}
+                                {%  for metric in training_metric.metrics %}
+                                    {% if 'current' in metric %}
+                                        // {"epoch": {% get_metric metric 'current' %}, 
+                                        {"epoch": {{metric.current }} , 
+                                        {% for metric_name in metric.metrics %}
+                                            
+                                            "{{metric_name}}":{% get_metric metric.metrics metric_name %},
+                                            
+                                        {% endfor %}
+                                    },
+                                    {% endif %}
+                                {% endfor %}                            
+                            {% endfor %}
+                    ];
+                        var chart{{ network_training.id }} = new Chart(ctx{{ network_training.id }}, {
+                            type: 'line', // Choose the appropriate chart type
+                            data: {
+                                labels: data{{ network_training.id }}.map(row => row.epoch),
+                                datasets: [
+                                {
+                                    label: 'loss',
+                                    data: data{{ network_training.id }}.map(row => row.loss)
                                 },
-                                {% endif %}
-                            {% endfor %}                            
-                        {% endfor %}
-                ];
-                    var chart{{ network_training.id }} = new Chart(ctx{{ network_training.id }}, {
-                        type: 'line', // Choose the appropriate chart type
-                        data: {
-                            labels: data{{ network_training.id }}.map(row => row.epoch),
-                            datasets: [
-                            {
-                                label: 'loss',
-                                data: data{{ network_training.id }}.map(row => row.loss)
-                            },
-                            {
-                                label: 'accuracy',
-                                data: data{{ network_training.id }}.map(row => row.accuracy)
+                                {
+                                    label: 'accuracy',
+                                    data: data{{ network_training.id }}.map(row => row.accuracy)
+                                }
+                                ]
                             }
-                            ]
-                        }
+                        });
+
+                        // Filter items by category
+                        $('#filterOptimizer').on('change', function() {
+                            var selectedOptimizer = $(this).val();
+                            if (selectedOptimizer === 'all') {
+                                $('#runs_list .accordion').show(); // Show all accordions when "All" is selected
+                            } else {
+                                $('#runs_list .accordion').hide(); // Hide all items
+                                $('#runs_list .accordion[data-optimizer="' + selectedOptimizer + '"]').show(); // Show matching items
+                            }
+                        });
+
+                        var ascending = true; // Flag to track sorting direction
+
+                        $('#sortButton').on('click', function() {
+                            // Toggle sorting direction
+                            ascending = !ascending;
+
+                            // Toggle the arrow icon
+                            var sortIcon = $(this).find('.sort-icon');
+                            if (ascending) {
+                                sortIcon.text('↑'); // Up arrow
+                            } else {
+                                sortIcon.text('↓'); // Down arrow
+                            }
+
+                            $('#runs_list').find('.accordion').sort(function(a, b) {
+                            var timeA = parseFloat($(a).data('time'));
+                            var timeB = parseFloat($(b).data('time'));
+                            return ascending ? timeA - timeB : timeB - timeA;
+                        }).appendTo('#runs_list');
+                        });
+
+                        
+
                     });
+                </script>
+        {% endfor %}
+    </div>
+</div>
+<div class="container content-tab" id='autokeras' style="display:none">
+    <div class="container" id="runs_list_autokeras">
 
-                    // Filter items by category
-                    $('#filterOptimizer').on('change', function() {
-                        var selectedOptimizer = $(this).val();
-                        if (selectedOptimizer === 'all') {
-                            $('#runs_list .accordion').show(); // Show all accordions when "All" is selected
-                        } else {
-                            $('#runs_list .accordion').hide(); // Hide all items
-                            $('#runs_list .accordion[data-optimizer="' + selectedOptimizer + '"]').show(); // Show matching items
-                        }
+        {% for keras_run in autokeras_runs %}
+            <div class="accordion" id="accordion{{ keras_run.id }}" data-app-version='{{keras_run.naso_app_version}}' data-tuner='{{keras_run.model.tuner.instance_type.name}}'>
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between is-align-items-center" id="heading{{ keras_run.id }}">
+                        <h2 class="mb-0">
+                            <button class="btn" type="button" data-toggle="collapse" data-target="#autokeras_collapse{{ keras_run.id }}" aria-expanded="true" aria-controls="autokeras_collapse{{ keras_run.id }}">
+                                {{ keras_run.model.project_name }}
+                            </button>
+                        </h2>
+                        <div class='d-flex is-align-items-center'>
+                                {% for metric in keras_run.metrics.last.metrics %}
+                                    {% if 'final_metric' in metric %}
+                                        {% for attr_name in metric.metrics %}
+                                            <span class="mx-1 tag is-info is-light">{{ attr_name }}: {% get_attribute_tag metric.metrics attr_name %}</span>
+                                        {% endfor %}
+
+                                        {% if 'time' in metric %}
+                                            <span class="mx-1 tag is-primary is-light">time: {% get_attribute_tag metric 'time' %}</span>
+                                        {% endif %}
+                                        {% endif %}
+                                {% endfor %}
+                            <a class="button is-info ml-2 has-tooltip-arrow has-tooltip-left" href="{% url 'runs:new_autokeras' %}?rerun={{keras_run.id}}" data-tooltip='Dieses Experiment neu starten'>
+                                <i class="fas fa-redo"></i>
+                            </a>
+                            <button class="button is-danger ml-2 delete-btn" data-target="#confirmDeleteModal" data-action="{% url 'runs:delete_autokeras' keras_run.id %}" data-item-id="{{ keras_run.id }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                                
+                        </div>
+                    </div>
+
+                    <div id="autokeras_collapse{{ keras_run.id }}" class="collapse" aria-labelledby="heading{{ keras_run.id }}" data-parent="#accordion{{ keras_run.id }}">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-8">
+                                    <canvas class='h-100 w-100' id="autokeras_chart{{ keras_run.id }}"></canvas>
+                                </div>
+                                <div class="col-4 border-left p-5">
+                                    <div>
+                                        <p>
+                                            <span class='has-text-weight-bold'>Max trials:</span>
+                                            {{ keras_run.model.max_trials }}
+                                        </p>
+                                        <p>
+                                            <span class='has-text-weight-bold'>Max Size:</span>
+                                            {{ keras_run.model.max_model_size }}
+                                        </p>
+                                        <p>
+                                            <span class='has-text-weight-bold'>Optimizer:</span>
+                                            {{ keras_run.model.tuner.tuner_type.name }}
+                                        </p>
+                                        <p>
+                                            <span class='has-text-weight-bold'>Loss:</span>
+                                            {{ keras_run.model.objective }}
+                                        </p>
+                                        <p>
+                                            <span class='has-text-weight-bold'>NASO Version:</span>
+                                            {{ keras_run.naso_app_version }}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <a href="{% url 'runs:details' keras_run.id %}"  class='mt-3 is-light button is-info'>Details</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                <script>
+                    document.addEventListener("DOMContentLoaded", () => {
+                        
+                        var autokeras_ctx{{ keras_run.id }} = document.getElementById('autokeras_chart{{ keras_run.id }}').getContext('2d');
+                        var autokeras_data{{ keras_run.id }} = [
+                            // Define your chart data here based on network_training and its TrainingMetric objects
+                            {% for training_metric in keras_run.metrics.all %}
+                            {%  for metric in training_metric.metrics %}
+                                    {% if 'current' in metric %}
+                                        {"epoch": {{metric.current }},
+                                        {% for metric_name in metric.metrics %}    
+                                        "{{metric_name}}":{% get_metric metric.metrics metric_name %},                                            
+                                        {% endfor %}                                    },
+                                    {% endif %}
+                                {% endfor %}                            
+                            {% endfor %}
+                        ];
+                        var autokeras_chart{{ keras_run.id }} = new Chart(autokeras_ctx{{ keras_run.id }}, {
+                            type: 'line', // Choose the appropriate chart type
+                            data: {
+                                labels: autokeras_data{{ keras_run.id }}.map(row => row.epoch),
+                                datasets: [
+                                {
+                                    label: 'loss',
+                                    data: autokeras_data{{ keras_run.id }}.map(row => row.loss)
+                                },
+                                {
+                                    label: 'accuracy',
+                                    data: autokeras_data{{ keras_run.id }}.map(row => row.accuracy)
+                                }
+                                ]
+                            }
+                        });
                     });
-
-                    var ascending = true; // Flag to track sorting direction
-
-                    $('#sortButton').on('click', function() {
-                        // Toggle sorting direction
-                        ascending = !ascending;
-
-                        // Toggle the arrow icon
-                        var sortIcon = $(this).find('.sort-icon');
-                        if (ascending) {
-                            sortIcon.text('↑'); // Up arrow
-                        } else {
-                            sortIcon.text('↓'); // Down arrow
-                        }
-
-                        $('#runs_list').find('.accordion').sort(function(a, b) {
-                        var timeA = parseFloat($(a).data('time'));
-                        var timeB = parseFloat($(b).data('time'));
-                        return ascending ? timeA - timeB : timeB - timeA;
-                    }).appendTo('#runs_list');
-                    });
-
-                    
-
-                });
-            </script>
-    {% endfor %}
+                </script>
+        {% endfor %}
+    </div>
 </div>
 {% include 'components/delete_modal.html' %}
 {% endblock content %}

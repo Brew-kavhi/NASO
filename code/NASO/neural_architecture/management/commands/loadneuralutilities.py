@@ -1,13 +1,16 @@
 import importlib
 import inspect
+
 import autokeras
-
-from neural_architecture.models.AutoKeras import AutoKerasNodeType
-
 from django.core.management.base import BaseCommand
 
-from neural_architecture.models.Types import (LossType, MetricType,
-                                              NetworkLayerType, OptimizerType)
+from neural_architecture.models.AutoKeras import AutoKerasNodeType, AutoKerasTunerType
+from neural_architecture.models.Types import (
+    LossType,
+    MetricType,
+    NetworkLayerType,
+    OptimizerType,
+)
 
 
 class Command(BaseCommand):
@@ -151,11 +154,18 @@ class Command(BaseCommand):
                     self.style.ERROR(f"Class {class_name} has errors: {e}")
                 )
 
-        for module in ["blocks.basic","blocks.heads", "blocks.preprocessing", "blocks.reduction", "nodes"]:
-            autokeras_module = importlib.import_module('autokeras.' + module)# blocks
+        self.stdout.write(self.style.SUCCESS(f"Importing Autokeras Blocks"))
+        for module in [
+            "blocks.basic",
+            "blocks.heads",
+            "blocks.preprocessing",
+            "blocks.reduction",
+            "nodes",
+        ]:
+            autokeras_module = importlib.import_module("autokeras." + module)  # blocks
             autokeras_nodes = inspect.getmembers(autokeras_module, inspect.isclass)
-            
-            for class_name, class_obj in layer_classes:
+
+            for class_name, class_obj in autokeras_nodes:
                 constructor = inspect.signature(class_obj.__init__)
                 arguments = []
                 for param_name, param in constructor.parameters.items():
@@ -171,19 +181,62 @@ class Command(BaseCommand):
                         else:
                             {
                                 arguments.append(
-                                    {"name": param_name, "default": "", "type": "unknown"}
+                                    {
+                                        "name": param_name,
+                                        "default": "",
+                                        "type": "unknown",
+                                    }
                                 )
                             }
                 try:
                     _, _ = AutoKerasNodeType.objects.get_or_create(
-                        module_name='autokeras.' + module,
+                        module_name="autokeras." + module,
                         name=class_name,
-                        keras_type = module
+                        autokeras_type=module,
+                        required_arguments=arguments,
                     )
                 except Exception as e:
                     self.stdout.write(
-                        self.style.ERROR(f"Class {class_name} has errors: {e}")
+                        self.style.ERROR(
+                            f"Class {class_name} from {'autokeras.' + module} has errors: {e}"
+                        )
                     )
+
+        tuners_module = importlib.import_module("autokeras.tuners")  # blocks
+        tuners = inspect.getmembers(tuners_module, inspect.isclass)
+
+        for class_name, class_obj in tuners:
+            constructor = inspect.signature(class_obj.__init__)
+            arguments = []
+            for param_name, param in constructor.parameters.items():
+                if not param_name == "self" and not param_name == "kwargs":
+                    if param.default is not inspect.Parameter.empty:
+                        arguments.append(
+                            {
+                                "name": param_name,
+                                "default": param.default,
+                                "dtype": type(param.default).__name__,
+                            }
+                        )
+                    else:
+                        {
+                            arguments.append(
+                                {"name": param_name, "default": "", "type": "unknown"}
+                            )
+                        }
+            try:
+                _, _ = AutoKerasTunerType.objects.get_or_create(
+                    module_name="autokeras.tuners",
+                    name=class_name,
+                    native_tuner=True,
+                    required_arguments=arguments,
+                )
+            except Exception as e:
+                self.stdout.write(
+                    self.style.ERROR(
+                        f"Class {class_name} from {'autokeras.' + module} has errors: {e}"
+                    )
+                )
 
         self.stdout.write(
             self.style.SUCCESS(

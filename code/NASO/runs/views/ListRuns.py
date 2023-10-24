@@ -1,11 +1,9 @@
-from django.http import HttpResponseRedirect, JsonResponse
-from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse_lazy
-from django.utils import timezone as tz
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django.views.generic.base import TemplateView
-from django.views.generic.edit import CreateView, DeleteView
 
 from naso.models.page import PageSetup
+from neural_architecture.models.AutoKeras import AutoKerasRun
 from runs.models.Training import NetworkTraining
 
 
@@ -16,13 +14,26 @@ class ListRuns(TemplateView):
 
     def get(self, request, *args, **kwargs):
         training_runs = reversed(NetworkTraining.objects.all())
+        autokeras_runs = reversed(AutoKerasRun.objects.all())
         self.context["network_training_data"] = training_runs
+        self.context["autokeras_runs"] = autokeras_runs
         return self.render_to_response(self.context)
 
 
 def delete_run(request, pk):
     # Fetch the object or return a 404 response if it doesn't exist
     obj = get_object_or_404(NetworkTraining, pk=pk)
+
+    # Delete the object
+    obj.delete()
+
+    # Return a JSON response to indicate successful deletion
+    return JsonResponse({"message": "Object deleted successfully", "id": pk})
+
+
+def delete_autokeras_run(request, pk):
+    # Fetch the object or return a 404 response if it doesn't exist
+    obj = get_object_or_404(AutoKerasRun, pk=pk)
 
     # Delete the object
     obj.delete()

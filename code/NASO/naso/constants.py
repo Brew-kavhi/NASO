@@ -1,5 +1,4 @@
 TENSORFLOW_DTYPES = {
-    "float16": "16-bit bfloat (brain floating point).",
     "bool": "Boolean",
     "complex128": "128-bit complex.",
     "complex64": "'64-bit complex.",

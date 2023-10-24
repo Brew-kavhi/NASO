@@ -21,3 +21,13 @@ class RunDetails(TemplateView):
 
     def get(self, request, *args, **kwargs):
         return self.render_to_response(self.context)
+
+
+class AutoKerasRunDetails(TemplateView):
+    template_name = "runs/run_details.html"
+
+    page = PageSetup(title="Experimente", description="Details")
+    context = {"page": page.get_context()}
+
+    def get(self, request, *args, **kwargs):
+        return self.render_to_response(self.context)

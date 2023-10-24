@@ -2,25 +2,36 @@ import json
 import random
 
 from django.contrib import messages
-from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
-from django.utils import timezone as tz
 from django.views.generic.base import TemplateView
-from django.views.generic.edit import CreateView, DeleteView
 
 from naso.celery import get_tasks
 from naso.models.page import PageSetup
+from neural_architecture.autokeras import run_autokeras
 from neural_architecture.models.Architecture import NetworkConfiguration, NetworkLayer
+from neural_architecture.models.AutoKeras import (
+    AutoKerasModel,
+    AutoKerasNode,
+    AutoKerasRun,
+    AutoKerasTuner,
+)
+from neural_architecture.models.Dataset import Dataset
 from neural_architecture.neural_net import run_neural_net
-from runs.forms.NewRunForm import NewRunForm
-from runs.models.Training import (EvaluationParameters, FitParameters,
-                                  LossFunction, Metric, NetworkHyperparameters,
-                                  NetworkTraining, Optimizer)
+from runs.forms.NewRunForm import NewAutoKerasRunForm, NewRunForm
+from runs.models.Training import (
+    EvaluationParameters,
+    FitParameters,
+    LossFunction,
+    Metric,
+    NetworkHyperparameters,
+    NetworkTraining,
+    Optimizer,
+)
 
 
 class NewRun(TemplateView):
-    template_name = "runs/run_new.html"
+    template_name = "runs/new_tensorflow.html"
     page = PageSetup(title="Experimente", description="Neu")
     page.add_pageaction(reverse_lazy("runs:list"), "Alle Experimente")
     context = {"page": page.get_context()}
@@ -75,40 +86,75 @@ class NewRun(TemplateView):
                     "metrics": [],  # Assuming 'metrics' is the field name
                 }
             )
-            if 'rerun' in request.GET:
-                # this run should be a rerun from an older config, so load the config
-                training_id  = request.GET.get('rerun')
-                training = NetworkTraining.objects.get(pk = training_id)
-                form.initial['name'] = training.network_config.name
-                form.initial['loss'] = training.hyper_parameters.loss.instance_type
-                form.initial['optimizer'] = training.hyper_parameters.optimizer.instance_type
-                form.initial['metrics'] = [metric.instance_type for metric in training.hyper_parameters.metrics.all()]
-                form.initial['run_eagerly'] = training.hyper_parameters.run_eagerly
-                form.initial['steps_per_execution'] = training.hyper_parameters.steps_per_execution
-                form.initial['jit_compile'] = training.hyper_parameters.jit_compile
-                form.initial['epochs']  = training.fit_parameters.epochs
-                form.initial['batch_size'] = training.fit_parameters.batch_size
-                form.initial['shuffle'] = training.fit_parameters.shuffle
-                form.initial['steps_per_epoch'] = training.fit_parameters.steps_per_epoch
-                form.initial['workers'] = training.fit_parameters.workers
-                form.initial['use_multiprocessing'] = training.fit_parameters.use_multiprocessing
-                nodes = [{
-                    'id': layer.id,
-                    'label': f"{layer.layer_type.name} ({layer.id})",
-                    'x': random.random()/10.0,
-                    'y': layer.id + random.random()/5.0,
-                    'size': 3,
-                    'color': '#008cc2',
-                    'type': layer.layer_type.id,
-                    'additional_arguments': layer.additional_arguments,
-                } for layer in training.network_config.layers.all()]
-                form.load_graph(nodes,training.network_config.connections)
-                form.load_optimizer_config(training.hyper_parameters.optimizer.additional_arguments)
-                form.load_loss_config(training.hyper_parameters.loss.additional_arguments)
-                form.load_metric_configs([{'id':metric.instance_type.id, 'arguments': metric.additional_arguments} for metric in training.hyper_parameters.metrics.all()])
-                self.context.update(form.get_extra_context())
 
-                
+            if "rerun" in request.GET:
+                print(request.GET)
+                # this run should be a rerun from an older config, so load the config
+                training_id = request.GET.get("rerun")
+                training = NetworkTraining.objects.get(pk=training_id)
+                form.initial["name"] = training.network_config.name
+                form.initial["loss"] = training.hyper_parameters.loss.instance_type
+                form.initial[
+                    "optimizer"
+                ] = training.hyper_parameters.optimizer.instance_type
+                form.initial["metrics"] = [
+                    metric.instance_type
+                    for metric in training.hyper_parameters.metrics.all()
+                ]
+                form.initial["run_eagerly"] = training.hyper_parameters.run_eagerly
+                form.initial[
+                    "steps_per_execution"
+                ] = training.hyper_parameters.steps_per_execution
+                form.initial["jit_compile"] = training.hyper_parameters.jit_compile
+                form.initial["epochs"] = training.fit_parameters.epochs
+                form.initial["batch_size"] = training.fit_parameters.batch_size
+                form.initial["shuffle"] = training.fit_parameters.shuffle
+                form.initial[
+                    "steps_per_epoch"
+                ] = training.fit_parameters.steps_per_epoch
+                form.initial["workers"] = training.fit_parameters.workers
+                form.initial[
+                    "use_multiprocessing"
+                ] = training.fit_parameters.use_multiprocessing
+                nodes = [
+                    {
+                        "id": layer.id,
+                        "label": f"{layer.layer_type.name} ({layer.id})",
+                        "x": random.random() / 10.0,
+                        "y": layer.id + random.random() / 5.0,
+                        "size": 3,
+                        "color": "#008cc2",
+                        "naso_type": layer.layer_type.id,
+                        "type": "image",
+                        "additional_arguments": layer.additional_arguments,
+                    }
+                    for layer in training.network_config.layers.all()
+                ]
+                form.load_graph(nodes, training.network_config.connections)
+                form.load_optimizer_config(
+                    training.hyper_parameters.optimizer.additional_arguments
+                )
+                form.load_loss_config(
+                    training.hyper_parameters.loss.additional_arguments
+                )
+                form.load_metric_configs(
+                    [
+                        {
+                            "id": metric.instance_type.id,
+                            "arguments": metric.additional_arguments,
+                        }
+                        for metric in training.hyper_parameters.metrics.all()
+                    ]
+                )
+
+                # load dataset:
+                form.initial["dataset"] = training.dataset.name
+                form.initial["dataset_is_supervised"] = training.dataset.as_supervised
+                self.context.update(form.get_extra_context())
+            else:
+                self.context = {"page": self.page.get_context()}
+            print(self.context)
+
             self.context["form"] = form
 
         return self.render_to_response(self.context)
@@ -172,11 +218,6 @@ class NewRun(TemplateView):
                     callbacks=[],
                 )
                 callbacks = []
-                #     {
-                #         "module_name": "neural_architecture.NetworkCallbacks.CeleryUpdateCallback",
-                #         "class_name": "CeleryUpdateCallback",
-                #     }
-                # ]
                 fit_parameters, _ = FitParameters.objects.get_or_create(
                     epochs=form.cleaned_data["epochs"],
                     batch_size=form.cleaned_data["batch_size"],
@@ -189,7 +230,7 @@ class NewRun(TemplateView):
 
                 network_config = NetworkConfiguration(name=form.cleaned_data["name"])
                 network_config.save()
-                
+
                 layers = json.loads(request.POST.get("nodes"))
                 connections = json.loads(request.POST.get("edges"))
 
@@ -199,24 +240,34 @@ class NewRun(TemplateView):
                         continue
                     print(layer["additional_arguments"])
                     naso_layer, _ = NetworkLayer.objects.get_or_create(
-                        layer_type_id=layer["type"],
+                        layer_type_id=layer["naso_type"],
                         name=layer["id"],
                         additional_arguments=layer["additional_arguments"],
                     )
                     naso_layer.save()
-                    node_to_layers[layer['id']] = naso_layer.id
+                    node_to_layers[layer["id"]] = naso_layer.id
                     network_config.layers.add(naso_layer)
                 # next iterate over the edges and adjust the ids, so we use the
                 # naso ids instead of the javacript ones
 
+                # TODO adjust htis here, so we dont modify the edges here.
+                # # we need those unqiue ids form the graphs cause naso_ids ar not unique for the layers
                 for edge in connections:
-                    if not edge['source'] == 'input_node':
-                        edge['source'] = node_to_layers[edge["source"]]
-                    edge['target'] = node_to_layers[edge["target"]]
+                    if not edge["source"] == "input_node":
+                        edge["source"] = node_to_layers[edge["source"]]
+                    edge["target"] = node_to_layers[edge["target"]]
 
                 network_config.connections = connections
                 network_config.save()
 
+                # generate the dataset:
+                dataset = form.cleaned_data["dataset"]
+                dataset_is_supervised = form.cleaned_data["dataset_is_supervised"]
+                data, _ = Dataset.objects.get_or_create(
+                    name=dataset, as_supervised=dataset_is_supervised
+                )
+
+                training.dataset = data
                 training.network_config = network_config
                 training.fit_parameters = fit_parameters
                 training.evaluation_parameters = eval_parameters
@@ -228,3 +279,129 @@ class NewRun(TemplateView):
                     request, messages.SUCCESS, "Training wurde gestartet."
                 )
                 return redirect("dashboard:index")
+
+
+class NewAutoKerasRun(TemplateView):
+    template_name = "runs/new_autokeras.html"
+    page = PageSetup(title="Autokeras", description="Neu")
+    context = {"page": page.get_context()}
+
+    def get_typewise_arguments(self, request_params):
+        tuner_arguments = []
+        for key, value in request_params:
+            if key.startswith("tuner_argument_"):
+                argument_name = key[len("tuner_argument_") :]
+                tuner_argument = {}
+                tuner_argument["name"] = argument_name
+                tuner_argument["value"] = value
+                tuner_arguments.append(tuner_argument)
+
+        return tuner_arguments
+
+    def get(self, request, *args, **kwargs):
+        running_task = get_tasks()
+        print(running_task)
+        if running_task.get("training_task_id"):
+            # there is already a task running, cannotr start a second one.
+            # vthis would falsify the measurements
+            self.context["running_task"] = {
+                "url": reverse_lazy("dashboard:index"),
+                "title": "Zum Dashboard",
+            }
+        else:
+            # there is no training going on right now, so show form to start a new one
+            form = NewAutoKerasRunForm()
+
+            if "rerun" in request.GET:
+                # this run should be a rerun from an older config, so load the config
+                autokeras_run_id = request.GET.get("rerun")
+                autokeras_run = AutoKerasRun.objects.get(pk=autokeras_run_id)
+                form.initial["name"] = autokeras_run.model.project_name
+                form.initial["max_model_size"] = autokeras_run.model.max_model_size
+                form.initial["objective"] = autokeras_run.model.objective
+                form.initial["max_trials"] = autokeras_run.model.max_trials
+                form.initial["directory"] = autokeras_run.model.directory
+
+                nodes = [
+                    {
+                        "id": layer.id,
+                        "label": f"{layer.name} ({layer.id})",
+                        "x": random.random() / 10.0,
+                        "y": layer.id + random.random() / 5.0,
+                        "size": 3,
+                        "color": "#008cc2",
+                        "naso_type": layer.node_type.id,
+                        "type": "image",
+                        "additional_arguments": layer.additional_arguments,
+                    }
+                    for layer in autokeras_run.model.blocks.all()
+                ]
+                form.load_graph(nodes, autokeras_run.model.connections)
+                form.load_tuner_config(autokeras_run.model.tuner)
+
+                # load dataset:
+                form.initial["dataset"] = autokeras_run.dataset.name
+                form.initial[
+                    "dataset_is_supervised"
+                ] = autokeras_run.dataset.as_supervised
+                self.context.update(form.get_extra_context())
+            else:
+                self.context = {"page": self.page.get_context()}
+
+            self.context["form"] = form
+
+        return self.render_to_response(self.context)
+
+    def post(self, request, *args, **kwargs):
+        form = NewAutoKerasRunForm(request.POST)
+        if form.is_valid():
+            # create the arrays for additional_arguments
+            tuner_arguments = self.get_typewise_arguments(request.POST.items())
+
+            # Create Optimizer object
+            tuner_type = form.cleaned_data["tuner"]
+            tuner, _ = AutoKerasTuner.objects.get_or_create(
+                tuner_type=tuner_type,
+                additional_arguments=tuner_arguments,
+            )
+
+            model = AutoKerasModel.objects.create(
+                project_name=form.cleaned_data["name"],
+                max_trials=form.cleaned_data["max_trials"],
+                directory=form.cleaned_data["directory"],
+                tuner=tuner,
+                objective=form.cleaned_data["objective"],
+                max_model_size=form.cleaned_data["max_model_size"],
+            )
+            layers = json.loads(request.POST.get("nodes"))
+            connections = json.loads(request.POST.get("edges"))
+
+            node_to_layers = {}
+            for layer in layers:
+                autokeras_layer, _ = AutoKerasNode.objects.get_or_create(
+                    node_type_id=layer["naso_type"],
+                    name=layer["id"],
+                    additional_arguments=layer["additional_arguments"],
+                )
+                autokeras_layer.save()
+                node_to_layers[layer["id"]] = autokeras_layer.id
+                model.blocks.add(autokeras_layer)
+
+            dataset = form.cleaned_data["dataset"]
+            dataset_is_supervised = form.cleaned_data["dataset_is_supervised"]
+            data, _ = Dataset.objects.get_or_create(
+                name=dataset, as_supervised=dataset_is_supervised
+            )
+
+            model.node_to_layer_id = node_to_layers
+            model.connections = connections
+            model.save()
+
+            run = AutoKerasRun.objects.create(
+                dataset=data,
+                model=model,
+            )
+
+            run_autokeras.delay(run.id)
+            messages.add_message(request, messages.SUCCESS, "Training wurde gestartet.")
+            return redirect("dashboard:index")
