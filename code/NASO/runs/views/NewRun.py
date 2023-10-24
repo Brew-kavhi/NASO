@@ -9,28 +9,16 @@ from django.views.generic.base import TemplateView
 from naso.celery import get_tasks
 from naso.models.page import PageSetup
 from neural_architecture.autokeras import run_autokeras
-<<<<<<< HEAD
-from neural_architecture.models.AutoKeras import AutoKerasModel, AutoKerasNode, AutoKerasTuner
-=======
->>>>>>> feat(autokeras integration): added list view of autokeras runs
 from neural_architecture.models.Architecture import NetworkConfiguration, NetworkLayer
 from neural_architecture.models.AutoKeras import (
     AutoKerasModel,
     AutoKerasNode,
-<<<<<<< HEAD
     AutoKerasRun,
     AutoKerasTuner,
-)
-from neural_architecture.models.Dataset import Dataset
-from neural_architecture.neural_net import run_neural_net
-=======
-    AutoKerasTuner,
-    AutoKerasRun,
 )
 from neural_architecture.models.Dataset import Dataset
 from neural_architecture.neural_net import run_neural_net
 from runs.forms.NewRunForm import NewAutoKerasRunForm, NewRunForm
->>>>>>> feat(autokeras integration): added list view of autokeras runs
 from runs.models.Training import (
     EvaluationParameters,
     FitParameters,
@@ -40,8 +28,6 @@ from runs.models.Training import (
     NetworkTraining,
     Optimizer,
 )
-from runs.forms.NewRunForm import NewRunForm, NewAutoKerasRunForm
-
 
 
 class NewRun(TemplateView):
