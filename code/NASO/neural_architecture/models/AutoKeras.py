@@ -4,7 +4,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 from helper_scripts.importing import get_class, get_object
-from runs.models.Training import LossFunction, Metric, Run, TrainingMetric
+from runs.models.Training import (CallbackFunction, LossFunction, Metric, Run,
+                                  TrainingMetric)
 
 from .Dataset import Dataset
 from .Types import BaseType, TypeInstance
@@ -58,7 +59,9 @@ class AutoKerasModel(models.Model):
     node_to_layer_id = models.JSONField(default=dict)
 
     metrics = models.ManyToManyField(Metric, related_name="autokeras_metrics")
-    callbacks = models.JSONField(null=True)
+    callbacks = models.ManyToManyField(
+        CallbackFunction, related_name="autokeras_callbacks"
+    )
     loss = models.ForeignKey(
         LossFunction, on_delete=models.deletion.SET_NULL, null=True
     )
@@ -105,6 +108,19 @@ class AutoKerasModel(models.Model):
                 )
             )
         return metrics
+
+    def get_callbacks(self):
+        callbacks = []
+        for callback in self.callbacks.all():
+            callbacks.append(
+                get_object(
+                    callback.instance_type.module_name,
+                    callback.instance_type.name,
+                    callback.additional_arguments,
+                    callback.instance_type.required_arguments,
+                )
+            )
+        return callbacks
 
     def edges_from_source(self, node_id):
         return [d for d in self.connections if d["source"] == node_id]

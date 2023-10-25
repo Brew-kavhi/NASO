@@ -8,8 +8,9 @@ from helper_scripts.importing import get_callback, get_object
 from naso.settings_base import APP_VERSION
 from neural_architecture.models.Architecture import NetworkConfiguration
 from neural_architecture.models.Dataset import Dataset
-from neural_architecture.models.Types import (LossType, MetricType,
-                                              OptimizerType, TypeInstance)
+from neural_architecture.models.Types import (CallbackType, LossType,
+                                              MetricType, OptimizerType,
+                                              TypeInstance)
 from neural_architecture.validators import validate_dtype
 
 
@@ -25,6 +26,12 @@ class Optimizer(TypeInstance):
     ema_momentum = models.FloatField(default=0.99)
     ema_overwrite_frequency = models.IntegerField(null=True)
     jit_compile = models.BooleanField(default=True)
+
+
+class CallbackFunction(TypeInstance):
+    instance_type = models.ForeignKey(
+        CallbackType, on_delete=models.deletion.DO_NOTHING
+    )
 
 
 class LossFunction(TypeInstance):

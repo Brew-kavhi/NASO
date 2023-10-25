@@ -37,6 +37,7 @@
             handleKerasTunerChange($('#{{form.tuner.auto_id}}'));
             handleKerasBlockChange($('#{{form.layers.auto_id}}'));
             handleMetricChange($('#{{form.metrics.auto_id}}'));
+            handleCallbackChange($('#{{form.callbacks.auto_id}}'));
             
             nodes.clear();
             refreshGraph();
@@ -55,7 +56,7 @@
                 refreshGraph();
             {% endif %}
             {% if optimizer_config %}
-                // load the optimizer values
+                // load the tuner values
                 let existing_optimizer = {{optimizer_config | safe}};
                 for (const argument of existing_optimizer) {
                     document.getElementsByName('optimizer_argument_' + argument.name)[0].value = argument.value
@@ -72,7 +73,7 @@
                 delete existing_loss;
             {% endif %}
             {% if metric_configs %}
-                // load the loss values
+                // load the metric values
                 let existing_metrics = {{metric_configs | safe}};
                 for (const metric of existing_metrics) {
                     for(const argument of metric['arguments']) {
@@ -83,6 +84,19 @@
                     }
                 }
                 delete existing_metrics;
+            {% endif %}
+            {% if callback_configs %}
+                // load the callback values
+                let existing_callbacks = {{callback_configs | safe}};
+                for (const callback of existing_callbacks) {
+                    for(const argument of callback['arguments']) {
+                        let fields = document.getElementsByName('callback_argument_' + callback['id'] + "_" + argument.name);
+                        if (fields[0]) {
+                            fields[0].value = argument.value;
+                        }
+                    }
+                }
+                delete existing_callbacks;
             {% endif %}
 
         }
@@ -114,6 +128,15 @@
                 "id": {{ metric.id }},
                 "name": "{{ metric.name }}",
                 "jsonConfig": {{ metric.required_arguments|safe|default:"{}" }},
+            },
+        {% endfor %}
+    ];
+    var callbackOptions = [
+        {% for callback in form.callbacks.field.queryset %}
+            {
+                "id": {{ callback.id }},
+                "name": "{{ callback.name }}",
+                "jsonConfig": {{ callback.required_arguments|safe|default:"{}" }},
             },
         {% endfor %}
     ];
