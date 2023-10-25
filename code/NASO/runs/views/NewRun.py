@@ -111,7 +111,7 @@ class NewRun(TemplateView):
                 ] = training.fit_parameters.use_multiprocessing
                 nodes = [
                     {
-                        "id": layer.id,
+                        "id": layer.name,
                         "label": f"{layer.layer_type.name} ({layer.id})",
                         "x": random.random() / 10.0,
                         "y": layer.id + random.random() / 5.0,
@@ -371,7 +371,7 @@ class NewAutoKerasRun(TemplateView):
                 form.initial["metric_weights"] = autokeras_run.model.metric_weights
                 nodes = [
                     {
-                        "id": layer.id,
+                        "id": layer.name,
                         "label": f"{layer.name} ({layer.id})",
                         "x": random.random() / 10.0,
                         "y": layer.id + random.random() / 5.0,
@@ -384,10 +384,26 @@ class NewAutoKerasRun(TemplateView):
                     for layer in autokeras_run.model.blocks.all()
                 ]
                 form.load_graph(nodes, autokeras_run.model.connections)
-                form.load_tuner_config(autokeras_run.model.tuner)
-                form.load_loss_config(autokeras_run.model.loss)
-                form.load_metric_configs(autokeras_run.model.metrics)
-                form.load_callbacks_configs(autokeras_run.model.callbacks)
+                form.load_tuner_config(autokeras_run.model.tuner.additional_arguments)
+                form.load_loss_config(autokeras_run.model.loss.additional_arguments)
+                form.load_metric_configs(
+                    [
+                        {
+                            "id": metric.instance_type.id,
+                            "arguments": metric.additional_arguments,
+                        }
+                        for metric in autokeras_run.model.metrics.all()
+                    ]
+                )
+                form.load_callbacks_configs(
+                    [
+                        {
+                            "id": callback.instance_type.id,
+                            "arguments": callback.additional_arguments,
+                        }
+                        for callback in autokeras_run.model.callbacks.all()
+                    ]
+                )
 
                 # load dataset:
                 form.initial["dataset"] = autokeras_run.dataset.name

@@ -47,7 +47,6 @@
                 edges = {{edges | safe}};
                 nodes.clear();
                 load_nodes = {{nodes | safe}};
-                nodes.set('start', { id: "input_node", label: "Input", x: 0, y: load_nodes[0]['y'] - 1, size: 3, color: '#008cc2' });
                 for(const node of load_nodes) {
                     nodes.set(node.id, node);
                 }
@@ -55,13 +54,13 @@
                 delete load_nodes;
                 refreshGraph();
             {% endif %}
-            {% if optimizer_config %}
-                // load the optimizer values
-                let existing_optimizer = {{optimizer_config | safe}};
-                for (const argument of existing_optimizer) {
-                    document.getElementsByName('optimizer_argument_' + argument.name)[0].value = argument.value
+            {% if tuner_config %}
+                // load the tuner values
+                let existing_tuners = {{tuner_config | safe}};
+                for (const argument of existing_tuners) {
+                    document.getElementsByName('tuner_argument_' + argument.name)[0].value = argument.value
                 }
-                delete existing_optimizer;
+                delete existing_tuners;
             {% endif %}
 
             {% if loss_config %}
@@ -73,7 +72,7 @@
                 delete existing_loss;
             {% endif %}
             {% if metric_configs %}
-                // load the loss values
+                // load the metric values
                 let existing_metrics = {{metric_configs | safe}};
                 for (const metric of existing_metrics) {
                     for(const argument of metric['arguments']) {
@@ -85,9 +84,9 @@
                 }
                 delete existing_metrics;
             {% endif %}
-            {% if callback_configs %}
-                // load the loss values
-                let existing_callbacks = {{callback_configs | safe}};
+            {% if callbacks_configs %}
+                // load the callback values
+                let existing_callbacks = {{callbacks_configs | safe}};
                 for (const callback of existing_callbacks) {
                     for(const argument of callback['arguments']) {
                         let fields = document.getElementsByName('callback_argument_' + callback['id'] + "_" + argument.name);
