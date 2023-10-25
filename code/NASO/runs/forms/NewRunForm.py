@@ -4,13 +4,10 @@ from crispy_forms.layout import HTML, Column, Field, Layout, Row, Submit
 from django import forms
 from django.urls import reverse_lazy
 
-from neural_architecture.models.AutoKeras import AutoKerasNodeType, AutoKerasTunerType
-from neural_architecture.models.Types import (
-    LossType,
-    MetricType,
-    NetworkLayerType,
-    OptimizerType,
-)
+from neural_architecture.models.AutoKeras import (AutoKerasNodeType,
+                                                  AutoKerasTunerType)
+from neural_architecture.models.Types import (LossType, MetricType,
+                                              NetworkLayerType, OptimizerType)
 
 
 class NewRunForm(forms.Form):
@@ -89,8 +86,8 @@ class NewRunForm(forms.Form):
             ),
             Field("optimizer", css_class="select2 w-100 mt-3"),
             HTML("<div id='optimizer-arguments' class='card rounded-3'></div>"),
-            Field("loss", css_class="select2 w-100 mt-3"),
-            HTML("<div id='loss-arguments' class='card rounded-3'></div>"),
+            # Field("loss", css_class="select2 w-100 mt-3"),
+            # HTML("<div id='loss-arguments' class='card rounded-3'></div>"),
             HTML('<div class="clearfix"></div>'),
             Row(
                 # Column("epochs", css_class="form-group col-6 mb-0"),
@@ -216,7 +213,6 @@ class NewRunForm(forms.Form):
         self.extra_context["loss_config"] = arguments
 
     def load_metric_configs(self, arguments):
-        print(arguments)
         self.extra_context["metric_configs"] = arguments
 
     def get_extra_context(self):
@@ -285,6 +281,16 @@ class NewAutoKerasRunForm(forms.Form):
             attrs={"class": "select2", "style": "width: -webkit-fill-available"}
         ),
     )
+    loss = forms.ModelChoiceField(
+        label="Loss Function",
+        queryset=LossType.objects.all(),
+    )
+    metrics = forms.ModelMultipleChoiceField(
+        label="Metrics",
+        queryset=MetricType.objects.all(),
+        required=False,
+        widget=forms.SelectMultiple(attrs={"class": "select2 w-100"}),
+    )
     max_model_size = forms.IntegerField(
         label="Max Model size",
         required=False,
@@ -297,6 +303,12 @@ class NewAutoKerasRunForm(forms.Form):
         label="Max Durchlaufe",
         initial=100,
         widget=forms.TextInput(attrs={"type": "number", "min": 0}),
+    )
+    metric_weights = forms.CharField(
+        label="Metric weights",
+        required=False,
+        initial="{}",
+        widget=forms.Textarea(attrs={"type": "text"}),
     )
 
     directory = forms.CharField(label="Directory", required=False)
@@ -318,6 +330,24 @@ class NewAutoKerasRunForm(forms.Form):
         self.helper.layout = Layout(
             HTML('<div class="row mb-3"><h2>Autokeras konfigurieren</h2></div>'),
             Field("name"),
+            Field(
+                "metrics",
+                css_class="chosen-select select2 w-100",
+                data_placeholder="Select Metrics",
+                multiple="multiple",
+            ),
+            HTML(
+                """
+                <div id='metrics-arguments' class='card rounded-3 d-flex flex-row flex-wrap'></div>
+                <div id='metric_weights_arguments' class='card rounded-3 p-5'></div>
+                """
+            ),
+            Field(
+                "loss",
+                css_class="select2 w-100 mt-3",
+                data_placeholder="Select Loss function",
+            ),
+            HTML("<div id='loss-arguments' class='card rounded-3'></div>"),
             Field("tuner", css_class="select2 w-100 mt-3"),
             HTML("<div id='tuner-arguments' class='card rounded-3'></div>"),
             HTML('<div class="clearfix"></div>'),
@@ -331,7 +361,11 @@ class NewAutoKerasRunForm(forms.Form):
                     Field("max_trials", template="crispyForms/small_field.html"),
                     css_class="col-3",
                 ),
-                Column(Field("objective"), css_class="col-6"),
+                Column(
+                    Field("objective"),
+                    css_class="col-6",
+                    data_tooltip="valid options: 'val_loss' or metric_name oder 'metrics' for weighted sum of metrics",
+                ),
                 Column(
                     Field("directory"),
                     css_class="col-12",
@@ -403,7 +437,11 @@ class NewAutoKerasRunForm(forms.Form):
 
         self.fields["tuner"].widget.attrs["onchange"] = "handleKerasTunerChange(this)"
         self.fields["layers"].widget.attrs["onchange"] = "handleKerasBlockChange(this)"
+        self.fields["metrics"].widget.attrs["onchange"] = "handleMetricChange(this)"
+        self.fields["loss"].widget.attrs["onchange"] = "handleLossChange(this)"
 
+        self.fields["loss"].widget.choices = self.get_loss_choices()
+        self.fields["metrics"].widget.choices = self.get_metric_choices()
         self.fields["tuner"].widget.choices = self.get_tuner_choices()
         self.fields["layers"].widget.choices = self.get_layer_choices()
 
@@ -413,6 +451,12 @@ class NewAutoKerasRunForm(forms.Form):
 
     def load_tuner_config(self, arguments):
         self.extra_context["tuner_config"] = arguments
+
+    def load_metric_configs(self, arguments):
+        self.extra_context["metric_configs"] = arguments
+
+    def load_loss_config(self, arguments):
+        self.extra_context["loss_config"] = arguments
 
     def get_extra_context(self):
         return self.extra_context
@@ -440,3 +484,25 @@ class NewAutoKerasRunForm(forms.Form):
             tuner_choices.append((module, [(tuner.id, tuner.name) for tuner in tuners]))
 
         return tuner_choices
+
+    def get_loss_choices(self):
+        loss_choices = []
+        modules = LossType.objects.values_list("module_name", flat=True).distinct()
+
+        for module in modules:
+            losses = LossType.objects.filter(module_name=module)
+            loss_choices.append((module, [(loss.id, loss.name) for loss in losses]))
+
+        return loss_choices
+
+    def get_metric_choices(self):
+        metric_choices = []
+        modules = MetricType.objects.values_list("module_name", flat=True).distinct()
+
+        for module in modules:
+            metrics = MetricType.objects.filter(module_name=module)
+            metric_choices.append(
+                (module, [(metric.id, metric.name) for metric in metrics])
+            )
+
+        return metric_choices

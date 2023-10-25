@@ -103,6 +103,10 @@ function handleMetricChange(selectElement) {
     // Clear existing input fields
     $('#metrics-arguments').empty();
     $('#metrics-arguments').removeClass('p-4 mb-3');
+    let metric_weight = $('#metric_weights_arguments');
+    if (metric_weight) {
+        metric_weight.empty();
+    }
 
     if (selectedMetrics.length === 0) {
         return ;
@@ -110,7 +114,7 @@ function handleMetricChange(selectElement) {
 
     for (const selectedMetric of selectedMetrics) {
         if (selectedMetric.jsonConfig.length > 0) {
-            
+                
             let metricContainerHTML = '<div class="card shadow-none m-3 w-auto" style="min-width:33%; max-width: 50%"> <div class="card-header">' + selectedMetric.name + '</div><div class="card-body">';
             
             for (const argumentName of selectedMetric.jsonConfig) {
@@ -125,6 +129,12 @@ function handleMetricChange(selectElement) {
             metricContainerHTML += '</div></div>';
             $('#metrics-arguments').append(metricContainerHTML);  // Append input fields
             $('#metrics-arguments').addClass('p-4 mb-3');
+            
+            if (metric_weight) {
+                weight_html = '<div class="mb-4 row"><label class="col-form-label col-lg-4">' + selectedMetric.name + '</label>' +
+                '<div class="col-lg-8"><input class="form-control" type="text" name="metric_weight_' + selectedMetric.id + '" value="1.0"></div></div>';
+                metric_weight.append(weight_html);
+            }
         }
     }
 

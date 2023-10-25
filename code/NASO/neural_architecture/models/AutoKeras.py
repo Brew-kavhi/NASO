@@ -1,9 +1,10 @@
 import autokeras
+import keras_tuner
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from helper_scripts.importing import get_object, get_class
-from runs.models.Training import Run, TrainingMetric
+from helper_scripts.importing import get_class, get_object
+from runs.models.Training import LossFunction, Metric, Run, TrainingMetric
 
 from .Dataset import Dataset
 from .Types import BaseType, TypeInstance
@@ -44,7 +45,7 @@ class AutoKerasTuner(TypeInstance):
 
 
 class AutoKerasModel(models.Model):
-    project_name = models.CharField(max_length=100, default="auto_model", unique=True)
+    project_name = models.CharField(max_length=100, default="auto_model")
     blocks = models.ManyToManyField(AutoKerasNode, related_name="Blocks")
     max_trials = models.IntegerField(default=100)
     directory = models.CharField(max_length=100, null=True, default=None)
@@ -55,6 +56,13 @@ class AutoKerasModel(models.Model):
     max_model_size = models.IntegerField(null=True)
     connections = models.JSONField(default=dict)
     node_to_layer_id = models.JSONField(default=dict)
+
+    metrics = models.ManyToManyField(Metric, related_name="autokeras_metrics")
+    callbacks = models.JSONField(null=True)
+    loss = models.ForeignKey(
+        LossFunction, on_delete=models.deletion.SET_NULL, null=True
+    )
+    metric_weights = models.JSONField(null=True)
 
     auto_model: autokeras.AutoModel = None
     layer_outputs: dict = {}
@@ -70,7 +78,7 @@ class AutoKerasModel(models.Model):
         # inputs are those nodes who are only source and never target
         # and ouputs is the other way around
         if not self.directory:
-            self.directory = self.project_name
+            self.directory = f"{self.project_name}_{self.id}"
         self.auto_model = autokeras.AutoModel(
             inputs=self.inputs,
             outputs=self.outputs,
@@ -78,8 +86,25 @@ class AutoKerasModel(models.Model):
             max_trials=self.max_trials,
             project_name=self.project_name,
             directory="auto_model/" + self.directory,
-            tuner=get_class(self.tuner.tuner_type.module_name, self.tuner.tuner_type.name),
+            tuner=get_class(
+                self.tuner.tuner_type.module_name, self.tuner.tuner_type.name
+            ),
+            metrics=self.get_metrics(),
+            objective=keras_tuner.Objective(self.objective, direction="min"),
         )
+
+    def get_metrics(self):
+        metrics = []
+        for metric in self.metrics.all():
+            metrics.append(
+                get_object(
+                    metric.instance_type.module_name,
+                    metric.instance_type.name,
+                    metric.additional_arguments,
+                    metric.instance_type.required_arguments,
+                )
+            )
+        return metrics
 
     def edges_from_source(self, node_id):
         return [d for d in self.connections if d["source"] == node_id]

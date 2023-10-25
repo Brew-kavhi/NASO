@@ -8,12 +8,8 @@ from helper_scripts.importing import get_callback, get_object
 from naso.settings_base import APP_VERSION
 from neural_architecture.models.Architecture import NetworkConfiguration
 from neural_architecture.models.Dataset import Dataset
-from neural_architecture.models.Types import (
-    LossType,
-    MetricType,
-    OptimizerType,
-    TypeInstance,
-)
+from neural_architecture.models.Types import (LossType, MetricType,
+                                              OptimizerType, TypeInstance)
 from neural_architecture.validators import validate_dtype
 
 

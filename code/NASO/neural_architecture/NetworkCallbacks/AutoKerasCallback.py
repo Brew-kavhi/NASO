@@ -21,6 +21,14 @@ class AutoKerasCallback(tf.keras.callbacks.Callback):
 
     def on_epoch_begin(self, epoch, logs=[], *args):
         # start the timer here
+        if "metrics" not in logs:
+            logs["metrics"] = 0
+        for metric_name in self.run.model.metric_weights:
+            if metric_name in logs:
+                logs["metrics"] += (
+                    logs[metric_name] * self.run.model.metric_weights[metric_name]
+                )
+
         metrics = {}
         for key in logs:
             if not math.isnan(logs[key]):
@@ -46,6 +54,14 @@ class AutoKerasCallback(tf.keras.callbacks.Callback):
         # stop the timer here:
         self.timer.stop()
         # so stop timesrs and then resume afterwards
+        if "metrics" not in logs:
+            logs["metrics"] = 0
+        for metric_name in self.run.model.metric_weights:
+            if metric_name in logs:
+                logs["metrics"] += (
+                    logs[metric_name] * self.run.model.metric_weights[metric_name]
+                )
+
         metrics = {}
         for key in logs:
             if not math.isnan(logs[key]):

@@ -9,25 +9,17 @@ from django.views.generic.base import TemplateView
 from naso.celery import get_tasks
 from naso.models.page import PageSetup
 from neural_architecture.autokeras import run_autokeras
-from neural_architecture.models.Architecture import NetworkConfiguration, NetworkLayer
-from neural_architecture.models.AutoKeras import (
-    AutoKerasModel,
-    AutoKerasNode,
-    AutoKerasRun,
-    AutoKerasTuner,
-)
+from neural_architecture.models.Architecture import (NetworkConfiguration,
+                                                     NetworkLayer)
+from neural_architecture.models.AutoKeras import (AutoKerasModel,
+                                                  AutoKerasNode, AutoKerasRun,
+                                                  AutoKerasTuner)
 from neural_architecture.models.Dataset import Dataset
 from neural_architecture.neural_net import run_neural_net
 from runs.forms.NewRunForm import NewAutoKerasRunForm, NewRunForm
-from runs.models.Training import (
-    EvaluationParameters,
-    FitParameters,
-    LossFunction,
-    Metric,
-    NetworkHyperparameters,
-    NetworkTraining,
-    Optimizer,
-)
+from runs.models.Training import (EvaluationParameters, FitParameters,
+                                  LossFunction, Metric, NetworkHyperparameters,
+                                  NetworkTraining, Optimizer)
 
 
 class NewRun(TemplateView):
@@ -286,17 +278,42 @@ class NewAutoKerasRun(TemplateView):
     page = PageSetup(title="Autokeras", description="Neu")
     context = {"page": page.get_context()}
 
-    def get_typewise_arguments(self, request_params):
+    def get_typewise_arguments(self, request_dict):
         tuner_arguments = []
-        for key, value in request_params:
+        loss_arguments = []
+        metrics_arguments = {}
+        metric_weights = {}
+        for key, value in request_dict.items():
             if key.startswith("tuner_argument_"):
                 argument_name = key[len("tuner_argument_") :]
                 tuner_argument = {}
                 tuner_argument["name"] = argument_name
                 tuner_argument["value"] = value
                 tuner_arguments.append(tuner_argument)
+            elif key.startswith("loss_argument_"):
+                argument_name = key[len("loss_argument_") :]
+                loss_argument = {}
+                loss_argument["name"] = argument_name
+                loss_argument["value"] = value
+                loss_arguments.append(loss_argument)
+            elif key.startswith("metric_argument_"):
+                # this is metric, get the metric key and check if there isa already a metric definition
+                metric_id = int(key.split("_")[2])
+                argument_name = "_".join(key.split("_")[3:])
+                metrics_argument = {}
 
-        return tuner_arguments
+                metrics_argument["name"] = argument_name
+                metrics_argument["value"] = value
+                if metric_id not in metrics_arguments:
+                    metrics_arguments[metric_id] = [metrics_argument]
+                else:
+                    metrics_arguments[metric_id].append(metrics_argument)
+                if argument_name == "name":
+                    metric_weights[value] = float(
+                        request_dict[f"metric_weight_{metric_id}"]
+                    )
+
+        return (tuner_arguments, loss_arguments, metrics_arguments, metric_weights)
 
     def get(self, request, *args, **kwargs):
         running_task = get_tasks()
@@ -322,6 +339,12 @@ class NewAutoKerasRun(TemplateView):
                 form.initial["max_trials"] = autokeras_run.model.max_trials
                 form.initial["directory"] = autokeras_run.model.directory
 
+                form.initial["loss"] = autokeras_run.model.loss.instance_type
+                form.initial["metrics"] = [
+                    metric.instance_type for metric in autokeras_run.model.metrics.all()
+                ]
+                form.initial["tuner"] = autokeras_run.model.tuner.tuner_type
+                form.initial["metric_weights"] = autokeras_run.model.metric_weights
                 nodes = [
                     {
                         "id": layer.id,
@@ -338,6 +361,8 @@ class NewAutoKerasRun(TemplateView):
                 ]
                 form.load_graph(nodes, autokeras_run.model.connections)
                 form.load_tuner_config(autokeras_run.model.tuner)
+                form.load_loss_config(autokeras_run.model.loss)
+                form.load_metric_configs(autokeras_run.model.metrics)
 
                 # load dataset:
                 form.initial["dataset"] = autokeras_run.dataset.name
@@ -356,7 +381,32 @@ class NewAutoKerasRun(TemplateView):
         form = NewAutoKerasRunForm(request.POST)
         if form.is_valid():
             # create the arrays for additional_arguments
-            tuner_arguments = self.get_typewise_arguments(request.POST.items())
+            (
+                tuner_arguments,
+                loss_arguments,
+                metrics_arguments,
+                weights,
+            ) = self.get_typewise_arguments(dict(request.POST.items()))
+            print(weights)
+            # Create LossFunction object (similarly for Metric objects)
+            loss_type = form.cleaned_data["loss"]
+            loss_function, _ = LossFunction.objects.get_or_create(
+                instance_type=loss_type, additional_arguments=loss_arguments
+            )
+
+            # Handle multiple selected metrics
+            selected_metrics = form.cleaned_data["metrics"]
+
+            metrics = []
+
+            for metric_type in selected_metrics:
+                metric_arguments = []
+                if metric_type.id in metrics_arguments:
+                    metric_arguments = metrics_arguments[metric_type.id]
+                metric, _ = Metric.objects.get_or_create(
+                    instance_type=metric_type, additional_arguments=metric_arguments
+                )
+                metrics.append(metric)
 
             # Create Optimizer object
             tuner_type = form.cleaned_data["tuner"]
@@ -372,9 +422,12 @@ class NewAutoKerasRun(TemplateView):
                 tuner=tuner,
                 objective=form.cleaned_data["objective"],
                 max_model_size=form.cleaned_data["max_model_size"],
+                loss=loss_function,
             )
             layers = json.loads(request.POST.get("nodes"))
             connections = json.loads(request.POST.get("edges"))
+
+            model.metric_weights = weights
 
             node_to_layers = {}
             for layer in layers:
@@ -396,6 +449,7 @@ class NewAutoKerasRun(TemplateView):
             model.node_to_layer_id = node_to_layers
             model.connections = connections
             model.save()
+            model.metrics.set(metrics)
 
             run = AutoKerasRun.objects.create(
                 dataset=data,
