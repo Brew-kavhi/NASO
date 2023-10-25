@@ -43,6 +43,10 @@ class OptimizerType(BaseType):
     keras_native_optimizer = models.BooleanField(default=False)
 
 
+class CallbackType(BaseType):
+    keras_native_callback = models.BooleanField(default=False)
+
+
 class LossType(BaseType):
     keras_native_loss = models.BooleanField(default=False)
 

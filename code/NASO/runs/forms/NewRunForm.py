@@ -6,8 +6,9 @@ from django.urls import reverse_lazy
 
 from neural_architecture.models.AutoKeras import (AutoKerasNodeType,
                                                   AutoKerasTunerType)
-from neural_architecture.models.Types import (LossType, MetricType,
-                                              NetworkLayerType, OptimizerType)
+from neural_architecture.models.Types import (CallbackType, LossType,
+                                              MetricType, NetworkLayerType,
+                                              OptimizerType)
 
 
 class NewRunForm(forms.Form):
@@ -291,6 +292,12 @@ class NewAutoKerasRunForm(forms.Form):
         required=False,
         widget=forms.SelectMultiple(attrs={"class": "select2 w-100"}),
     )
+    callbacks = forms.ModelMultipleChoiceField(
+        label="Callbacks",
+        queryset=CallbackType.objects.all(),
+        required=False,
+        widget=forms.SelectMultiple(attrs={"class": "select2 w-100"}),
+    )
     max_model_size = forms.IntegerField(
         label="Max Model size",
         required=False,
@@ -339,7 +346,7 @@ class NewAutoKerasRunForm(forms.Form):
             HTML(
                 """
                 <div id='metrics-arguments' class='card rounded-3 d-flex flex-row flex-wrap'></div>
-                <div id='metric_weights_arguments' class='card rounded-3 p-5'></div>
+                <div id='metric_weights_arguments' class='card rounded-3'></div>
                 """
             ),
             Field(
@@ -348,6 +355,13 @@ class NewAutoKerasRunForm(forms.Form):
                 data_placeholder="Select Loss function",
             ),
             HTML("<div id='loss-arguments' class='card rounded-3'></div>"),
+            Field(
+                "callbacks",
+                css_class="select2 w-100 mt-3",
+                data_placeholder="Select Callbacks",
+                multiple="multiple",
+            ),
+            HTML("<div id='callbacks-arguments' class='card rounded-3'></div>"),
             Field("tuner", css_class="select2 w-100 mt-3"),
             HTML("<div id='tuner-arguments' class='card rounded-3'></div>"),
             HTML('<div class="clearfix"></div>'),
@@ -439,11 +453,13 @@ class NewAutoKerasRunForm(forms.Form):
         self.fields["layers"].widget.attrs["onchange"] = "handleKerasBlockChange(this)"
         self.fields["metrics"].widget.attrs["onchange"] = "handleMetricChange(this)"
         self.fields["loss"].widget.attrs["onchange"] = "handleLossChange(this)"
+        self.fields["callbacks"].widget.attrs["onchange"] = "handleCallbackChange(this)"
 
         self.fields["loss"].widget.choices = self.get_loss_choices()
         self.fields["metrics"].widget.choices = self.get_metric_choices()
         self.fields["tuner"].widget.choices = self.get_tuner_choices()
         self.fields["layers"].widget.choices = self.get_layer_choices()
+        self.fields["callbacks"].widget.choices = self.get_callbacks_choices()
 
     def load_graph(self, nodes, edges):
         self.extra_context["nodes"] = nodes
@@ -454,6 +470,9 @@ class NewAutoKerasRunForm(forms.Form):
 
     def load_metric_configs(self, arguments):
         self.extra_context["metric_configs"] = arguments
+
+    def load_callbacks_configs(self, arguments):
+        self.extra_context["callbacks_configs"] = arguments
 
     def load_loss_config(self, arguments):
         self.extra_context["loss_config"] = arguments
@@ -506,3 +525,15 @@ class NewAutoKerasRunForm(forms.Form):
             )
 
         return metric_choices
+
+    def get_callbacks_choices(self):
+        callback_choices = []
+        modules = CallbackType.objects.values_list("module_name", flat=True).distinct()
+
+        for module in modules:
+            callbacks = CallbackType.objects.filter(module_name=module)
+            callback_choices.append(
+                (module, [(callback.id, callback.name) for callback in callbacks])
+            )
+
+        return callback_choices

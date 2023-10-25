@@ -34,7 +34,11 @@ def run_autokeras(self, run_id):
         # load the datasets from the documentation in here
         with open("net.log", "w") as f:
             with redirect_stdout(f):
-                autokeras_model.fit(train_dataset, callbacks=[callback], verbose=2)
+                autokeras_model.fit(
+                    train_dataset,
+                    callbacks=[callback] + autokeras_model.get_callbacks(),
+                    verbose=2,
+                )
 
         # Evaluate the best model with testing data.
         print(autokeras_model.evaluate(test_dataset))

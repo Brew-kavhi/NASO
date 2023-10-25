@@ -17,9 +17,10 @@ from neural_architecture.models.AutoKeras import (AutoKerasModel,
 from neural_architecture.models.Dataset import Dataset
 from neural_architecture.neural_net import run_neural_net
 from runs.forms.NewRunForm import NewAutoKerasRunForm, NewRunForm
-from runs.models.Training import (EvaluationParameters, FitParameters,
-                                  LossFunction, Metric, NetworkHyperparameters,
-                                  NetworkTraining, Optimizer)
+from runs.models.Training import (CallbackFunction, EvaluationParameters,
+                                  FitParameters, LossFunction, Metric,
+                                  NetworkHyperparameters, NetworkTraining,
+                                  Optimizer)
 
 
 class NewRun(TemplateView):
@@ -282,6 +283,7 @@ class NewAutoKerasRun(TemplateView):
         tuner_arguments = []
         loss_arguments = []
         metrics_arguments = {}
+        callbacks_arguments = {}
         metric_weights = {}
         for key, value in request_dict.items():
             if key.startswith("tuner_argument_"):
@@ -312,8 +314,26 @@ class NewAutoKerasRun(TemplateView):
                     metric_weights[value] = float(
                         request_dict[f"metric_weight_{metric_id}"]
                     )
+            elif key.startswith("callback_argument_"):
+                # this is metric, get the metric key and check if there isa already a metric definition
+                callback_id = int(key.split("_")[2])
+                argument_name = "_".join(key.split("_")[3:])
+                callbacks_argument = {}
 
-        return (tuner_arguments, loss_arguments, metrics_arguments, metric_weights)
+                callbacks_argument["name"] = argument_name
+                callbacks_argument["value"] = value
+                if callback_id not in callbacks_arguments:
+                    callbacks_arguments[callback_id] = [callbacks_argument]
+                else:
+                    callbacks_arguments[callback_id].append(callbacks_argument)
+
+        return (
+            tuner_arguments,
+            loss_arguments,
+            metrics_arguments,
+            callbacks_arguments,
+            metric_weights,
+        )
 
     def get(self, request, *args, **kwargs):
         running_task = get_tasks()
@@ -343,6 +363,10 @@ class NewAutoKerasRun(TemplateView):
                 form.initial["metrics"] = [
                     metric.instance_type for metric in autokeras_run.model.metrics.all()
                 ]
+                form.initial["callbacks"] = [
+                    callback.instance_type
+                    for callback in autokeras_run.model.callbacks.all()
+                ]
                 form.initial["tuner"] = autokeras_run.model.tuner.tuner_type
                 form.initial["metric_weights"] = autokeras_run.model.metric_weights
                 nodes = [
@@ -363,6 +387,7 @@ class NewAutoKerasRun(TemplateView):
                 form.load_tuner_config(autokeras_run.model.tuner)
                 form.load_loss_config(autokeras_run.model.loss)
                 form.load_metric_configs(autokeras_run.model.metrics)
+                form.load_callbacks_configs(autokeras_run.model.callbacks)
 
                 # load dataset:
                 form.initial["dataset"] = autokeras_run.dataset.name
@@ -385,6 +410,7 @@ class NewAutoKerasRun(TemplateView):
                 tuner_arguments,
                 loss_arguments,
                 metrics_arguments,
+                callbacks_arguments,
                 weights,
             ) = self.get_typewise_arguments(dict(request.POST.items()))
             print(weights)
@@ -407,6 +433,19 @@ class NewAutoKerasRun(TemplateView):
                     instance_type=metric_type, additional_arguments=metric_arguments
                 )
                 metrics.append(metric)
+
+            # Handle multiple selected callbacks
+            selected_callbacks = form.cleaned_data["callbacks"]
+            callbacks = []
+
+            for callback_type in selected_callbacks:
+                callback_arguments = []
+                if callback_type.id in callbacks_arguments:
+                    callback_arguments = callbacks_arguments[callback_type.id]
+                callback, _ = CallbackFunction.objects.get_or_create(
+                    instance_type=callback_type, additional_arguments=callback_arguments
+                )
+                callbacks.append(callback)
 
             # Create Optimizer object
             tuner_type = form.cleaned_data["tuner"]
@@ -450,6 +489,7 @@ class NewAutoKerasRun(TemplateView):
             model.connections = connections
             model.save()
             model.metrics.set(metrics)
+            model.callbacks.set(callbacks)
 
             run = AutoKerasRun.objects.create(
                 dataset=data,
