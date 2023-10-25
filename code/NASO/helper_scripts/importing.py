@@ -49,7 +49,10 @@ def get_arguments_as_dict(additional_arguments, required_arguments):
                 if argument["name"] == required_arg["name"]:
                     if required_arg["dtype"] == "int":
                         try:
-                            arguments[argument["name"]] = int(argument["value"])
+                            if is_int(argument["value"]):
+                                arguments[argument["name"]] = int(argument["value"])
+                            else:
+                                arguments[argument["name"]] = float(argument["value"])
                         except Exception as e:
                             logger.error(
                                 f"Fehler: Parameter {argument['name']} muss als Zahl gegeben sein: {e}"
@@ -57,3 +60,11 @@ def get_arguments_as_dict(additional_arguments, required_arguments):
                     continue
 
     return arguments
+
+
+def is_int(string):
+    try:
+        int(string)
+        return True
+    except ValueError:
+        return False

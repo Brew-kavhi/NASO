@@ -6,8 +6,9 @@ from django.core.management.base import BaseCommand
 
 from neural_architecture.models.AutoKeras import (AutoKerasNodeType,
                                                   AutoKerasTunerType)
-from neural_architecture.models.Types import (LossType, MetricType,
-                                              NetworkLayerType, OptimizerType)
+from neural_architecture.models.Types import (CallbackType, LossType,
+                                              MetricType, NetworkLayerType,
+                                              OptimizerType)
 
 
 class Command(BaseCommand):
@@ -35,11 +36,9 @@ class Command(BaseCommand):
                             }
                         )
                     else:
-                        {
-                            arguments.append(
-                                {"name": param_name, "default": "", "type": "unknown"}
-                            )
-                        }
+                        arguments.append(
+                            {"name": param_name, "default": "", "type": "unknown"}
+                        )
             try:
                 _, _ = OptimizerType.objects.get_or_create(
                     module_name="tensorflow.keras.optimizers",
@@ -68,11 +67,9 @@ class Command(BaseCommand):
                             }
                         )
                     else:
-                        {
-                            arguments.append(
-                                {"name": param_name, "default": "", "type": "unknown"}
-                            )
-                        }
+                        arguments.append(
+                            {"name": param_name, "default": "", "type": "unknown"}
+                        )
             try:
                 _, _ = LossType.objects.get_or_create(
                     module_name="tensorflow.keras.losses",
@@ -100,11 +97,9 @@ class Command(BaseCommand):
                             }
                         )
                     else:
-                        {
-                            arguments.append(
-                                {"name": param_name, "default": "", "type": "unknown"}
-                            )
-                        }
+                        arguments.append(
+                            {"name": param_name, "default": "", "type": "unknown"}
+                        )
             try:
                 _, _ = MetricType.objects.get_or_create(
                     module_name="tensorflow.keras.metrics",
@@ -115,8 +110,8 @@ class Command(BaseCommand):
             except Exception as e:
                 print(f"Class: {class_name} has error {e}")
 
+        # TODO Add the activation functions here
         self.stdout.write(self.style.SUCCESS(f"Importing layers"))
-        # TODO Add the layers and the activation functions here
         layers_module = importlib.import_module("tensorflow.keras.layers")
         layer_classes = inspect.getmembers(layers_module, inspect.isclass)
 
@@ -134,16 +129,47 @@ class Command(BaseCommand):
                             }
                         )
                     else:
-                        {
-                            arguments.append(
-                                {"name": param_name, "default": "", "type": "unknown"}
-                            )
-                        }
+                        arguments.append(
+                            {"name": param_name, "default": "", "type": "unknown"}
+                        )
             try:
                 _, _ = NetworkLayerType.objects.get_or_create(
                     module_name="tensorflow.keras.layers",
                     name=class_name,
                     keras_native_layer=True,
+                    required_arguments=arguments,
+                )
+            except Exception as e:
+                self.stdout.write(
+                    self.style.ERROR(f"Class {class_name} has errors: {e}")
+                )
+
+        self.stdout.write(self.style.SUCCESS(f"Importing Callbacks"))
+        callbacks_module = importlib.import_module("tensorflow.keras.callbacks")
+        callback_classes = inspect.getmembers(callbacks_module, inspect.isclass)
+
+        for class_name, class_obj in callback_classes:
+            constructor = inspect.signature(class_obj.__init__)
+            arguments = []
+            for param_name, param in constructor.parameters.items():
+                if not param_name == "self" and not param_name == "kwargs":
+                    if param.default is not inspect.Parameter.empty:
+                        arguments.append(
+                            {
+                                "name": param_name,
+                                "default": param.default,
+                                "dtype": type(param.default).__name__,
+                            }
+                        )
+                    else:
+                        arguments.append(
+                            {"name": param_name, "default": "", "type": "unknown"}
+                        )
+            try:
+                _, _ = CallbackType.objects.get_or_create(
+                    module_name="tensorflow.keras.callbacks",
+                    name=class_name,
+                    keras_native_callback=True,
                     required_arguments=arguments,
                 )
             except Exception as e:
@@ -176,15 +202,13 @@ class Command(BaseCommand):
                                 }
                             )
                         else:
-                            {
-                                arguments.append(
-                                    {
-                                        "name": param_name,
-                                        "default": "",
-                                        "type": "unknown",
-                                    }
-                                )
-                            }
+                            arguments.append(
+                                {
+                                    "name": param_name,
+                                    "default": "",
+                                    "type": "unknown",
+                                }
+                            )
                 try:
                     _, _ = AutoKerasNodeType.objects.get_or_create(
                         module_name="autokeras." + module,
@@ -216,11 +240,9 @@ class Command(BaseCommand):
                             }
                         )
                     else:
-                        {
-                            arguments.append(
-                                {"name": param_name, "default": "", "type": "unknown"}
-                            )
-                        }
+                        arguments.append(
+                            {"name": param_name, "default": "", "type": "unknown"}
+                        )
             try:
                 _, _ = AutoKerasTunerType.objects.get_or_create(
                     module_name="autokeras.tuners",
