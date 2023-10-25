@@ -3,7 +3,29 @@
 {% load get_values %}
 
 {% block content %}
+<script>
+   const options = {
+  responsive: true,
+  scales: {
+    y: {
+        type: 'linear',
+        display: true,
+        position: 'left',
+      },
+      y1: {
+        type: 'linear',
+        display: true,
+        position: 'right',
 
+        // grid line settings
+        grid: {
+          drawOnChartArea: false, // only want the grid lines for one axis to show up
+        },
+    }
+  },
+};
+
+</script>
 <div class="tabs is-centered is-toggle is-toggle-round">
     <ul>
         <li class="tab is-active" onclick="openTab(event,'tensorflow')">
@@ -128,7 +150,8 @@
                                     data: data{{ network_training.id }}.map(row => row.accuracy)
                                 }
                                 ]
-                            }
+                            },
+                            options: options
                         });
 
                         // Filter items by category
@@ -266,14 +289,18 @@
                                 datasets: [
                                 {
                                     label: 'loss',
-                                    data: autokeras_data{{ keras_run.id }}.map(row => row.loss)
+                                    data: autokeras_data{{ keras_run.id }}.map(row => row.loss),
+                                    yAxisID : 'y',
                                 },
                                 {
                                     label: 'accuracy',
-                                    data: autokeras_data{{ keras_run.id }}.map(row => row.accuracy)
+                                    data: autokeras_data{{ keras_run.id }}.map(row => row.accuracy),
+                                    yAxisID :  'y1',
+                                    
                                 }
                                 ]
-                            }
+                            },
+                            options: options
                         });
                     });
                 </script>

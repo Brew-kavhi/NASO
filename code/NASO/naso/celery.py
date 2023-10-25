@@ -25,6 +25,21 @@ app.autodiscover_tasks()
 
 
 def get_celery_task_state(task_id):
+    """
+    Returns the state of a Celery task with the given task_id.
+
+    Args:
+        task_id (str): The ID of the Celery task.
+
+    Returns:
+        dict: A dictionary containing the state of the task and any additional details.
+              If the task is not found, the state will be "CLOSED".
+              If the task is still running, the state will be "PENDING".
+              If the task has completed successfully, the state will be "SUCCESS".
+              If the task has failed, the state will be "FAILURE".
+              Additional details about the task (such as the number of epochs or accuracy)
+              may also be included in the dictionary.
+    """
     result = AsyncResult(task_id)
     context = {"state": ""}
     retries = 0

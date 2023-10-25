@@ -29,11 +29,13 @@ function setProgress(state, details) {
     
             element.children[0].innerText = "Epoche " + details.current + " von " + details.total;
         });
-        $('#training-tags').empty();
-        console.log(details);
-        $('#training-tags').append(
-            '<div class="tag is-light is-info ">Curent accuracy: ' + details.metrics.accuracy + '</div>'
-        );
+        if (details.metrics.accuracy) {
+            $('#training-tags').empty();
+            console.log(details);
+            $('#training-tags').append(
+                '<div class="tag is-light is-info ">Curent accuracy: ' + details.metrics.accuracy + '</div>'
+            );
+        }
 
         const progressLink = '/runs/' + details.run_id + '/details/';
         const link = document.getElementById('training_detail_link')

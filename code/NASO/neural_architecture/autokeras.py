@@ -9,6 +9,7 @@ from celery import shared_task
 from neural_architecture.models.AutoKeras import AutoKerasRun
 from neural_architecture.NetworkCallbacks.AutoKerasCallback import AutoKerasCallback
 
+
 logger.add("net.log", backtrace=True, diagnose=True)
 
 

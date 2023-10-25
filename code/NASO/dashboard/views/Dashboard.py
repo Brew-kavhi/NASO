@@ -1,7 +1,10 @@
+from django.urls import reverse_lazy
 from django.views.generic.base import TemplateView
 
-from naso.celery import get_tasks
+from naso.celery import get_celery_task_state, get_tasks
 from naso.models.page import PageSetup
+from neural_architecture.models.AutoKeras import AutoKerasRun
+from runs.models.Training import NetworkTraining
 
 
 class Dashboard(TemplateView):
@@ -12,4 +15,30 @@ class Dashboard(TemplateView):
 
     def get(self, request, *args, **kwargs):
         self.context["celery"] = get_tasks()
+        if "training_task_id" in self.context["celery"]:
+            run_details = get_celery_task_state(
+                self.context["celery"]["training_task_id"]
+            )["details"]
+            print(run_details)
+            is_autokeras = "autokeras" in run_details
+            if "run_id" in run_details:
+                if is_autokeras:
+                    run = AutoKerasRun.objects.get(id=run_details["run_id"]).model
+                    self.context["run"] = {
+                        "name": run.project_name,
+                        "id": run.id,
+                        "link": reverse_lazy(
+                            "runs:autokeras_details", kwargs={"pk": run.id}
+                        ),
+                    }
+                else:
+                    run = NetworkTraining.objects.get(
+                        id=run_details["run_id"]
+                    ).network_config
+                    self.context["run"] = {
+                        "name": run.name,
+                        "id": run.id,
+                        "link": reverse_lazy("runs:details", kwargs={"pk": run.id}),
+                    }
+
         return self.render_to_response(self.context)
