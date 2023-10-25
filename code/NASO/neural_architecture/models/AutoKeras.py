@@ -2,7 +2,7 @@ import autokeras
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from helper_scripts.importing import get_object
+from helper_scripts.importing import get_object, get_class
 from runs.models.Training import Run, TrainingMetric
 
 from .Dataset import Dataset
@@ -78,6 +78,7 @@ class AutoKerasModel(models.Model):
             max_trials=self.max_trials,
             project_name=self.project_name,
             directory="auto_model/" + self.directory,
+            tuner=get_class(self.tuner.tuner_type.module_name, self.tuner.tuner_type.name),
         )
 
     def edges_from_source(self, node_id):

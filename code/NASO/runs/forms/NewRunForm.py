@@ -300,12 +300,6 @@ class NewAutoKerasRunForm(forms.Form):
     )
 
     directory = forms.CharField(label="Directory", required=False)
-<<<<<<< HEAD
-
-    dataset = forms.ChoiceField(choices=(), required=False)
-    dataset_is_supervised = forms.BooleanField(initial=True, required=False)
-=======
->>>>>>> fat (autokeras integration): integrated autokeras runner
 
     dataset = forms.ChoiceField(choices=(), required=False)
     dataset_is_supervised = forms.BooleanField(initial=True, required=False)

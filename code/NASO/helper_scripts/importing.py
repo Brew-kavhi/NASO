@@ -2,7 +2,12 @@ import importlib
 
 from loguru import logger
 
+def get_class(module_name: str, class_name: str):
+    module = importlib.import_module(module_name)
+    class_instance = getattr(module, class_name)
+    return class_instance
 
+    
 def get_object(
     module_name: str, class_name: str, additional_arguments, required_arguments=[]
 ):
