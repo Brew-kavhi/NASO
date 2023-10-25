@@ -9,6 +9,7 @@ from runs.models.Training import NetworkTraining, TrainingMetric
 
 class CeleryUpdateCallback(tf.keras.callbacks.Callback):
     additional_callbacks = None
+
     def __init__(self, celery_task, run: NetworkTraining):
         super().__init__()
         self.celery_task = celery_task

@@ -1,12 +1,7 @@
-from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse_lazy
-from django.utils import timezone as tz
 from django.views.generic.base import TemplateView
-from django.views.generic.edit import CreateView, DeleteView
-from plugins.models.plugins import Plugin
 
 from naso.models.page import PageSetup
+from plugins.models.plugins import Plugin
 
 
 class PluginList(TemplateView):

@@ -1,21 +1,16 @@
+import importlib.util
 import json
 import os
 import shutil
 
-from django.conf import settings
-from django.http import HttpResponseRedirect
+from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse_lazy
-from django.utils import timezone as tz
 from django.views.generic.base import TemplateView
-from django.views.generic.edit import CreateView, DeleteView
+from loguru import logger
 
 from naso.models.page import PageSetup
 from plugins.forms.PluginForm import PluginForm
 from plugins.models.plugins import Plugin
-import importlib.util
-from django.contrib import messages
-from loguru import logger
 
 
 class NewPlugin(TemplateView):

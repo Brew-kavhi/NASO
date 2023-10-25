@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+
 from plugins.models.plugins import Plugin
 
 
