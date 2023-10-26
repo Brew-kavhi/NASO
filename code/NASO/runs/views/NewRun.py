@@ -483,7 +483,7 @@ class NewAutoKerasRun(TemplateView):
             if template:
                 model.node_to_layer_id = template.node_to_layer_id
                 model.connections = template.connections
-                model.blocks.set(template.blocks)
+                model.blocks.set(template.blocks.all())
             else:
                 node_to_layers = {}
                 for layer in layers:

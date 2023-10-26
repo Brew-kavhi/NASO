@@ -51,7 +51,8 @@ class NewRunForm(forms.Form):
     network_template = forms.ModelChoiceField(
         label="Vorlage",
         queryset=KerasNetworkTemplate.objects.all(),
-        widget=forms.SelectMultiple(attrs={"class": "select2 w-100"}),
+        widget=forms.Select(attrs={"class": "select2 w-100"}),
+        required=False,
     )
 
     epochs = forms.IntegerField(
@@ -103,8 +104,8 @@ class NewRunForm(forms.Form):
             ),
             Field("optimizer", css_class="select2 w-100 mt-3"),
             HTML("<div id='optimizer-arguments' class='card rounded-3'></div>"),
-            # Field("loss", css_class="select2 w-100 mt-3"),
-            # HTML("<div id='loss-arguments' class='card rounded-3'></div>"),
+            Field("loss", css_class="select2 w-100 mt-3"),
+            HTML("<div id='loss-arguments' class='card rounded-3'></div>"),
             HTML('<div class="clearfix"></div>'),
             Row(
                 # Column("epochs", css_class="form-group col-6 mb-0"),
@@ -181,9 +182,11 @@ class NewRunForm(forms.Form):
             </div>
             """
             ),
-            Row(Field("save_network_as_template")),
-            Row(Field("network_template_name")),
-            Row(Field("network_template")),
+            Row(
+                Column(Field("save_network_as_template")),
+                Column(Field("network_template_name")),
+                Column(Field("network_template")),
+            ),
             Row(
                 HTML(
                     """
@@ -344,7 +347,8 @@ class NewAutoKerasRunForm(forms.Form):
     network_template = forms.ModelChoiceField(
         label="Vorlage",
         queryset=AutoKerasNetworkTemplate.objects.all(),
-        widget=forms.SelectMultiple(attrs={"class": "select2 w-100"}),
+        widget=forms.Select(attrs={"class": "select2 w-100"}),
+        required=False,
     )
 
     directory = forms.CharField(label="Directory", required=False)
@@ -452,9 +456,11 @@ class NewAutoKerasRunForm(forms.Form):
             </div>
             """
             ),
-            Row(Field("save_network_as_template")),
-            Row(Field("network_template_name")),
-            Row(Field("network_template")),
+            Row(
+                Column(Field("save_network_as_template")),
+                Column(Field("network_template_name")),
+                Column(Field("network_template")),
+            ),
             Row(
                 HTML(
                     """

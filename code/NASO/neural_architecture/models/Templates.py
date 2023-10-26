@@ -10,9 +10,15 @@ class KerasNetworkTemplate(models.Model):
     connections = models.JSONField(default=dict)
     node_to_layer_id = models.JSONField(default=dict)
 
+    def __str__(self):
+        return self.name
+
 
 class AutoKerasNetworkTemplate(models.Model):
     name = models.CharField(max_length=30, unique=True)
     blocks = models.ManyToManyField(AutoKerasNode, related_name="blocks")
     connections = models.JSONField(default=dict)
     node_to_layer_id = models.JSONField(default=dict)
+
+    def __str__(self):
+        return self.name
