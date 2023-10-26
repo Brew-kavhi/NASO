@@ -3,13 +3,13 @@ import tensorflow_datasets as tfds
 from loguru import logger
 
 from celery import shared_task
-from helper_scripts.importing import get_object
-from neural_architecture.models.Architecture import (NetworkConfiguration,
-                                                     NetworkLayer)
-from neural_architecture.NetworkCallbacks.CeleryUpdateCallback import \
-    CeleryUpdateCallback
-from neural_architecture.NetworkCallbacks.EvaluationBaseCallback import \
-    EvaluationBaseCallback
+from neural_architecture.models.Architecture import NetworkConfiguration
+from neural_architecture.NetworkCallbacks.CeleryUpdateCallback import (
+    CeleryUpdateCallback,
+)
+from neural_architecture.NetworkCallbacks.EvaluationBaseCallback import (
+    EvaluationBaseCallback,
+)
 from runs.models.Training import NetworkTraining, TrainingMetric
 
 logger.add("net.log", backtrace=True, diagnose=True)
@@ -55,26 +55,8 @@ class NeuralNetwork:
         if not self.training_config or not self.training_config.hyper_parameters:
             raise AttributeError
 
-        # TODO find out how the dynamic sizes work
-        size = 0
-        layer_inputs = {}
-        x = tf.keras.Input((28, 28))
-        layer_inputs["input_node"] = x
-        for edge in config.connections:
-            naso_layer = NetworkLayer.objects.get(id=edge["target"])
-            tf_layer = get_object(
-                module_name=naso_layer.layer_type.module_name,
-                class_name=naso_layer.layer_type.name,
-                additional_arguments=naso_layer.additional_arguments,
-            )
-            x = tf_layer(layer_inputs[edge["source"]])
-            layer_inputs[edge["target"]] = x
-            size += tf_layer.count_params()
-            # TODO what is the last node?
-
-        config.size = size
-        config.save()
-        model = tf.keras.Model(inputs=layer_inputs["input_node"], outputs=x)
+        (inputs, outputs) = config.build_model()
+        model = tf.keras.Model(inputs=inputs, outputs=outputs)
 
         # TODO: sure this is correct? Here we need objects for metrcs and optimizers i guess
         model.compile(**self.training_config.hyper_parameters.get_as_dict())

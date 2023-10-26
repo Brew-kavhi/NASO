@@ -4,11 +4,18 @@ from crispy_forms.layout import HTML, Column, Field, Layout, Row, Submit
 from django import forms
 from django.urls import reverse_lazy
 
-from neural_architecture.models.AutoKeras import (AutoKerasNodeType,
-                                                  AutoKerasTunerType)
-from neural_architecture.models.Types import (CallbackType, LossType,
-                                              MetricType, NetworkLayerType,
-                                              OptimizerType)
+from neural_architecture.models.AutoKeras import AutoKerasNodeType, AutoKerasTunerType
+from neural_architecture.models.Templates import (
+    AutoKerasNetworkTemplate,
+    KerasNetworkTemplate,
+)
+from neural_architecture.models.Types import (
+    CallbackType,
+    LossType,
+    MetricType,
+    NetworkLayerType,
+    OptimizerType,
+)
 
 
 class NewRunForm(forms.Form):
@@ -37,6 +44,16 @@ class NewRunForm(forms.Form):
         label="Steps per execution", required=False, initial=1
     )
     jit_compile = forms.BooleanField(label="JIT Compile", required=False)
+    save_network_as_template = forms.BooleanField(
+        label="Als Vorlage speichern", required=False
+    )
+    network_template_name = forms.CharField(label="Vorlagename", required=False)
+    network_template = forms.ModelChoiceField(
+        label="Vorlage",
+        queryset=KerasNetworkTemplate.objects.all(),
+        widget=forms.Select(attrs={"class": "select2 w-100"}),
+        required=False,
+    )
 
     epochs = forms.IntegerField(
         label="Epochen",
@@ -87,8 +104,8 @@ class NewRunForm(forms.Form):
             ),
             Field("optimizer", css_class="select2 w-100 mt-3"),
             HTML("<div id='optimizer-arguments' class='card rounded-3'></div>"),
-            # Field("loss", css_class="select2 w-100 mt-3"),
-            # HTML("<div id='loss-arguments' class='card rounded-3'></div>"),
+            Field("loss", css_class="select2 w-100 mt-3"),
+            HTML("<div id='loss-arguments' class='card rounded-3'></div>"),
             HTML('<div class="clearfix"></div>'),
             Row(
                 # Column("epochs", css_class="form-group col-6 mb-0"),
@@ -164,6 +181,11 @@ class NewRunForm(forms.Form):
                 </div>
             </div>
             """
+            ),
+            Row(
+                Column(Field("save_network_as_template")),
+                Column(Field("network_template_name")),
+                Column(Field("network_template")),
             ),
             Row(
                 HTML(
@@ -318,6 +340,17 @@ class NewAutoKerasRunForm(forms.Form):
         widget=forms.Textarea(attrs={"type": "text"}),
     )
 
+    save_network_as_template = forms.BooleanField(
+        label="Als Vorlage speichern", required=False
+    )
+    network_template_name = forms.CharField(label="Vorlagename", required=False)
+    network_template = forms.ModelChoiceField(
+        label="Vorlage",
+        queryset=AutoKerasNetworkTemplate.objects.all(),
+        widget=forms.Select(attrs={"class": "select2 w-100"}),
+        required=False,
+    )
+
     directory = forms.CharField(label="Directory", required=False)
 
     dataset = forms.ChoiceField(choices=(), required=False)
@@ -422,6 +455,11 @@ class NewAutoKerasRunForm(forms.Form):
                 </div>
             </div>
             """
+            ),
+            Row(
+                Column(Field("save_network_as_template")),
+                Column(Field("network_template_name")),
+                Column(Field("network_template")),
             ),
             Row(
                 HTML(

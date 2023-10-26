@@ -4,11 +4,14 @@ import inspect
 import autokeras
 from django.core.management.base import BaseCommand
 
-from neural_architecture.models.AutoKeras import (AutoKerasNodeType,
-                                                  AutoKerasTunerType)
-from neural_architecture.models.Types import (CallbackType, LossType,
-                                              MetricType, NetworkLayerType,
-                                              OptimizerType)
+from neural_architecture.models.AutoKeras import AutoKerasNodeType, AutoKerasTunerType
+from neural_architecture.models.Types import (
+    CallbackType,
+    LossType,
+    MetricType,
+    NetworkLayerType,
+    OptimizerType,
+)
 
 
 class Command(BaseCommand):

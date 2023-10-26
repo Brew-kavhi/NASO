@@ -32,6 +32,17 @@
             handleMetricChange($('#{{form.metrics.auto_id}}'));
             handleLayerChange($('#{{form.layers.auto_id}}'));
             
+            $('#div_id_network_template_name').addClass("d-none");
+            $('#id_save_network_as_template').change(function() {
+                if ($(this).prop('checked')) {
+                    $('#div_id_network_template_name').removeClass("d-none");
+                    $('#id_network_template_name').prop('required', true);
+                } else {
+                    $('#div_id_network_template_name').addClass("d-none");
+                    $('#id_network_template_name').prop('required', false);
+                }
+            });
+            
             
             {% if nodes and edges%}
                 // load the nodes an dedegs into the graph
