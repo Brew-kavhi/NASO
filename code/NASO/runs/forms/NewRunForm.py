@@ -4,11 +4,18 @@ from crispy_forms.layout import HTML, Column, Field, Layout, Row, Submit
 from django import forms
 from django.urls import reverse_lazy
 
-from neural_architecture.models.AutoKeras import (AutoKerasNodeType,
-                                                  AutoKerasTunerType)
-from neural_architecture.models.Types import (CallbackType, LossType,
-                                              MetricType, NetworkLayerType,
-                                              OptimizerType)
+from neural_architecture.models.AutoKeras import AutoKerasNodeType, AutoKerasTunerType
+from neural_architecture.models.Templates import (
+    AutoKerasNetworkTemplate,
+    KerasNetworkTemplate,
+)
+from neural_architecture.models.Types import (
+    CallbackType,
+    LossType,
+    MetricType,
+    NetworkLayerType,
+    OptimizerType,
+)
 
 
 class NewRunForm(forms.Form):
@@ -37,6 +44,15 @@ class NewRunForm(forms.Form):
         label="Steps per execution", required=False, initial=1
     )
     jit_compile = forms.BooleanField(label="JIT Compile", required=False)
+    save_network_as_template = forms.BooleanField(
+        label="Als Vorlage speichern", required=False
+    )
+    network_template_name = forms.CharField(label="Vorlagename", required=False)
+    network_template = forms.ModelChoiceField(
+        label="Vorlage",
+        queryset=KerasNetworkTemplate.objects.all(),
+        widget=forms.SelectMultiple(attrs={"class": "select2 w-100"}),
+    )
 
     epochs = forms.IntegerField(
         label="Epochen",
@@ -165,6 +181,9 @@ class NewRunForm(forms.Form):
             </div>
             """
             ),
+            Row(Field("save_network_as_template")),
+            Row(Field("network_template_name")),
+            Row(Field("network_template")),
             Row(
                 HTML(
                     """
@@ -318,6 +337,16 @@ class NewAutoKerasRunForm(forms.Form):
         widget=forms.Textarea(attrs={"type": "text"}),
     )
 
+    save_network_as_template = forms.BooleanField(
+        label="Als Vorlage speichern", required=False
+    )
+    network_template_name = forms.CharField(label="Vorlagename", required=False)
+    network_template = forms.ModelChoiceField(
+        label="Vorlage",
+        queryset=AutoKerasNetworkTemplate.objects.all(),
+        widget=forms.SelectMultiple(attrs={"class": "select2 w-100"}),
+    )
+
     directory = forms.CharField(label="Directory", required=False)
 
     dataset = forms.ChoiceField(choices=(), required=False)
@@ -423,6 +452,9 @@ class NewAutoKerasRunForm(forms.Form):
             </div>
             """
             ),
+            Row(Field("save_network_as_template")),
+            Row(Field("network_template_name")),
+            Row(Field("network_template")),
             Row(
                 HTML(
                     """

@@ -6,21 +6,32 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic.base import TemplateView
 
-from naso.celery import get_tasks
 from naso.models.page import PageSetup
 from neural_architecture.autokeras import run_autokeras
-from neural_architecture.models.Architecture import (NetworkConfiguration,
-                                                     NetworkLayer)
-from neural_architecture.models.AutoKeras import (AutoKerasModel,
-                                                  AutoKerasNode, AutoKerasRun,
-                                                  AutoKerasTuner)
+from neural_architecture.models.Architecture import NetworkConfiguration, NetworkLayer
+from neural_architecture.models.AutoKeras import (
+    AutoKerasModel,
+    AutoKerasNode,
+    AutoKerasRun,
+    AutoKerasTuner,
+)
 from neural_architecture.models.Dataset import Dataset
+from neural_architecture.models.Templates import (
+    AutoKerasNetworkTemplate,
+    KerasNetworkTemplate,
+)
 from neural_architecture.neural_net import run_neural_net
 from runs.forms.NewRunForm import NewAutoKerasRunForm, NewRunForm
-from runs.models.Training import (CallbackFunction, EvaluationParameters,
-                                  FitParameters, LossFunction, Metric,
-                                  NetworkHyperparameters, NetworkTraining,
-                                  Optimizer)
+from runs.models.Training import (
+    CallbackFunction,
+    EvaluationParameters,
+    FitParameters,
+    LossFunction,
+    Metric,
+    NetworkHyperparameters,
+    NetworkTraining,
+    Optimizer,
+)
 
 
 class NewRun(TemplateView):
@@ -210,34 +221,39 @@ class NewRun(TemplateView):
                 network_config = NetworkConfiguration(name=form.cleaned_data["name"])
                 network_config.save()
 
-                layers = json.loads(request.POST.get("nodes"))
-                connections = json.loads(request.POST.get("edges"))
+                template = form.cleaned_data["network_template"]
+                if template:
+                    network_config.layers.set(template.layers)
+                    network_config.connections = template.connections
+                else:
+                    layers = json.loads(request.POST.get("nodes"))
+                    connections = json.loads(request.POST.get("edges"))
 
-                node_to_layers = {}
-                for layer in layers:
-                    if layer["id"] == "input_node":
-                        continue
-                    print(layer["additional_arguments"])
-                    naso_layer, _ = NetworkLayer.objects.get_or_create(
-                        layer_type_id=layer["naso_type"],
-                        name=layer["id"],
-                        additional_arguments=layer["additional_arguments"],
-                    )
-                    naso_layer.save()
-                    node_to_layers[layer["id"]] = naso_layer.id
-                    network_config.layers.add(naso_layer)
-                # next iterate over the edges and adjust the ids, so we use the
-                # naso ids instead of the javacript ones
+                    node_to_layers = {}
+                    for layer in layers:
+                        if layer["id"] == "input_node":
+                            continue
+                        naso_layer, _ = NetworkLayer.objects.get_or_create(
+                            layer_type_id=layer["naso_type"],
+                            name=layer["id"],
+                            additional_arguments=layer["additional_arguments"],
+                        )
+                        naso_layer.save()
+                        node_to_layers[layer["id"]] = naso_layer.id
+                        network_config.layers.add(naso_layer)
 
-                # TODO adjust htis here, so we dont modify the edges here.
-                # # we need those unqiue ids form the graphs cause naso_ids ar not unique for the layers
-                for edge in connections:
-                    if not edge["source"] == "input_node":
-                        edge["source"] = node_to_layers[edge["source"]]
-                    edge["target"] = node_to_layers[edge["target"]]
-
-                network_config.connections = connections
+                    network_config.connections = connections
+                    network_config.node_to_layer_id = node_to_layers
                 network_config.save()
+
+                if form.cleaned_data["save_network_as_template"]:
+                    template = KerasNetworkTemplate.objects.create(
+                        name=form.cleaned_data["network_template_name"],
+                        connections=connections,
+                        node_to_layer_id=node_to_layers,
+                    )
+                    template.layers.set(network_config.layers.all())
+                    template.save()
 
                 # generate the dataset:
                 dataset = form.cleaned_data["dataset"]
@@ -463,26 +479,41 @@ class NewAutoKerasRun(TemplateView):
 
             model.metric_weights = weights
 
-            node_to_layers = {}
-            for layer in layers:
-                autokeras_layer, _ = AutoKerasNode.objects.get_or_create(
-                    node_type_id=layer["naso_type"],
-                    name=layer["id"],
-                    additional_arguments=layer["additional_arguments"],
+            template = form.cleaned_data["network_template"]
+            if template:
+                model.node_to_layer_id = template.node_to_layer_id
+                model.connections = template.connections
+                model.blocks.set(template.blocks)
+            else:
+                node_to_layers = {}
+                for layer in layers:
+                    autokeras_layer, _ = AutoKerasNode.objects.get_or_create(
+                        node_type_id=layer["naso_type"],
+                        name=layer["id"],
+                        additional_arguments=layer["additional_arguments"],
+                    )
+                    autokeras_layer.save()
+                    node_to_layers[layer["id"]] = autokeras_layer.id
+                    model.blocks.add(autokeras_layer)
+
+                model.node_to_layer_id = node_to_layers
+                model.connections = connections
+            model.save()
+
+            if form.cleaned_data["save_network_as_template"]:
+                template = AutoKerasNetworkTemplate.objects.create(
+                    name=form.cleaned_data["network_template_name"],
+                    connections=connections,
+                    node_to_layer_id=node_to_layers,
                 )
-                autokeras_layer.save()
-                node_to_layers[layer["id"]] = autokeras_layer.id
-                model.blocks.add(autokeras_layer)
+                template.blocks.set(model.blocks.all())
+                template.save()
 
             dataset = form.cleaned_data["dataset"]
             dataset_is_supervised = form.cleaned_data["dataset_is_supervised"]
             data, _ = Dataset.objects.get_or_create(
                 name=dataset, as_supervised=dataset_is_supervised
             )
-
-            model.node_to_layer_id = node_to_layers
-            model.connections = connections
-            model.save()
             model.metrics.set(metrics)
             model.callbacks.set(callbacks)
 

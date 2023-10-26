@@ -2,8 +2,12 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic.base import TemplateView
 
-from naso.celery import (get_celery_task_state, get_registered_tasks,
-                         get_tasks, kill_celery_task)
+from naso.celery import (
+    get_celery_task_state,
+    get_registered_tasks,
+    get_tasks,
+    kill_celery_task,
+)
 from naso.models.page import PageSetup
 from neural_architecture.models.AutoKeras import AutoKerasRun
 from runs.models.Training import NetworkTraining

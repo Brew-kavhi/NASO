@@ -5,8 +5,13 @@ from django.db import models
 
 from helper_scripts.extensions import custom_on_epoch_end_decorator
 from helper_scripts.importing import get_class, get_object
-from runs.models.Training import (CallbackFunction, LossFunction, Metric, Run,
-                                  TrainingMetric)
+from runs.models.Training import (
+    CallbackFunction,
+    LossFunction,
+    Metric,
+    Run,
+    TrainingMetric,
+)
 
 from .Dataset import Dataset
 from .Types import BaseType, TypeInstance
@@ -164,8 +169,6 @@ class AutoKerasModel(models.Model):
             autokeras_node.additional_arguments,
             autokeras_node.node_type.required_arguments,
         )
-        print(autokeras_node.additional_arguments)
-        print(autokeras_node.node_type.required_arguments)
         return block
 
     def build_connected_layers(self, node_id):
