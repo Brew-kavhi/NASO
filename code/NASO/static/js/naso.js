@@ -119,6 +119,12 @@ function handleMetricChange(selectElement) {
             }
         }
     }
+    if (metric_weight) {
+        weight_html = '<div class="mb-4 row"><label class="col-form-label col-lg-4">Model Size</label>' +
+        '<div class="col-lg-8"><input class="form-control" type="text" name="metric_weight_modelsize" value="1.0"></div></div>';
+        metric_weight.append(weight_html);
+        metric_weight.addClass('p-5');
+    }
 }
 
 function handleCallbackChange(selectElement) {

@@ -2,6 +2,7 @@ import os
 import time
 
 from celery.result import AsyncResult
+from celery.task.control import revoke
 from decouple import config
 
 from celery import Celery
@@ -67,6 +68,16 @@ def get_celery_task_state(task_id):
             time.sleep(1)  # Exponential backoff
         retries += 1
     return context
+
+
+def kill_celery_task(task_id):
+    """
+    Kills a Celery task with the given task_id.
+
+    Args:
+        task_id (str): The ID of the Celery task.
+    """
+    revoke(task_id, terminate=True)
 
 
 def get_tasks():

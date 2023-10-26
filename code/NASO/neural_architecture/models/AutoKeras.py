@@ -3,6 +3,7 @@ import keras_tuner
 from django.core.exceptions import ValidationError
 from django.db import models
 
+from helper_scripts.extensions import custom_on_epoch_end_decorator
 from helper_scripts.importing import get_class, get_object
 from runs.models.Training import (CallbackFunction, LossFunction, Metric, Run,
                                   TrainingMetric)
@@ -82,6 +83,13 @@ class AutoKerasModel(models.Model):
         # and ouputs is the other way around
         if not self.directory:
             self.directory = f"{self.project_name}_{self.id}"
+        custom_tuner = get_class(
+            self.tuner.tuner_type.module_name, self.tuner.tuner_type.name
+        )
+        custom_tuner.on_epoch_end = custom_on_epoch_end_decorator(
+            custom_tuner.on_epoch_end
+        )
+
         self.auto_model = autokeras.AutoModel(
             inputs=self.inputs,
             outputs=self.outputs,
@@ -89,9 +97,7 @@ class AutoKerasModel(models.Model):
             max_trials=self.max_trials,
             project_name=self.project_name,
             directory="auto_model/" + self.directory,
-            tuner=get_class(
-                self.tuner.tuner_type.module_name, self.tuner.tuner_type.name
-            ),
+            tuner=custom_tuner,
             metrics=self.get_metrics(),
             objective=keras_tuner.Objective(self.objective, direction="min"),
         )
