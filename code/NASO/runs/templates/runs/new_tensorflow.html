@@ -17,14 +17,7 @@
     {% if form %}
         <div id="tensorflow-tab" class="content-tab">
             {% crispy form  %}
-        </div>
-        {% elif running_task %}
-        <div class="card">
-            <div class="card-body">
-                Es lauft bereits ein Training.
-                <a href="{{running_task.url}}">{{running_task.title}}</a>
-            </div>
-        </div>
+        </div>        
     {% endif %}
     </div>
     <script src="{% static 'js/sigma.min.js' %}"></script>

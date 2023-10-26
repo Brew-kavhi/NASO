@@ -1,7 +1,9 @@
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic.base import TemplateView
 
-from naso.celery import get_celery_task_state, get_tasks
+from naso.celery import (get_celery_task_state, get_registered_tasks,
+                         get_tasks, kill_celery_task)
 from naso.models.page import PageSetup
 from neural_architecture.models.AutoKeras import AutoKerasRun
 from runs.models.Training import NetworkTraining
@@ -15,6 +17,7 @@ class Dashboard(TemplateView):
 
     def get(self, request, *args, **kwargs):
         self.context["celery"] = get_tasks()
+        self.context["registered_tasks"] = get_registered_tasks()
         if "training_task_id" in self.context["celery"]:
             run_details = get_celery_task_state(
                 self.context["celery"]["training_task_id"]
@@ -42,3 +45,8 @@ class Dashboard(TemplateView):
                     }
 
         return self.render_to_response(self.context)
+
+
+def kill_task(request, task_id):
+    kill_celery_task(task_id)
+    return redirect("dashboard:index")

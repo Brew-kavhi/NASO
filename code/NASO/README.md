@@ -39,7 +39,8 @@ to start the development server. For using the local settings append ```--settin
 (Development server can only handle a few connections at one time, maybe 5-10 max, while production server can handle way more.)
 
 Furthermore, there needs to be a celery worker running. You can starte one with this command: 
-```poetry run celery -A naso worker -l INFO```
+```poetry run celery -A naso worker -l INFO --concurrency 1```
+The concurrency parameter ensures that only one task is executed at a time, because otherwise it could lead to weird behaviour.
 If you want to daemonize it, so it starts one every reboot, you can find  more information about it in the celery folder of this project. Now if this server is running on a remote machine that is behind another network, like it is the case with the workstations at IPVS, we need to enable port forwarding. this is done with the following command, to be executedon your home desktop: 
 ```ssh -L <local_port>:<remote-machine>:<django-port> <username>@ipvslogin.informatik.uni-stuttgart.de```
 # Documentation
