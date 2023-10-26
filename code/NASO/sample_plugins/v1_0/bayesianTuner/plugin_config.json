@@ -1,0 +1,7 @@
+{
+  "name": "Sample_Plugin",
+  "author": "Your Name",
+  "version": "1.0.2",
+  "description": "This tuner subclases the bayesain optimizer and extends it by extending the on_epoch_end and trial_end functions. These are used to add some metrics."
+}
+

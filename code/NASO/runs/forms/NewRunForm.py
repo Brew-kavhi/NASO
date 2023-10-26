@@ -378,7 +378,7 @@ class NewAutoKerasRunForm(forms.Form):
                 Column(
                     Field("objective"),
                     css_class="col-6",
-                    data_tooltip="valid options: 'val_loss' or metric_name oder 'metrics' for weighted sum of metrics",
+                    data_tooltip="valid options: 'val_loss', 'metrics' for weighted sum of metrics, 'model_size'  or metric_name for single metric",
                 ),
                 Column(
                     Field("directory"),
