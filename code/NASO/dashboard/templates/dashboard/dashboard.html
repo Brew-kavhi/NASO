@@ -12,6 +12,11 @@
             <div id="training-tags" class="d-flex is-align-items-center">
 
             </div>
+            <div>
+                <a class="button is-danger" href="{% url 'dashboard:kill_celery_task' celery.training_task_id %}">
+                    <i class="fa fa-times"></i>
+                </a>
+            </div>
         </div>
         <div class="card-body">
             <div class="training-progress-bar">
@@ -33,6 +38,36 @@
             Derzeit werden keine Netze trainiert.
         </div>
     </div>
+    {% endif %}
+    {% if registered_tasks %}
+        <h2>Queued Tasks</h2>
+        {% for task in registered_tasks %}
+            <div class="card">
+                <div class="card-header justify-content-between">
+                    <strong>
+			{% if task.is_autokeras %}
+                        	 <a href="{% url 'runs:autokeras_details' task.run.id %}">{{ task.run.project_name }}</a>
+			{% else %}
+				 <a href="{% url 'runs:details' task.run.id %}">{{task.run.network_config.name}}</a>
+			{% endif %}
+                    </strong>
+                    <div id="training-tags" class="d-flex is-align-items-center">
+
+                    </div>
+                    <div>
+                        <a class="button is-danger" href="{% url 'dashboard:kill_celery_task' task.id %}">
+                            <i class="fa fa-trash"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    
+                    <div class='mt-3'>
+                        <a class='is-light button is-info' id='training_detail_link' href="Link zu run details">Details...</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
     {% endif %}
     {% block javascript %}
     

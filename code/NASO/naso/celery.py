@@ -2,10 +2,11 @@ import os
 import time
 
 from celery.result import AsyncResult
-from celery.task.control import revoke
 from decouple import config
 
 from celery import Celery
+from neural_architecture.models.AutoKeras import AutoKerasRun
+from runs.models.Training import NetworkTraining
 
 # Set the default Django settings module for the 'celery' program.
 os.environ.setdefault(
@@ -77,7 +78,7 @@ def kill_celery_task(task_id):
     Args:
         task_id (str): The ID of the Celery task.
     """
-    revoke(task_id, terminate=True)
+    app.control.revoke(task_id, terminate=True)
 
 
 def get_tasks():
@@ -94,6 +95,28 @@ def get_tasks():
                 if training_tasks[-1]["id"]:
                     return {"training_task_id": training_tasks[-1]["id"]}
     return {}
+
+
+def get_registered_tasks():
+    inspector = app.control.inspect()
+    registered_tasks = inspector.reserved()
+    tasks = []
+    if registered_tasks:
+        for task_collection in registered_tasks.values():
+            # these are the tasks for one worker
+            for task in task_collection:
+                is_autokeras = "autokeras" in task["type"]
+                run_id = task["args"][0]
+                if is_autokeras:
+                    run = AutoKerasRun.objects.get(pk=run_id)
+                else:
+                    run = NetworkTraining.objects.get(pk=run_id)
+                tasks.append(
+                    {"id": task["id"], "run": run, "is_autokeras": is_autokeras}
+                )
+        print(tasks)
+        return tasks
+    return []
 
 
 if __name__ == "__main__":
