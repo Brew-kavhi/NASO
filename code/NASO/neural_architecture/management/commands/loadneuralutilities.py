@@ -1,11 +1,11 @@
 import importlib
 import inspect
 
-import autokeras
 from django.core.management.base import BaseCommand
 
 from neural_architecture.models.AutoKeras import (AutoKerasNodeType,
                                                   AutoKerasTunerType)
+from neural_architecture.models.Dataset import DatasetLoader
 from neural_architecture.models.Types import (CallbackType, LossType,
                                               MetricType, NetworkLayerType,
                                               OptimizerType)
@@ -257,6 +257,14 @@ class Command(BaseCommand):
                         f"Class {class_name} from {'autokeras.' + module} has errors: {e}"
                     )
                 )
+
+        # load the Datasetloaders, that come preconfigured with the system:
+        DatasetLoader.objects.get_or_create(
+            module_name="neural_architecture.models.Dataset",
+            class_name="TensorflowDatasetLoader",
+            name="Tensorflow Datasets",
+            description="These are all the datasets that are available in tensorflow_datasets.",
+        )
 
         self.stdout.write(
             self.style.SUCCESS(

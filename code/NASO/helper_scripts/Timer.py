@@ -15,6 +15,8 @@ class Timer:
             elapsed_time = time.time() - self.start_time
             self.total_time += elapsed_time
             self.start_time = None
+            return elapsed_time
+        return 0
 
     def resume(self):
         if self.start_time is None:

@@ -1,4 +1,3 @@
-import tensorflow_datasets as tfds
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import HTML, Column, Field, Layout, Row, Submit
 from django import forms
@@ -6,6 +5,7 @@ from django.urls import reverse_lazy
 
 from neural_architecture.models.AutoKeras import (AutoKerasNodeType,
                                                   AutoKerasTunerType)
+from neural_architecture.models.Dataset import DatasetLoader
 from neural_architecture.models.Templates import (AutoKerasNetworkTemplate,
                                                   KerasNetworkTemplate)
 from neural_architecture.models.Types import (CallbackType, LossType,
@@ -69,6 +69,12 @@ class NewRunForm(forms.Form):
     workers = forms.IntegerField(required=False, initial=1, label="Workers")
     use_multiprocessing = forms.BooleanField(
         required=False, initial=False, label="Use multiprocessing"
+    )
+
+    dataset_loaders = forms.ModelMultipleChoiceField(
+        label="Dataset Loaders",
+        queryset=DatasetLoader.objects.all(),
+        required=False,
     )
 
     dataset = forms.ChoiceField(choices=(), required=False)
@@ -193,8 +199,15 @@ class NewRunForm(forms.Form):
             Row(
                 Column(
                     Field(
-                        "dataset",
+                        "dataset_loaders",
                         css_class="chosen-select select2 w-100",
+                        wrapper_class="align-items-center",
+                    )
+                ),
+                Column(
+                    Field(
+                        "dataset",
+                        css_class="autocomplete w-100",
                     )
                 ),
                 Column(Field("dataset_is_supervised"), css_class="col-3"),
@@ -203,17 +216,15 @@ class NewRunForm(forms.Form):
             Submit("customer-general-edit", "Training starten"),
         )
 
-        tensorflow_datasets = []
-        for dataset in tfds.list_builders():
-            tensorflow_datasets.append((dataset, dataset))
-        self.fields["dataset"].choices = tensorflow_datasets
-
         self.fields["optimizer"].widget.attrs[
             "onchange"
         ] = "handleOptimizerChange(this)"
         self.fields["loss"].widget.attrs["onchange"] = "handleLossChange(this)"
         self.fields["metrics"].widget.attrs["onchange"] = "handleMetricChange(this)"
         self.fields["layers"].widget.attrs["onchange"] = "handleLayerChange(this)"
+        self.fields["dataset_loaders"].widget.attrs[
+            "onchange"
+        ] = "handleDatasetLoaderChange(this)"
 
         self.fields["metrics"].widget.choices = self.get_metric_choices()
         self.fields["optimizer"].widget.choices = self.get_optimizer_choices()
@@ -348,7 +359,14 @@ class NewAutoKerasRunForm(forms.Form):
 
     directory = forms.CharField(label="Directory", required=False)
 
-    dataset = forms.ChoiceField(choices=(), required=False)
+    dataset_loaders = forms.ModelChoiceField(
+        label="Dataset Loaders",
+        queryset=DatasetLoader.objects.all(),
+        widget=forms.Select(attrs={"class": "select2 w-100"}),
+        required=False,
+    )
+
+    dataset = forms.CharField(label="Dataset", required=False)
     dataset_is_supervised = forms.BooleanField(initial=True, required=False)
 
     extra_context = {}
@@ -406,7 +424,7 @@ class NewAutoKerasRunForm(forms.Form):
                 Column(
                     Field("objective"),
                     css_class="col-6",
-                    data_tooltip="valid options: 'val_loss', 'metrics' for weighted sum of metrics, 'model_size'  or metric_name for single metric",
+                    data_tooltip="valid options: 'val_loss', 'metrics' for weighted sum of metrics, 'model_size', 'execution_time'  or metric_name for single metric",
                 ),
                 Column(
                     Field("directory"),
@@ -467,8 +485,15 @@ class NewAutoKerasRunForm(forms.Form):
             Row(
                 Column(
                     Field(
-                        "dataset",
+                        "dataset_loaders",
                         css_class="chosen-select select2 w-100",
+                        wrapper_class="align-items-center",
+                    )
+                ),
+                Column(
+                    Field(
+                        "dataset",
+                        css_class="autocomplete w-100",
                     )
                 ),
                 Column(Field("dataset_is_supervised"), css_class="col-3"),
@@ -477,16 +502,14 @@ class NewAutoKerasRunForm(forms.Form):
             Submit("customer-general-edit", "Training starten"),
         )
 
-        tensorflow_datasets = []
-        for dataset in tfds.list_builders():
-            tensorflow_datasets.append((dataset, dataset))
-        self.fields["dataset"].choices = tensorflow_datasets
-
         self.fields["tuner"].widget.attrs["onchange"] = "handleKerasTunerChange(this)"
         self.fields["layers"].widget.attrs["onchange"] = "handleKerasBlockChange(this)"
         self.fields["metrics"].widget.attrs["onchange"] = "handleMetricChange(this)"
         self.fields["loss"].widget.attrs["onchange"] = "handleLossChange(this)"
         self.fields["callbacks"].widget.attrs["onchange"] = "handleCallbackChange(this)"
+        self.fields["dataset_loaders"].widget.attrs[
+            "onchange"
+        ] = "handleDatasetLoaderChange(this)"
 
         self.fields["loss"].widget.choices = self.get_loss_choices()
         self.fields["metrics"].widget.choices = self.get_metric_choices()

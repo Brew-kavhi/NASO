@@ -46,13 +46,18 @@ class AutoKerasCallback(tf.keras.callbacks.Callback):
                 "autokeras": True,
             },
         )
+        # now start energy measurement
 
         # resume the timer here
         self.timer.start()
 
     def on_epoch_end(self, epoch, logs=[], *args):
         # stop the timer here:
-        self.timer.stop()
+        epoch_time = self.timer.stop()
+
+        # stop energy measurement here and add it to the logs
+        # logs['energy_consumption'] = energy
+
         # so stop timesrs and then resume afterwards
         if "metrics" not in logs:
             logs["metrics"] = 0
@@ -61,6 +66,8 @@ class AutoKerasCallback(tf.keras.callbacks.Callback):
                 logs["metrics"] += (
                     logs[metric_name] * self.run.model.metric_weights[metric_name]
                 )
+
+        logs["execution_time"] = epoch_time
 
         metrics = {}
         for key in logs:
@@ -91,9 +98,6 @@ class AutoKerasCallback(tf.keras.callbacks.Callback):
         )
         metric.save()
         self.run.metrics.add(metric)
-
-    def on_train_begin(self, logs=None):
-        logger.info("Aurtokeras training began ")
 
     def on_train_end(self, logs=None):
         print("training end")

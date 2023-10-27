@@ -1,5 +1,4 @@
 import tensorflow as tf
-import tensorflow_datasets as tfds
 from loguru import logger
 
 from celery import shared_task
@@ -63,13 +62,14 @@ class NeuralNetwork:
 
     def load_data(self):
         # TODO this needs to customer adjustable
-        (self.train_dataset, self.test_dataset) = tfds.load(
-            self.training_config.dataset.name,
-            split=["train", "test"],
-            as_supervised=self.training_config.dataset.as_supervised,
-        )
-        self.train_dataset = self.train_dataset.cache()
-        self.train_dataset = self.train_dataset.prefetch(tf.data.AUTOTUNE)
+        data = self.training_config.dataset.get_data()
+
+        self.train_dataset = data[0]
+        if len(data) > 1:
+            self.test_dataset = data[1]
+        else:
+            self.test_dataset = self.train_dataset
+        logger.success("Data is loaded.")
 
     def train(self, training_config: NetworkTraining = None):
         fit_parameters = self.training_config.fit_parameters
