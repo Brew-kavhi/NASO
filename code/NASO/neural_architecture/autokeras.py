@@ -1,8 +1,6 @@
 import traceback
 from contextlib import redirect_stdout
 
-import tensorflow as tf
-import tensorflow_datasets as tfds
 from loguru import logger
 
 from celery import shared_task
@@ -20,13 +18,13 @@ def run_autokeras(self, run_id):
     run = AutoKerasRun.objects.get(pk=run_id)
     autokeras_model = run.model
 
-    (train_dataset, test_dataset) = tfds.load(
-        run.dataset.name,
-        split=["train", "test"],
-        as_supervised=run.dataset.as_supervised,
-    )
-    train_dataset = train_dataset.cache()
-    train_dataset = train_dataset.prefetch(tf.data.AUTOTUNE)
+    data = run.dataset.get_data()
+
+    train_dataset = data[0]
+    if len(data) > 1:
+        test_dataset = data[1]
+    else:
+        test_dataset = train_dataset
 
     callback = AutoKerasCallback(self, run)
 

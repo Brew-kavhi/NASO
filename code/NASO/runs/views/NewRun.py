@@ -249,7 +249,9 @@ class NewRun(TemplateView):
                 dataset = form.cleaned_data["dataset"]
                 dataset_is_supervised = form.cleaned_data["dataset_is_supervised"]
                 data, _ = Dataset.objects.get_or_create(
-                    name=dataset, as_supervised=dataset_is_supervised
+                    name=dataset,
+                    as_supervised=dataset_is_supervised,
+                    dataset_loader=form.cleaned_data["dataset_loaders"],
                 )
 
                 training.dataset = data
@@ -322,6 +324,10 @@ class NewAutoKerasRun(TemplateView):
         if "metric_weight_modelsize" in request_dict:
             metric_weights["model_size"] = float(
                 request_dict["metric_weight_modelsize"]
+            )
+        if "metric_weight_executiontime" in request_dict:
+            metric_weights["execution_time"] = float(
+                request_dict["metric_weight_executiontime"]
             )
 
         return (
@@ -414,7 +420,7 @@ class NewAutoKerasRun(TemplateView):
                 callbacks_arguments,
                 weights,
             ) = self.get_typewise_arguments(dict(request.POST.items()))
-            print(weights)
+
             # Create LossFunction object (similarly for Metric objects)
             loss_type = form.cleaned_data["loss"]
             loss_function, _ = LossFunction.objects.get_or_create(
@@ -502,7 +508,9 @@ class NewAutoKerasRun(TemplateView):
             dataset = form.cleaned_data["dataset"]
             dataset_is_supervised = form.cleaned_data["dataset_is_supervised"]
             data, _ = Dataset.objects.get_or_create(
-                name=dataset, as_supervised=dataset_is_supervised
+                name=dataset,
+                as_supervised=dataset_is_supervised,
+                dataset_loader=form.cleaned_data["dataset_loaders"],
             )
             model.metrics.set(metrics)
             model.callbacks.set(callbacks)
