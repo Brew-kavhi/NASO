@@ -5,13 +5,11 @@ from celery.result import AsyncResult
 from decouple import config
 
 from celery import Celery
-from neural_architecture.models.AutoKeras import AutoKerasRun
-from runs.models.Training import NetworkTraining
 
 # Set the default Django settings module for the 'celery' program.
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",
-    config("DJANGO_SETTINGS_MODULE", default="naso.settings_production"),
+    config("DJANGO_SETTINGS_MODULE", default="naso.settings_local"),
 )
 
 app = Celery("naso", backend=config("CELERY_BROKER_URL"))
@@ -107,12 +105,8 @@ def get_registered_tasks():
             for task in task_collection:
                 is_autokeras = "autokeras" in task["type"]
                 run_id = task["args"][0]
-                if is_autokeras:
-                    run = AutoKerasRun.objects.get(pk=run_id)
-                else:
-                    run = NetworkTraining.objects.get(pk=run_id)
                 tasks.append(
-                    {"id": task["id"], "run": run, "is_autokeras": is_autokeras}
+                    {"id": task["id"], "run_id": run_id, "is_autokeras": is_autokeras}
                 )
         print(tasks)
         return tasks

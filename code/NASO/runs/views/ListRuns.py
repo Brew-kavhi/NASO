@@ -1,3 +1,6 @@
+import os
+import shutil
+
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.generic.base import TemplateView
@@ -37,6 +40,11 @@ def delete_autokeras_run(request, pk):
 
     # Delete the object
     obj.delete()
+
+    # Delete the folder:
+    folder = "auto_model/" + obj.model.directory
+    if os.path.exists(folder):
+        shutil.rmtree(folder)
 
     # Return a JSON response to indicate successful deletion
     return JsonResponse({"message": "Object deleted successfully", "id": pk})

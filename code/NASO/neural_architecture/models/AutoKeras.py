@@ -5,13 +5,8 @@ from django.db import models
 
 from helper_scripts.extensions import custom_on_epoch_end_decorator
 from helper_scripts.importing import get_class, get_object
-from runs.models.Training import (
-    CallbackFunction,
-    LossFunction,
-    Metric,
-    Run,
-    TrainingMetric,
-)
+from runs.models.Training import (CallbackFunction, LossFunction, Metric, Run,
+                                  TrainingMetric)
 
 from .Dataset import Dataset
 from .Types import BaseType, TypeInstance
@@ -149,7 +144,6 @@ class AutoKerasModel(models.Model):
 
     def get_input_nodes(self):
         # input nodes are nodes that are no target. but at list one source:
-
         for node in self.node_to_layer_id:
             incoming_edges = self.edges_to_target(node)
             if len(incoming_edges) == 0:
@@ -157,7 +151,6 @@ class AutoKerasModel(models.Model):
                 outgoing_nodes = self.edges_from_source(node)
                 if len(outgoing_nodes) > 0:
                     self.inputs[node] = self.get_block_for_node(node)
-
         return self.inputs
 
     def get_block_for_node(self, node_id):

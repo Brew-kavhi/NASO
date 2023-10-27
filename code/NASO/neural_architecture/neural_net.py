@@ -4,12 +4,10 @@ from loguru import logger
 
 from celery import shared_task
 from neural_architecture.models.Architecture import NetworkConfiguration
-from neural_architecture.NetworkCallbacks.CeleryUpdateCallback import (
-    CeleryUpdateCallback,
-)
-from neural_architecture.NetworkCallbacks.EvaluationBaseCallback import (
-    EvaluationBaseCallback,
-)
+from neural_architecture.NetworkCallbacks.CeleryUpdateCallback import \
+    CeleryUpdateCallback
+from neural_architecture.NetworkCallbacks.EvaluationBaseCallback import \
+    EvaluationBaseCallback
 from runs.models.Training import NetworkTraining, TrainingMetric
 
 logger.add("net.log", backtrace=True, diagnose=True)

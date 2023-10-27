@@ -11,13 +11,16 @@ from django.db import models
 class Dataset(models.Model):
     BASE_DIR = Path(__file__).resolve().parent.parent
 
-    name = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=255)
     description = models.TextField()
     upload_date = models.DateTimeField(auto_now_add=True)
     data_dir = models.CharField(
         default=os.path.join(BASE_DIR, "datasets"), max_length=100, null=True
     )
     as_supervised = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ["name", "as_supervised"]
 
     def __str__(self):
         return self.name

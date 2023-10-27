@@ -8,30 +8,20 @@ from django.views.generic.base import TemplateView
 
 from naso.models.page import PageSetup
 from neural_architecture.autokeras import run_autokeras
-from neural_architecture.models.Architecture import NetworkConfiguration, NetworkLayer
-from neural_architecture.models.AutoKeras import (
-    AutoKerasModel,
-    AutoKerasNode,
-    AutoKerasRun,
-    AutoKerasTuner,
-)
+from neural_architecture.models.Architecture import (NetworkConfiguration,
+                                                     NetworkLayer)
+from neural_architecture.models.AutoKeras import (AutoKerasModel,
+                                                  AutoKerasNode, AutoKerasRun,
+                                                  AutoKerasTuner)
 from neural_architecture.models.Dataset import Dataset
-from neural_architecture.models.Templates import (
-    AutoKerasNetworkTemplate,
-    KerasNetworkTemplate,
-)
+from neural_architecture.models.Templates import (AutoKerasNetworkTemplate,
+                                                  KerasNetworkTemplate)
 from neural_architecture.neural_net import run_neural_net
 from runs.forms.NewRunForm import NewAutoKerasRunForm, NewRunForm
-from runs.models.Training import (
-    CallbackFunction,
-    EvaluationParameters,
-    FitParameters,
-    LossFunction,
-    Metric,
-    NetworkHyperparameters,
-    NetworkTraining,
-    Optimizer,
-)
+from runs.models.Training import (CallbackFunction, EvaluationParameters,
+                                  FitParameters, LossFunction, Metric,
+                                  NetworkHyperparameters, NetworkTraining,
+                                  Optimizer)
 
 
 class NewRun(TemplateView):

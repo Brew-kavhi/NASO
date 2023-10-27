@@ -4,18 +4,13 @@ from crispy_forms.layout import HTML, Column, Field, Layout, Row, Submit
 from django import forms
 from django.urls import reverse_lazy
 
-from neural_architecture.models.AutoKeras import AutoKerasNodeType, AutoKerasTunerType
-from neural_architecture.models.Templates import (
-    AutoKerasNetworkTemplate,
-    KerasNetworkTemplate,
-)
-from neural_architecture.models.Types import (
-    CallbackType,
-    LossType,
-    MetricType,
-    NetworkLayerType,
-    OptimizerType,
-)
+from neural_architecture.models.AutoKeras import (AutoKerasNodeType,
+                                                  AutoKerasTunerType)
+from neural_architecture.models.Templates import (AutoKerasNetworkTemplate,
+                                                  KerasNetworkTemplate)
+from neural_architecture.models.Types import (CallbackType, LossType,
+                                              MetricType, NetworkLayerType,
+                                              OptimizerType)
 
 
 class NewRunForm(forms.Form):
