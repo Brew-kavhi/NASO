@@ -32,13 +32,11 @@ class EnergyCallback(tf.keras.callbacks.Callback):
         return round(self.timer.get_total_time(), 2)
 
     def on_epoch_begin(self, epoch, logs=[], *args):
-        # start the timer here
         self.measurements = []
         measurement = self.get_power_usage(0)
         self.measurements.append(measurement)
 
     def on_epoch_end(self, epoch, logs=[], *args):
-        # stop the timer here:
         meausrement = self.get_power_usage(0)
         self.measurements.append(meausrement)
 

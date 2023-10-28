@@ -95,7 +95,7 @@ class NewRun(TemplateView):
             form.initial["shuffle"] = training.fit_parameters.shuffle
             form.initial["steps_per_epoch"] = training.fit_parameters.steps_per_epoch
             form.initial["workers"] = training.fit_parameters.workers
-            form.initial["datasert_loaders"] = training.dataset.dataset_loader
+            form.initial["dataset_loaders"] = training.dataset.dataset_loader
             form.initial[
                 "use_multiprocessing"
             ] = training.fit_parameters.use_multiprocessing
