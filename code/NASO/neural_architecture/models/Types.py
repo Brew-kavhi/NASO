@@ -8,7 +8,7 @@ from django.db import models
 class BaseType(models.Model):
     module_name = models.CharField(max_length=150)
     name = models.CharField(max_length=100)
-    required_arguments = models.JSONField()
+    required_arguments = models.JSONField(null=True)
 
     class Meta:
         abstract = True

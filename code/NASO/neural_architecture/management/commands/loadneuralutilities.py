@@ -260,12 +260,7 @@ class Command(BaseCommand):
                 )
 
         # load the Datasetloaders, that come preconfigured with the system:
-        DatasetLoader.objects.get_or_create(
-            module_name="neural_architecture.models.Dataset",
-            class_name="TensorflowDatasetLoader",
-            name="Tensorflow Datasets",
-            description="These are all the datasets that are available in tensorflow_datasets.",
-        )
+        load_dataset_loaders()
 
         # load the energy callback:
         CallbackType.objects.get_or_create(
@@ -280,3 +275,18 @@ class Command(BaseCommand):
                 "Successfully installed all predefined nueral definitions."
             )
         )
+
+
+def load_dataset_loaders():
+    DatasetLoader.objects.get_or_create(
+        module_name="neural_architecture.models.Dataset",
+        class_name="TensorflowDatasetLoader",
+        name="Tensorflow Datasets",
+        description="These are all the datasets that are available in tensorflow_datasets.",
+    )
+    DatasetLoader.objects.get_or_create(
+        module_name="neural_architecture.models.Dataset",
+        class_name="SkLearnDatasetLoader",
+        name="SkLearn Datasets",
+        description="These are all the datasets that are available in sklearn.",
+    )
