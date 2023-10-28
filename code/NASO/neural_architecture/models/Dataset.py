@@ -5,6 +5,7 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 from django.db import models
 from django.http import JsonResponse
+from sklearn import datasets
 
 from helper_scripts.importing import get_class
 from plugins.interfaces.Dataset import DatasetLoaderInterface
@@ -99,6 +100,51 @@ class TensorflowDatasetLoader(DatasetLoaderInterface):
 
     def get_datasets(self, *args, **kwargs):
         return self.dataset_list
+
+
+class SkLearnDatasetLoader(DatasetLoaderInterface):
+    dataset_list = {
+        "California Housing": "fetch_california_housing",
+        "RCV1": "fetch_rcv1",
+        "20 Newsgroup": "fetch_20newsgroups",
+        "Olivetti Faces": "fetch_olivetti_faces",
+        "Forest Covertypes": "fetch_covtype",
+        "LFW People": "fetch_lfw_people",
+        "Kid cup": "fetch_kddcup99",
+        "Iris plants (clasification)": "load_iris",
+        "Diabetes (regression)": "load_diabetes",
+        "Handwritten digits (calssifation)": "load_digits",
+        "Physical excercise Linnerud (regression)": "load_linnerud",
+        "Wines": "load_wine",
+        "Breast cancer": "load_breast_cancer",
+    }
+    training_split = 0.9
+
+    def get_datasets(self, *args, **kwargs):
+        return list(self.dataset_list.keys())
+
+    def get_data(self, name, *args, **kwargs):
+        loader_args = {}
+        if "data_dir" in args:
+            loader_args["data_home"] = args["data_dir"]
+
+        data = getattr(datasets, self.dataset_list[name])(**loader_args)
+        target_values = data.target.reshape((-1, 1))
+        size = target_values.shape[0]
+
+        train_set = tf.data.Dataset.from_tensor_slices(
+            (
+                data.data[: int(size * self.training_split)],
+                target_values[: int(size * self.training_split)],
+            )
+        )
+        test_set = tf.data.Dataset.from_tensor_slices(
+            (
+                data.data[int(size * self.training_split) :],
+                target_values[int(size * self.training_split) :],
+            )
+        )
+        return (train_set, test_set)
 
 
 def get_datasets(request, pk):
