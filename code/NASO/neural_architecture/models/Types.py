@@ -76,7 +76,13 @@ class TypeInstance(models.Model):
 
     def __str__(self):
         # Use getattr to access the 'type' property based on the subclass
-        type_name = getattr(self, self._meta.get_field("instance_type").attname, None)
+        try:
+            type_name = getattr(
+                self, self._meta.get_field("instance_type").attname, None
+            )
+        except Exception:
+            type_name = getattr(self, self._meta.get_field("node_type").attname, None)
+
         return str(type_name) if type_name else ""
 
     def validate_json_data(self):
