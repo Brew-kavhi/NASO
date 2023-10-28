@@ -95,6 +95,7 @@ class NewRun(TemplateView):
             form.initial["shuffle"] = training.fit_parameters.shuffle
             form.initial["steps_per_epoch"] = training.fit_parameters.steps_per_epoch
             form.initial["workers"] = training.fit_parameters.workers
+            form.initial["dataset_loaders"] = training.dataset.dataset_loader
             form.initial[
                 "use_multiprocessing"
             ] = training.fit_parameters.use_multiprocessing
@@ -399,6 +400,7 @@ class NewAutoKerasRun(TemplateView):
             )
 
             # load dataset:
+            form.initial["dataset_loaders"] = autokeras_run.dataset.dataset_loader
             form.initial["dataset"] = autokeras_run.dataset.name
             form.initial["dataset_is_supervised"] = autokeras_run.dataset.as_supervised
             self.context.update(form.get_extra_context())

@@ -3,7 +3,8 @@ import keras_tuner
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from helper_scripts.extensions import custom_on_epoch_end_decorator
+from helper_scripts.extensions import (custom_on_epoch_end_decorator,
+                                       custom_on_trial_end_decorator)
 from helper_scripts.importing import get_class, get_object
 from runs.models.Training import (CallbackFunction, LossFunction, Metric, Run,
                                   TrainingMetric)
@@ -89,6 +90,9 @@ class AutoKerasModel(models.Model):
         custom_tuner.on_epoch_end = custom_on_epoch_end_decorator(
             custom_tuner.on_epoch_end
         )
+        custom_tuner.on_trial_end = custom_on_trial_end_decorator(
+            custom_tuner.on_trial_end
+        )
 
         self.auto_model = autokeras.AutoModel(
             inputs=self.inputs,
@@ -115,14 +119,14 @@ class AutoKerasModel(models.Model):
             )
         return metrics
 
-    def get_callbacks(self):
+    def get_callbacks(self, run: "AutoKerasRun"):
         callbacks = []
         for callback in self.callbacks.all():
             callbacks.append(
                 get_object(
                     callback.instance_type.module_name,
                     callback.instance_type.name,
-                    callback.additional_arguments,
+                    callback.additional_arguments + [{"name": "run", "value": run}],
                     callback.instance_type.required_arguments,
                 )
             )

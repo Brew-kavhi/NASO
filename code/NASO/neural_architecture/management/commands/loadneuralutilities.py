@@ -19,6 +19,7 @@ class Command(BaseCommand):
         # for example the RegisteredActivationFunctions: tanh, ...
         # load optimizers here
 
+        # TODO refactor .  this function to use multiple more clear functions with a single purpose
         optimizers_module = importlib.import_module("tensorflow.keras.optimizers")
         optimizer_classes = inspect.getmembers(optimizers_module, inspect.isclass)
 
@@ -264,6 +265,14 @@ class Command(BaseCommand):
             class_name="TensorflowDatasetLoader",
             name="Tensorflow Datasets",
             description="These are all the datasets that are available in tensorflow_datasets.",
+        )
+
+        # load the energy callback:
+        CallbackType.objects.get_or_create(
+            module_name="neural_architecture.NetworkCallbacks.EnergyCallback",
+            name="EnergyCallback",
+            keras_native_callback=False,
+            required_arguments=[],
         )
 
         self.stdout.write(

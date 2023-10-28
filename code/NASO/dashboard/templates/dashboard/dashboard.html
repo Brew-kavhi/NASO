@@ -13,8 +13,8 @@
 
             </div>
             <div>
-                <a class="button is-danger" href="{% url 'dashboard:kill_celery_task' celery.training_task_id %}">
-                    <i data-tooltip='cancel this task' class="fa fa-times"></i>
+                <a data-tooltip='cancel this task' class="button is-danger" href="{% url 'dashboard:kill_celery_task' celery.training_task_id %}">
+                    <i class="fa fa-times"></i>
                 </a>
             </div>
         </div>
