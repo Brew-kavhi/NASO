@@ -34,7 +34,7 @@ def run_autokeras(self, run_id):
             with redirect_stdout(f):
                 autokeras_model.fit(
                     train_dataset,
-                    callbacks=[callback] + autokeras_model.get_callbacks(),
+                    callbacks=[callback] + autokeras_model.get_callbacks(run),
                     verbose=2,
                 )
 
