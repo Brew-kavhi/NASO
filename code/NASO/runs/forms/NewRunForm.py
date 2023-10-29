@@ -392,7 +392,6 @@ class NewAutoKerasRunForm(forms.Form):
             HTML(
                 """
                 <div id='metrics-arguments' class='card rounded-3 d-flex flex-row flex-wrap'></div>
-                <div id='metric_weights_arguments' class='card rounded-3'></div>
                 """
             ),
             Field(
@@ -424,7 +423,6 @@ class NewAutoKerasRunForm(forms.Form):
                 Column(
                     Field("objective"),
                     css_class="col-6",
-                    data_tooltip="valid options: 'val_loss', 'metrics' for weighted sum of metrics, 'model_size', 'execution_time'  or metric_name for single metric",
                 ),
                 Column(
                     Field("directory"),
@@ -433,7 +431,8 @@ class NewAutoKerasRunForm(forms.Form):
                 css_class="mt-5 pt-3 border-top",
             ),
             HTML(
-                """<br>
+                """<div id='metric_weights_arguments' class='card rounded-3 d-none'></div>
+                <br>
             <div class='d-flex mb-5' id='networkgraph'>
             
                 <div id="graph-container" style="height:30em; border-radius: 10px" class='bg-white mr-3 col-lg-8'>

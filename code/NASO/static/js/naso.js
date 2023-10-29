@@ -88,15 +88,12 @@ function handleMetricChange(selectElement) {
     // Clear existing input fields
     $('#metrics-arguments').empty();
     $('#metrics-arguments').removeClass('p-4 mb-3');
-    let metric_weight = $('#metric_weights_arguments');
-    if (metric_weight) {
-        metric_weight.empty();
-        metric_weight.removeClass('p-5');
-    }
+    
 
     if (selectedMetrics.length === 0) {
         return ;
     }
+    metricObjectiveOptions = new Map();
 
     for (const selectedMetric of selectedMetrics) {
         if (selectedMetric.jsonConfig.length > 0) {
@@ -105,28 +102,30 @@ function handleMetricChange(selectElement) {
             
             for (const argumentName of selectedMetric.jsonConfig) {
                 metricContainerHTML += addInputField(argumentName, 'metric_argument_' + selectedMetric.id + '_');
+                
             }
             
             metricContainerHTML += '</div></div>';
             $('#metrics-arguments').append(metricContainerHTML);  // Append input fields
             $('#metrics-arguments').addClass('p-4 mb-3');
-            
-            if (metric_weight) {
-                weight_html = '<div class="mb-4 row"><label class="col-form-label col-lg-4">' + selectedMetric.name + '</label>' +
-                '<div class="col-lg-8"><input class="form-control" type="text" name="metric_weight_' + selectedMetric.id + '" value="1.0"></div></div>';
-                metric_weight.append(weight_html);
-                metric_weight.addClass('p-5');
+            for (const argumentName of selectedMetric.jsonConfig) {
+                if (argumentName['name'] == 'name') {
+                    metricObjectiveOptions.set(selectedMetric.id, $('#metric_argument_' + selectedMetric.id + '_name').val());
+                    //add onchange listener to the objective field
+                    $('#metric_argument_' + selectedMetric.id + '_name').attr('metric_id', selectedMetric.id);
+                    $('#metric_argument_' + selectedMetric.id + '_name').change(function() {    
+                        console.log('metricchange');
+                        metricObjectiveOptions.set(Number($(this).attr('metric_id')), $(this).val());
+                        renderMetricWeights();
+                    });
+                    break;
+                }
             }
+            
+            
         }
     }
-    if (metric_weight) {
-        weight_html = '<div class="mb-4 row"><label class="col-form-label col-lg-4">Model Size</label>' +
-        '<div class="col-lg-8"><input class="form-control" type="text" name="metric_weight_modelsize" value="1.0"></div></div>' + 
-        '<div class="mb-4 row"><label class="col-form-label col-lg-4">Execution Time</label>' +
-        '<div class="col-lg-8"><input class="form-control" type="text" name="metric_weight_executiontime" value="1.0"></div></div>';
-        metric_weight.append(weight_html);
-        metric_weight.addClass('p-5');
-    }
+    renderMetricWeights();
 }
 
 function handleCallbackChange(selectElement) {
@@ -157,6 +156,7 @@ function handleCallbackChange(selectElement) {
     if (selectedCallbacks.length === 0) {
         return ;
     }
+    callbackObjectiveOptions = [];
 
     for (const selectedCallback of selectedCallbacks) {
         if (selectedCallback.jsonConfig.length > 0) {
@@ -171,7 +171,73 @@ function handleCallbackChange(selectElement) {
             $('#callbacks-arguments').append(callbackContainerHTML);  // Append input fields
             $('#callbacks-arguments').addClass('p-4 mb-3');
         }
+        if (selectedCallback.metrics && selectedCallback.metrics.length > 0) {
+            for (const metric of selectedCallback.metrics) {
+                if (!callbackObjectiveOptions.includes(metric)) {
+                    console.log(metric);
+                    callbackObjectiveOptions.push(metric);
+                }
+            }
+        }
     }
+    renderMetricWeights();
+}
+
+function renderMetricWeights() {
+    // render a card with fields to set the weights for each metric in the ObjectiveOptions
+    let metric_weight = $('#metric_weights_arguments');
+    if (metric_weight) {
+        metric_weight.empty();
+        metric_weight.removeClass('p-5');
+        
+        $('#id_objective').autocomplete({
+            source: fixedObjectiveOptions.concat(callbackObjectiveOptions).concat(Array.from(metricObjectiveOptions.values())),
+            minLength: 0,
+            select: function(event, ui) {
+                $('#id_objective').val(ui.item.value);
+                if (ui.item.value ==='metrics') {
+                    $('#metric_weights_arguments').addClass('d-block');
+                    $('#metric_weights_arguments').removeClass('d-none');
+                }
+                else {
+                    $('#metric_weights_arguments').removeClass('d-block');
+                    $('#metric_weights_arguments').addClass('d-none');
+                }
+                return false;
+            }
+        }).focus(function() {
+            $(this).autocomplete('search', $(this).val())
+        });
+        
+        let metricContainerHTML = '<div class="card shadow-none m-3 w-auto"> <div>Weights</div><div class="card-body d-flex flex-wrap">';
+        for (const metric of fixedObjectiveOptions.concat(callbackObjectiveOptions).concat(Array.from(metricObjectiveOptions.values()))) {  
+            value = 1.0;
+            if (metricWeights.has(metric)) {
+                value = metricWeights.get(metric);
+            }  
+            else {
+                metricWeights.set(metric, value);
+            }
+            if (metric !== 'metrics') {
+                weight_html = '<div class="col-4 mb-4 row"><label class="col-form-label col-lg-4">' + metric + '</label>' +
+                '<div class="col-lg-8"><input class="form-control" type="text" name="metric_weight_' + metric + '" value="' + value + '"></div></div>';
+                metricContainerHTML += weight_html;
+            }
+            
+        }
+        metricContainerHTML += '</div></div>';
+        metric_weight.append(metricContainerHTML);  // Append input fields
+        metric_weight.addClass('p-4 mb-3');
+        for (const metric of fixedObjectiveOptions.concat(callbackObjectiveOptions).concat(Array.from(metricObjectiveOptions.values()))) {  
+            if (metric !== 'metrics') {
+                $('#metric_weights_arguments input[name="metric_weight_' + metric + '"]').change(function() {
+                    metricName = $(this).attr('name').slice(14);
+                    metricWeights.set(metricName, $(this).val());
+                });
+            }            
+        }
+    }
+    
 }
 
 function handleKerasTunerChange(selectElement) {
@@ -244,9 +310,10 @@ function addInputField(argument, prefix) {
         label = argument['name'];
         inputName = prefix + argument['name']
         return '<div class="mb-4 row"><label class="col-form-label col-lg-2">' + label + '</label>' +
-        '<div class="col-lg-10 d-flex"><input class="form-control" type="text" name="' + inputName + '" value="' + 
+        '<div class="col-lg-10 d-flex"><input class="form-control" type="text" id="' + inputName+ '" name="' + inputName + '" value="' + 
         defaultValue + '"><span class="icon"><i class="fa fa-help icon" data-tooltip="Type: ' + argument['dtype'] + '">?</i></span></div></div>';
     }
-    return '';
-    
+    return '';   
 }
+
+let metricWeights = new Map();

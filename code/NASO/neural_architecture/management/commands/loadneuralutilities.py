@@ -263,12 +263,14 @@ class Command(BaseCommand):
         load_dataset_loaders()
 
         # load the energy callback:
-        CallbackType.objects.get_or_create(
+        call, _ = CallbackType.objects.get_or_create(
             module_name="neural_architecture.NetworkCallbacks.EnergyCallback",
             name="EnergyCallback",
             keras_native_callback=False,
             required_arguments=[],
         )
+        call.registers_metrics = '["energy_consumption", "trial_energy_consumption"]'
+        call.save()
 
         self.stdout.write(
             self.style.SUCCESS(
