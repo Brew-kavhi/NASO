@@ -322,14 +322,9 @@ class NewAutoKerasRun(TemplateView):
                 else:
                     callbacks_arguments[callback_id].append(callbacks_argument)
 
-        if "metric_weight_modelsize" in request_dict:
-            metric_weights["model_size"] = float(
-                request_dict["metric_weight_modelsize"]
-            )
-        if "metric_weight_executiontime" in request_dict:
-            metric_weights["execution_time"] = float(
-                request_dict["metric_weight_executiontime"]
-            )
+            elif key.startswith("metric_weight_"):
+                metric_name = key[len("metric_weight_") :]
+                metric_weights[metric_name] = float(value)
 
         return (
             tuner_arguments,
