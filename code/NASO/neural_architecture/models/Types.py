@@ -45,6 +45,7 @@ class OptimizerType(BaseType):
 
 class CallbackType(BaseType):
     keras_native_callback = models.BooleanField(default=False)
+    registers_metrics = models.TextField(null=True)
 
 
 class LossType(BaseType):
