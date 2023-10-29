@@ -36,6 +36,7 @@ def run_autokeras(self, run_id):
                     train_dataset,
                     callbacks=[callback] + autokeras_model.get_callbacks(run),
                     verbose=2,
+                    epochs=autokeras_model.epochs,
                 )
 
         # Evaluate the best model with testing data.

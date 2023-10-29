@@ -358,6 +358,7 @@ class NewAutoKerasRun(TemplateView):
             ]
             form.initial["tuner"] = autokeras_run.model.tuner.tuner_type
             form.initial["metric_weights"] = autokeras_run.model.metric_weights
+            form.initial["max_epochs"] = autokeras_run.model.epochs
             nodes = [
                 {
                     "id": layer.name,
@@ -466,6 +467,7 @@ class NewAutoKerasRun(TemplateView):
                 objective=form.cleaned_data["objective"],
                 max_model_size=form.cleaned_data["max_model_size"],
                 loss=loss_function,
+                epochs=form.cleaned_data["max_epochs"],
             )
             layers = json.loads(request.POST.get("nodes"))
             connections = json.loads(request.POST.get("edges"))

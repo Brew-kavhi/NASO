@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 from helper_scripts.extensions import (custom_on_epoch_end_decorator,
+                                       custom_on_trial_begin_decorator,
                                        custom_on_trial_end_decorator)
 from helper_scripts.importing import get_class, get_object
 from runs.models.Training import (CallbackFunction, LossFunction, Metric, Run,
@@ -68,6 +69,7 @@ class AutoKerasModel(models.Model):
         LossFunction, on_delete=models.deletion.SET_NULL, null=True
     )
     metric_weights = models.JSONField(null=True)
+    epochs = models.IntegerField(default=1000)
 
     auto_model: autokeras.AutoModel = None
     layer_outputs: dict = {}
@@ -92,6 +94,9 @@ class AutoKerasModel(models.Model):
         )
         custom_tuner.on_trial_end = custom_on_trial_end_decorator(
             custom_tuner.on_trial_end
+        )
+        custom_tuner.on_trial_begin = custom_on_trial_begin_decorator(
+            custom_tuner.on_trial_begin
         )
 
         self.auto_model = autokeras.AutoModel(
