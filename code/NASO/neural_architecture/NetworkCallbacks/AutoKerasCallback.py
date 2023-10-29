@@ -100,7 +100,6 @@ class AutoKerasCallback(tf.keras.callbacks.Callback):
         self.run.metrics.add(metric)
 
     def on_train_end(self, logs=None):
-        print("training end")
         metrics = {}
         for key in logs:
             if not math.isnan(logs[key]):
