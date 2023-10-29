@@ -1,5 +1,203 @@
 {% extends 'base.html' %}
 
 {% block content %}
-Here ypou find details for a run
+
+<div class="container">
+    <h2>
+        {{run.model.project_name}}
+    </h2>
+    <div class="card">
+        <div class="card-header">
+            <h5 class="my-2">
+                General
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-6">
+                    <p>
+                        <span class='has-text-weight-bold'>Max trials:</span>
+                        {{ run.model.max_trials }}
+                    </p>
+                    <p>
+                        <span class='has-text-weight-bold'>Max Sqize:</span>
+                        {{ run.model.max_model_size }}
+                    </p>
+                    <p>
+                        <span class='has-text-weight-bold'>Objective:</span>
+                        {{ run.model.objective }}
+                    </p>
+                </div>
+                <div class="col-6">                   
+                    <p>
+                        <span class='has-text-weight-bold'>NASO Version:</span>
+                        {{ run.naso_app_version }}
+                    </p>
+                    <p>
+                        <span class='has-text-weight-bold'>Git Hash:</span>
+                        {{ run.git_hash }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- create accordion with bulma for optimizer-->
+    <div class="accordion" id="accordion_optimizer">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between is-align-items-center" id="heading_optimizer">
+                <h2 class="mb-0">
+                    <button class="btn" type="button" data-toggle="collapse" data-target="#collapse_optimizer" aria-expanded="true" aria-controls="collapse_optimizer">
+                        {{ run.optimizer }}
+                    </button>
+                </h2>
+                <i class="fas fa-angle-down"></i>
+            </div>
+
+            <div id="collapse_optimizer" class="collapse" aria-labelledby="heading_optimizer" data-parent="#accordion_optimizer">
+                <div class="card-body">
+                    <div class="row">
+                       
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <h4>
+        Metrics
+    </h4>
+    {% for metric in run.model.metrics.all %}
+    <div class="accordion" id="accordion_{metric.id}">
+        <div class="card">
+            <div data-toggle="collapse" data-target="#collapse_{metric.id}" class="card-header d-flex justify-content-between is-align-items-center" id="heading_{metric.id}">
+                <h5 class="my-2">
+                    {{metric}}                    
+                </h5>
+                <i class="fas fa-angle-down"></i>
+            </div>
+
+            <div id="collapse_{metric.id}" class="collapse" aria-labelledby="heading_{metric.id}" data-parent="#accordion_{metric.id}">
+                <div class="card-body">
+                    <div class="">                       
+                            <div>
+                                {% for argument in metric.additional_arguments %}
+                                <p>
+                                    <span class='has-text-weight-bold'>{{argument.name}}</span>
+                                    {{argument.value}}
+                                </p>
+                                {% endfor %}
+                            </div>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <h4>
+        Callbacks
+    </h4>
+    {% for callback in run.model.callbacks.all %}
+    <div class="accordion" id="accordion_{{callback.id}}">
+        <div class="card">
+            <div data-toggle="collapse" data-target="#collapse_{{callback.id}}" class="card-header d-flex justify-content-between is-align-items-center" id="heading_{{callback.id}}">
+                <h5 class="my-2">
+                    {{callback.instance_type}}
+                </h5>
+                <i class="fas fa-angle-down"></i>
+            </div>
+
+            <div id="collapse_{{callback.id}}" class="collapse" aria-labelledby="heading_{{callback.id}}" data-parent="#accordion_{{callback.id}}">
+                <div class="card-body">
+                    <div class="">                       
+                            <div>
+                                {% for argument in callback.additional_arguments %}
+                                <p>
+                                    <span class='has-text-weight-bold'>{{argument.name}}</span>
+                                    <span class="ml-3 border-bottom ">Test{{argument.value}}</span>
+                                </p>
+                                {% endfor %}
+                            </div>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    <div class="accordion" id="accordion_tuner">
+        <div class="card">
+            <div data-toggle="collapse" data-target="#collapse_tuner" class="card-header d-flex justify-content-between is-align-items-center" id="heading_tuner">
+                <h5 class="my-2">
+                    Tuner
+                </h5>
+                <i class="fas fa-angle-down"></i>
+            </div>
+
+            <div id="collapse_tuner" class="collapse" aria-labelledby="heading_tuner" data-parent="#accordion_tuner">
+                <div class="card-body">
+                    <div class="">                       
+                            <div>
+                                <p>
+                                    <span class='has-text-weight-bold'>Datasetloader:</span>
+                                    {{ run.model.tuner.tuner_type }}
+                                </p>
+                                <p>
+                                    <span class='has-text-weight-bold'>Dataset:</span>
+                                    {{ run.model.tuner.tuner_type }}
+                                </p>
+                            </div>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="accordion" id="accordion_dataset">
+        <div class="card">
+            <div data-toggle="collapse" data-target="#collapse_dataset" class="card-header d-flex justify-content-between is-align-items-center" id="heading_dataset">
+                <h5 class="my-2">
+                    Dataset
+                </h5>
+                <i class="fas fa-angle-down"></i>
+            </div>
+
+            <div id="collapse_dataset" class="collapse" aria-labelledby="heading_dataset" data-parent="#accordion_dataset">
+                <div class="card-body">
+                    <div class="">                       
+                            <div>
+                                <p>
+                                    <span class='has-text-weight-bold'>Datasetloader:</span>
+                                    {{ run.dataset.dataset_loader }}
+                                </p>
+                                <p>
+                                    <span class='has-text-weight-bold'>Dataset:</span>
+                                    {{ run.dataset.name }}
+                                </p>
+                            </div>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="accordion" id="accordion_graphs">
+        <div class="card">
+            <div data-toggle="collapse" data-target="#collapse_graphs" class="card-header d-flex justify-content-between is-align-items-center" id="heading_graphs">
+                <h5 class="my-2">
+                    Graphs
+                </h5>
+                <i class="fas fa-angle-down"></i>
+            </div>
+
+            <div id="collapse_graphs" class="collapse" aria-labelledby="heading_graphs" data-parent="#accordion_graphs">
+                <div class="card-body">
+                    <div class="">                       
+                          
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
