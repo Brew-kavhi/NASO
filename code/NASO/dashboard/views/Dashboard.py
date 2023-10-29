@@ -21,7 +21,7 @@ class Dashboard(TemplateView):
         for task in self.context["registered_tasks"]:
             if task["is_autokeras"]:
                 run = AutoKerasRun.objects.get(id=task["run_id"])
-                task["name"] = run.project_name
+                task["name"] = run.model.project_name
                 task["link"] = reverse_lazy(
                     "runs:autokeras_details", kwargs={"pk": run.id}
                 )

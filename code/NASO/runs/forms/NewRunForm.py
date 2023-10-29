@@ -331,6 +331,11 @@ class NewAutoKerasRunForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={"type": "number", "min": 0}),
     )
+    max_epochs = forms.IntegerField(
+        label="Max Epochs",
+        required=False,
+        widget=forms.TextInput(attrs={"type": "number", "min": 0}),
+    )
 
     objective = forms.CharField(label="Objective", required=False, initial="val_loss")
 
@@ -414,11 +419,15 @@ class NewAutoKerasRunForm(forms.Form):
                 # Column("epochs", css_class="form-group col-6 mb-0"),
                 Column(
                     Field("max_model_size", template="crispyForms/small_field.html"),
-                    css_class="col-3",
+                    css_class="col-2",
                 ),
                 Column(
                     Field("max_trials", template="crispyForms/small_field.html"),
-                    css_class="col-3",
+                    css_class="col-2",
+                ),
+                Column(
+                    Field("max_epochs", template="crispyForms/small_field.html"),
+                    css_class="col-2",
                 ),
                 Column(
                     Field("objective"),
