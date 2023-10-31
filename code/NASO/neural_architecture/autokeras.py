@@ -32,9 +32,10 @@ def run_autokeras(self, run_id):
         # load the datasets from the documentation in here
         with open("net.log", "w") as f:
             with redirect_stdout(f):
+                autokeras_model.build_model(run)
                 autokeras_model.fit(
                     train_dataset,
-                    callbacks=[callback] + autokeras_model.get_callbacks(run),
+                    callbacks=autokeras_model.get_callbacks(run) + [callback],
                     verbose=2,
                     epochs=autokeras_model.epochs,
                 )

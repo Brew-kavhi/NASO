@@ -1,17 +1,17 @@
 {% extends 'base.html' %}
-
+{% load get_values %}
 {% block content %}
 
 <div class="container">
-    <h2>
-        {{run.model.project_name}}
-    </h2>
-    <div class="card">
-        <div class="card-header">
+    <div class="accordion" id="accordion_general">
+    <div data-toggle="collapse" data-target="#collapse_general" class="card">
+        <div class="card-header d-flex justify-content-between is-align-items-center">
             <h5 class="my-2">
                 General
             </h5>
+            <i class="fas fa-angle-down"></i>
         </div>
+        <div id="collapse_general" class="collapse" aria-labelledby="heading_general" data-parent="#accordion_general">
         <div class="card-body">
             <div class="row">
                 <div class="col-6">
@@ -20,7 +20,7 @@
                         {{ run.model.max_trials }}
                     </p>
                     <p>
-                        <span class='has-text-weight-bold'>Max Sqize:</span>
+                        <span class='has-text-weight-bold'>Max Size:</span>
                         {{ run.model.max_model_size }}
                     </p>
                     <p>
@@ -29,6 +29,10 @@
                     </p>
                 </div>
                 <div class="col-6">                   
+                    <p>
+                        <span class='has-text-weight-bold'>Max Epochs:</span>
+                        {{ run.model.epochs }}
+                    </p>
                     <p>
                         <span class='has-text-weight-bold'>NASO Version:</span>
                         {{ run.naso_app_version }}
@@ -40,23 +44,44 @@
                 </div>
             </div>
         </div>
+        </div>
+    </div>
     </div>
     <!-- create accordion with bulma for optimizer-->
-    <div class="accordion" id="accordion_optimizer">
+    <div class="accordion" id="accordion_loss">
         <div class="card">
-            <div class="card-header d-flex justify-content-between is-align-items-center" id="heading_optimizer">
-                <h2 class="mb-0">
-                    <button class="btn" type="button" data-toggle="collapse" data-target="#collapse_optimizer" aria-expanded="true" aria-controls="collapse_optimizer">
-                        {{ run.optimizer }}
-                    </button>
-                </h2>
-                <i class="fas fa-angle-down"></i>
+            <div data-toggle="collapse" data-target="#collapse_loss" class="card-header d-flex justify-content-between is-align-items-center" id="heading_loss">
+                <h5 class="my-2">
+                    Loss
+                </h5>
+                <div>
+                    <span class="mx-5 tag is-info is-light text-md">{{ run.model.loss.instance_type }}</span>
+                    <i class="fas fa-angle-down"></i>
+                </div>
             </div>
 
-            <div id="collapse_optimizer" class="collapse" aria-labelledby="heading_optimizer" data-parent="#accordion_optimizer">
+            <div id="collapse_loss" class="collapse" aria-labelledby="heading_loss" data-parent="#accordion_loss">
                 <div class="card-body">
                     <div class="row">
-                       
+                        {% if run.model.loss.additional_arguments %}
+                            {% for argument in run.model.loss.additional_arguments %}
+                                <div class="col-6">
+                                    <p>
+                                        <span class='has-text-weight-bold'>{{argument.name}}</span>
+                                        {{argument.value}}
+                                    </p>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            {% for argument in run.model.loss.instance_type.required_arguments %}
+                            <div class="col-6">
+                                <p>
+                                    <span class='has-text-weight-bold col-2'>{{argument.name}}</span>
+                                    {{argument.default}}
+                                </p>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -66,25 +91,34 @@
         Metrics
     </h4>
     {% for metric in run.model.metrics.all %}
-    <div class="accordion" id="accordion_{metric.id}">
+    <div class="accordion" id="accordion_{{metric.id}}">
         <div class="card">
-            <div data-toggle="collapse" data-target="#collapse_{metric.id}" class="card-header d-flex justify-content-between is-align-items-center" id="heading_{metric.id}">
+            <div data-toggle="collapse" data-target="#collapse_{{metric.id}}" class="card-header d-flex justify-content-between is-align-items-center" id="heading_{{metric.id}}">
                 <h5 class="my-2">
-                    {{metric}}                    
+                    {{metric.instance_type}}                    
                 </h5>
                 <i class="fas fa-angle-down"></i>
             </div>
 
-            <div id="collapse_{metric.id}" class="collapse" aria-labelledby="heading_{metric.id}" data-parent="#accordion_{metric.id}">
+            <div id="collapse_{{metric.id}}" class="collapse" aria-labelledby="heading_{{metric.id}}" data-parent="#accordion_{{metric.id}}">
                 <div class="card-body">
                     <div class="">                       
                             <div>
-                                {% for argument in metric.additional_arguments %}
-                                <p>
-                                    <span class='has-text-weight-bold'>{{argument.name}}</span>
-                                    {{argument.value}}
-                                </p>
-                                {% endfor %}
+                                {% if metric.additional_arguments %}
+                                    {% for argument in metric.additional_arguments %}
+                                    <p>
+                                        <span class='has-text-weight-bold'>{{argument.name}}</span>
+                                        {{argument.value}}
+                                    </p>
+                                    {% endfor %}
+                                {% else %}
+                                    {% for argument in metric.instance_type.required_arguments %}
+                                    <p>
+                                        <span class='has-text-weight-bold'>{{argument.name}}</span>
+                                        {{argument.default}}    
+                                    </p>
+                                    {% endfor %}
+                                {% endif %}
                             </div>
                         
                     </div>
@@ -111,12 +145,21 @@
                 <div class="card-body">
                     <div class="">                       
                             <div>
-                                {% for argument in callback.additional_arguments %}
-                                <p>
-                                    <span class='has-text-weight-bold'>{{argument.name}}</span>
-                                    <span class="ml-3 border-bottom ">Test{{argument.value}}</span>
-                                </p>
-                                {% endfor %}
+                                {% if callback.additional_arguments %}
+                                    {% for argument in callback.additional_arguments %}
+                                    <p>
+                                        <span class='has-text-weight-bold'>{{argument.name}}</span>
+                                        <span class="border-bottom">{{argument.value}}</span>
+                                    </p>
+                                    {% endfor %}
+                                {% else %}
+                                    {% for argument in callback.instance_type.required_arguments %}
+                                    <p>
+                                        <span class='has-text-weight-bold'>{{argument.name}}</span>
+                                        <span class="border-bottom">{{argument.default}}</span>
+                                    </p>
+                                    {% endfor %}
+                                {% endif %}
                             </div>
                         
                     </div>
@@ -131,23 +174,34 @@
                 <h5 class="my-2">
                     Tuner
                 </h5>
-                <i class="fas fa-angle-down"></i>
+                <div>
+                    <span class="mx-5 tag is-info is-light text-md">{{ run.model.tuner.tuner_type }}</span>
+                    <i class="fas fa-angle-down"></i>
+                </div>
             </div>
 
             <div id="collapse_tuner" class="collapse" aria-labelledby="heading_tuner" data-parent="#accordion_tuner">
                 <div class="card-body">
-                    <div class="">                       
-                            <div>
+                    <div class="row">                       
+                        {% if run.model.tuner.additional_arguments %}
+                            {% for argument in run.model.tuner.additional_arguments %}
+                                <div class="col-6">
+                                    <p>
+                                        <span class='has-text-weight-bold'>{{argument.name}}</span>
+                                        {{argument.value}}
+                                    </p>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            {% for argument in run.model.tuner.tuner_type.required_arguments %}
+                            <div class="col-6">
                                 <p>
-                                    <span class='has-text-weight-bold'>Datasetloader:</span>
-                                    {{ run.model.tuner.tuner_type }}
-                                </p>
-                                <p>
-                                    <span class='has-text-weight-bold'>Dataset:</span>
-                                    {{ run.model.tuner.tuner_type }}
+                                    <span class='has-text-weight-bold col-2'>{{argument.name}}</span>
+                                    {{argument.default}}
                                 </p>
                             </div>
-                        
+                            {% endfor %}
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -159,7 +213,10 @@
                 <h5 class="my-2">
                     Dataset
                 </h5>
-                <i class="fas fa-angle-down"></i>
+                <div>
+                    <span class="mx-5 tag is-info is-light text-md">{{ run.dataset.name }}</span>
+                    <i class="fas fa-angle-down"></i>
+                </div>
             </div>
 
             <div id="collapse_dataset" class="collapse" aria-labelledby="heading_dataset" data-parent="#accordion_dataset">
@@ -171,8 +228,8 @@
                                     {{ run.dataset.dataset_loader }}
                                 </p>
                                 <p>
-                                    <span class='has-text-weight-bold'>Dataset:</span>
-                                    {{ run.dataset.name }}
+                                    <span class='has-text-weight-bold'>Information:</span>
+                                    {{ run.dataset.description }}
                                 </p>
                             </div>
                         
@@ -200,4 +257,32 @@
         </div>
     </div>
 </div>
+<script>
+{% for training_metric in run.metrics.all %}
+        {% for metric in training_metric.metrics %}
+        {{metric.trial_id|safe}}
+        {% endfor %}
+    {% endfor %}
+    let metrics = new Map();
+    {% for training_metric in run.metrics.all %}
+        {% for metric in training_metric.metrics %}
+            if (metrics.has({{metric.trial_id}})) {
+                let epochs = metrics.get({{metric.trial_id}});
+                if (epochs.has({{metric.current}})) {
+                    {% for metric_name in metric.metrics %}
+                        epochs.get({{metric.current}}).push({"{{metric_name}}":{% get_metric metric.metrics metric_name %}});
+                    {% endfor %}
+                } else{
+                    let values = [];
+                    {% for metric_name in metric.metrics %}
+                        values.push({"{{metric_name}}":{% get_metric metric.metrics metric_name %}});
+                    {% endfor %}
+                    epochs.set({{metric.current}}, values);
+                }
+            } else {
+                metrics.set({{metric.trial_id}}, [{{metric.value}}]);
+            }
+        {% endfor %}
+    {% endfor %}
+</script>
 {% endblock %}

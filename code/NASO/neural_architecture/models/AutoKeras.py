@@ -3,7 +3,8 @@ import keras_tuner
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from helper_scripts.extensions import (custom_on_epoch_end_decorator,
+from helper_scripts.extensions import (custom_on_epoch_begin_decorator,
+                                       custom_on_epoch_end_decorator,
                                        custom_on_trial_begin_decorator,
                                        custom_on_trial_end_decorator)
 from helper_scripts.importing import get_class, get_object
@@ -76,7 +77,7 @@ class AutoKerasModel(models.Model):
     inputs: dict = {}
     outputs: dict = {}
 
-    def build_model(self):
+    def build_model(self, run: "AutoKerasRun"):
         # build the model here:
         # first build the layers:
         for input_node in self.get_input_nodes():
@@ -90,7 +91,10 @@ class AutoKerasModel(models.Model):
             self.tuner.tuner_type.module_name, self.tuner.tuner_type.name
         )
         custom_tuner.on_epoch_end = custom_on_epoch_end_decorator(
-            custom_tuner.on_epoch_end
+            custom_tuner.on_epoch_end, run
+        )
+        custom_tuner.on_epoch_begin = custom_on_epoch_begin_decorator(
+            custom_tuner.on_epoch_begin
         )
         custom_tuner.on_trial_end = custom_on_trial_end_decorator(
             custom_tuner.on_trial_end
@@ -204,17 +208,17 @@ class AutoKerasModel(models.Model):
     # calls the fit method of the autokeras model
     def fit(self, *args, **kwargs):
         if not self.auto_model:
-            self.build_model()
+            raise Exception("Model has not been built yet.")
         self.auto_model.fit(*args, **kwargs)
 
     def predict(self, *args, **kwargs):
         if not self.auto_model:
-            self.build_model()
+            raise Exception("Model has not been built yet.")
         self.auto_model.predict(*args, **kwargs)
 
     def evaluate(self, *args, **kwargs):
         if not self.auto_model:
-            self.build_model()
+            raise Exception("Model has not been built yet.")
         self.auto_model.evaluate(*args, **kwargs)
 
 

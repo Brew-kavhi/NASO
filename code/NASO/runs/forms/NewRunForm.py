@@ -412,7 +412,9 @@ class NewAutoKerasRunForm(forms.Form):
                 multiple="multiple",
             ),
             HTML("<div id='callbacks-arguments' class='card rounded-3'></div>"),
-            Field("tuner", data_placeholder="Select Tuner", css_class="select2 w-100 mt-3"),
+            Field(
+                "tuner", data_placeholder="Select Tuner", css_class="select2 w-100 mt-3"
+            ),
             HTML("<div id='tuner-arguments' class='card rounded-3'></div>"),
             HTML('<div class="clearfix"></div>'),
             Row(

@@ -68,6 +68,7 @@ class AutoKerasCallback(tf.keras.callbacks.Callback):
                 )
 
         logs["execution_time"] = epoch_time
+        logs["total_time"] = self.timer.get_total_time()
 
         metrics = {}
         for key in logs:
@@ -84,20 +85,6 @@ class AutoKerasCallback(tf.keras.callbacks.Callback):
                 "autokeras": True,
             },
         )
-
-        metric = TrainingMetric(
-            epoch=epoch,
-            metrics=[
-                {
-                    "current": epoch,
-                    "run_id": self.run.id,
-                    "metrics": metrics,
-                    "time": self.timer.get_total_time(),
-                },
-            ],
-        )
-        metric.save()
-        self.run.metrics.add(metric)
 
     def on_train_end(self, logs=None):
         metrics = {}
