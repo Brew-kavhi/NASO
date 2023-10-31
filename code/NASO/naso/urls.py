@@ -26,4 +26,5 @@ urlpatterns = [
     ),
     path("runs/", include(("runs.urls", "runs"), namespace="runs")),
     path("system/", include(("system.urls", "system"), namespace="system")),
+    path("api/", include(("api.urls", "api"), namespace="api")),
 ]
