@@ -304,12 +304,13 @@
 <script>
     let run_metrics = {};
     let trialOverviewChart = null;
+    let allEpochs = [];
     document.addEventListener("DOMContentLoaded", () => {
         let canvas = document.getElementById("canvas_trial_overview").getContext('2d');
         trialOverviewChart = new Chart(canvas, {
             type: 'line', // Choose the appropriate chart type
             data: {
-                labels: [],
+                labels: allEpochs,
                 datasets: []
             },
             options: {
@@ -367,8 +368,6 @@
         });
         fetch("{% url 'api:autokeras:trial_details' run.id %}").then(function(response) {
             response.json().then(function(data) {
-                // update the appropriate UI component
-                console.log(data);
                 // for every trial in data, append a div to trial_container_<trial_id> and fill in the values from data[trial_id]:
                 for (trial_id in data) {
                     let trial_data = data[trial_id];
@@ -392,8 +391,13 @@
 
     function trialOverviewX(event) {
         let xaxis = $('#trial_overview_xaxis').val();
-        trialOverviewChart.data.labels = dictToArray(run_metrics[0], xaxis);
-        trialOverviewChart.update();
+        if (xaxis == 'epochs') {
+            trialOverviewChart.data.labels = allEpochs;
+            trialOverviewChart.update();
+        } else {
+            trialOverviewChart.data.labels = dictToArray(run_metrics[0], xaxis);
+            trialOverviewChart.update();
+        }
     }
 
     function trialOverviewY(event) {
@@ -513,7 +517,10 @@
             labels.push(epoch);
         }
 
-        trialOverviewChart.data.labels = labels;
+        if (labels.length > trialOverviewChart.data.labels.length) {
+            allEpochs = labels;
+            trialOverviewChart.data.labels = labels;
+        }
 
         var trialChart = new Chart(canvas, {
             type: 'line', // Choose the appropriate chart type

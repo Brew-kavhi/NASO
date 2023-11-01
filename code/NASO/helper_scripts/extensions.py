@@ -9,7 +9,7 @@ def custom_on_epoch_end_decorator(original_on_epoch_end, run):
         if "model_size" not in logs:
             logs["model_size"] = model.count_params()
         if "trial_id" not in logs:
-            logs["trial_id"] = int(trial.trial_id)
+            logs["trial_id"] = trial.trial_id
 
         metrics = {}
         for key in logs:
@@ -41,7 +41,7 @@ def custom_on_epoch_begin_decorator(original_on_epoch_begin):
         if "model_size" not in logs:
             logs["model_size"] = model.count_params()
         if "trial_id" not in logs:
-            logs["trial_id"] = int(trial.trial_id)
+            logs["trial_id"] = trial.trial_id
 
         if original_on_epoch_begin:
             original_on_epoch_begin(self, trial, model, epoch, logs)

@@ -96,7 +96,6 @@ class AutoKerasModel(models.Model):
                 self.tuner_object.on_trial_begin
             )
 
-
     def build_model(self, run: "AutoKerasRun"):
         # build the model here:
         # first build the layers:
@@ -105,9 +104,10 @@ class AutoKerasModel(models.Model):
             self.build_connected_layers(input_node)
         # inputs are those nodes who are only source and never target
         # and ouputs is the other way around
-        if not self.directory:
+        if len(self.directory) == 0 or not self.directory:
             self.directory = f"{self.project_name}_{self.id}"
         self.build_tuner(run)
+        self.save()
 
         self.auto_model = autokeras.AutoModel(
             inputs=self.inputs,
@@ -126,8 +126,9 @@ class AutoKerasModel(models.Model):
             for input_node in self.get_input_nodes():
                 self.layer_outputs[input_node] = self.inputs[input_node]
                 self.build_connected_layers(input_node)
-        if not self.directory:
+        if len(self.directory) == 0 or not self.directory:
             self.directory = f"{self.project_name}_{self.id}"
+            self.save()
 
         self.build_tuner(run)
 
