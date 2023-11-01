@@ -305,10 +305,7 @@ class NewAutoKerasRun(TemplateView):
                     metrics_arguments[metric_id] = [metrics_argument]
                 else:
                     metrics_arguments[metric_id].append(metrics_argument)
-                if argument_name == "name":
-                    metric_weights[value] = float(
-                        request_dict[f"metric_weight_{metric_id}"]
-                    )
+
             elif key.startswith("callback_argument_"):
                 # this is metric, get the metric key and check if there isa already a metric definition
                 callback_id = int(key.split("_")[2])

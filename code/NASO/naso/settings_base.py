@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     "plugins",
     "runs",
     "system",
+    "api",
     "neural_architecture",
     "crispy_forms",
     "crispy_bootstrap5",

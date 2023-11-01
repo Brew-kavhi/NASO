@@ -37,7 +37,10 @@ function setProgress(state, details) {
             );
         }
 
-        const progressLink = '/runs/' + details.run_id + '/details/';
+        let progressLink = '/runs/' + details.run_id + '/details/';
+        if (details.autokeras) {
+            progressLink = '/runs/autokeras/' + details.run_id + '/details/';
+        }
         const link = document.getElementById('training_detail_link')
         if (link) {
             link.href = progressLink;

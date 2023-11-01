@@ -43,7 +43,8 @@ class Dashboard(TemplateView):
                         "name": run.project_name,
                         "id": run.id,
                         "link": reverse_lazy(
-                            "runs:autokeras_details", kwargs={"pk": run.id}
+                            "runs:autokeras_details",
+                            kwargs={"pk": run_details["run_id"]},
                         ),
                     }
                 else:
@@ -53,7 +54,9 @@ class Dashboard(TemplateView):
                     self.context["run"] = {
                         "name": run.name,
                         "id": run.id,
-                        "link": reverse_lazy("runs:details", kwargs={"pk": run.id}),
+                        "link": reverse_lazy(
+                            "runs:details", kwargs={"pk": run_details["run_id"]}
+                        ),
                     }
 
         return self.render_to_response(self.context)

@@ -3,7 +3,8 @@ import keras_tuner
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from helper_scripts.extensions import (custom_on_epoch_end_decorator,
+from helper_scripts.extensions import (custom_on_epoch_begin_decorator,
+                                       custom_on_epoch_end_decorator,
                                        custom_on_trial_begin_decorator,
                                        custom_on_trial_end_decorator)
 from helper_scripts.importing import get_class, get_object
@@ -75,8 +76,27 @@ class AutoKerasModel(models.Model):
     layer_outputs: dict = {}
     inputs: dict = {}
     outputs: dict = {}
+    tuner_object = None
 
-    def build_model(self):
+    def build_tuner(self, run):
+        if not self.tuner_object:
+            self.tuner_object = get_class(
+                self.tuner.tuner_type.module_name, self.tuner.tuner_type.name
+            )
+            self.tuner_object.on_epoch_end = custom_on_epoch_end_decorator(
+                self.tuner_object.on_epoch_end, run
+            )
+            self.tuner_object.on_epoch_begin = custom_on_epoch_begin_decorator(
+                self.tuner_object.on_epoch_begin
+            )
+            self.tuner_object.on_trial_end = custom_on_trial_end_decorator(
+                self.tuner_object.on_trial_end
+            )
+            self.tuner_object.on_trial_begin = custom_on_trial_begin_decorator(
+                self.tuner_object.on_trial_begin
+            )
+
+    def build_model(self, run: "AutoKerasRun"):
         # build the model here:
         # first build the layers:
         for input_node in self.get_input_nodes():
@@ -84,20 +104,10 @@ class AutoKerasModel(models.Model):
             self.build_connected_layers(input_node)
         # inputs are those nodes who are only source and never target
         # and ouputs is the other way around
-        if not self.directory:
+        if len(self.directory) == 0 or not self.directory:
             self.directory = f"{self.project_name}_{self.id}"
-        custom_tuner = get_class(
-            self.tuner.tuner_type.module_name, self.tuner.tuner_type.name
-        )
-        custom_tuner.on_epoch_end = custom_on_epoch_end_decorator(
-            custom_tuner.on_epoch_end
-        )
-        custom_tuner.on_trial_end = custom_on_trial_end_decorator(
-            custom_tuner.on_trial_end
-        )
-        custom_tuner.on_trial_begin = custom_on_trial_begin_decorator(
-            custom_tuner.on_trial_begin
-        )
+            self.save()
+        self.build_tuner(run)
 
         self.auto_model = autokeras.AutoModel(
             inputs=self.inputs,
@@ -106,10 +116,35 @@ class AutoKerasModel(models.Model):
             max_trials=self.max_trials,
             project_name=self.project_name,
             directory="auto_model/" + self.directory,
-            tuner=custom_tuner,
+            tuner=self.tuner_object,
             metrics=self.get_metrics(),
             objective=keras_tuner.Objective(self.objective, direction="min"),
         )
+
+    def load_model(self, run: "AutoKerasRun"):
+        if len(self.inputs) == 0 or len(self.outputs) == 0:
+            for input_node in self.get_input_nodes():
+                self.layer_outputs[input_node] = self.inputs[input_node]
+                self.build_connected_layers(input_node)
+        if len(self.directory) == 0 or not self.directory:
+            self.directory = f"{self.project_name}_{self.id}"
+            self.save()
+
+        self.build_tuner(run)
+
+        loaded_model = autokeras.AutoModel(
+            inputs=self.inputs,
+            outputs=self.outputs,
+            overwrite=False,
+            max_trials=self.max_trials,
+            project_name=self.project_name,
+            directory="auto_model/" + self.directory,
+            tuner=self.tuner_object,
+            metrics=self.get_metrics(),
+            objective=keras_tuner.Objective(self.objective, direction="min"),
+        )
+
+        return loaded_model
 
     def get_metrics(self):
         metrics = []
@@ -204,17 +239,17 @@ class AutoKerasModel(models.Model):
     # calls the fit method of the autokeras model
     def fit(self, *args, **kwargs):
         if not self.auto_model:
-            self.build_model()
+            raise Exception("Model has not been built yet.")
         self.auto_model.fit(*args, **kwargs)
 
     def predict(self, *args, **kwargs):
         if not self.auto_model:
-            self.build_model()
+            raise Exception("Model has not been built yet.")
         self.auto_model.predict(*args, **kwargs)
 
     def evaluate(self, *args, **kwargs):
         if not self.auto_model:
-            self.build_model()
+            raise Exception("Model has not been built yet.")
         self.auto_model.evaluate(*args, **kwargs)
 
 

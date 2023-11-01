@@ -44,7 +44,7 @@
 {% block title %}{{APP_TITLE}}{% endblock %}
 {% block content_header %}
 <section class="content-header">
-    <div class="d-flex justify-content-between">
+    <div class="d-flex justify-content-between container">
         <h1>
             {% block page_name %}{{page.title}}{% endblock %}
             {% block no_description %}  
@@ -53,11 +53,13 @@
         </h1>
         
         {% if page.actions %}
+        <div class='d-flex'>
             {% block page_actions %}
                 {% for action in page.actions %}
-                    <a href="{{action.url}}" class="btn btn-success btn-sm">{{ action.title }}</a>
+                    <a href="{{action.url}}" class="btn btn-{{action.color}} btn-sm mx-2">{{ action.title }}</a>
                 {% endfor %}
             {% endblock %}
+        </div>
         {% endif %}
     </div>
     

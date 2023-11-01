@@ -1,10 +1,12 @@
 import json
 
 from django.http import HttpResponse
+from django.urls import reverse_lazy
 from django.views.generic.base import TemplateView, View
 
 from naso.celery import get_celery_task_state
 from naso.models.page import PageSetup
+from neural_architecture.models.AutoKeras import AutoKerasRun
 
 
 class TrainingProgress(View):
@@ -30,4 +32,14 @@ class AutoKerasRunDetails(TemplateView):
     context = {"page": page.get_context()}
 
     def get(self, request, *args, **kwargs):
+        run = AutoKerasRun.objects.get(pk=kwargs["pk"])
+        self.context["run"] = run
+        self.page.title = run.model.project_name
+        self.page.actions = []
+        self.page.add_pageaction(
+            reverse_lazy("runs:new_autokeras") + "?rerun=" + str(run.pk),
+            "Run again",
+            color="primary",
+        )
+        self.context["page"] = self.page.get_context()
         return self.render_to_response(self.context)
