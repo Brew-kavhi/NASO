@@ -2,7 +2,7 @@
 {% load get_values %}
 {% block content %}
 
-<div class="container">
+<div class="container pb-1">
     <div class="accordion" id="accordion_general">
     <div data-toggle="collapse" data-target="#collapse_general" class="card">
         <div class="card-header d-flex justify-content-between is-align-items-center">
@@ -27,6 +27,13 @@
                         <span class='has-text-weight-bold'>Objective:</span>
                         {{ run.model.objective }}
                     </p>
+                    {% if run.model.objective == 'metrics' %}
+                        <p>
+                            <span class='has-text-weight-bold'>Weights:</span>
+                            {{ run.model.metric_weights }}
+                        </p>
+                    {% endif %}
+                    
                 </div>
                 <div class="col-6">                   
                     <p>
@@ -238,6 +245,42 @@
             </div>
         </div>
     </div>
+    <div class="accordion" id="trial_overview">
+        <div class="card">
+            <div data-toggle="collapse" data-target="#collapse_trials" class="card-header d-flex justify-content-between is-align-items-center" id="heading_trials">
+                <h5 class="my-2">
+                    Trial overview
+                </h5>
+                <i class="fas fa-angle-down"></i>
+            </div>
+
+            <div id="collapse_trials" class="collapse" aria-labelledby="heading_trials" data-parent="#trial_overview">
+                <div class="card-body d-flex">
+                    <div class="col-9" id='trial_overview_container'>
+                        <canvas class='h-100 w-100' id='canvas_trial_overview'></canvas>
+                    </div>
+                    <div class="col-3">
+                        <div class="axis-selection">
+                            <div>
+                                <label>X-Axis</label>
+                                <select class="form-control" id="trial_overview_xaxis" onchange="trialOverviewX(this)">
+                                    <option value="epochs">epochs</option>
+                                </select>
+                            </div>
+                            <div class="my-5">
+                                <label>Y-Axis</label>
+                                <select class="form-control" id="trial_overview_yaxis" onchange="trialOverviewY(this)">
+                                </select>
+                            </div>
+                        </div>
+                        <div id="trial_selection">
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="accordion" id="accordion_graphs">
         <div class="card">
             <div data-toggle="collapse" data-target="#collapse_graphs" class="card-header d-flex justify-content-between is-align-items-center" id="heading_graphs">
@@ -249,8 +292,9 @@
 
             <div id="collapse_graphs" class="collapse" aria-labelledby="heading_graphs" data-parent="#accordion_graphs">
                 <div class="card-body">
-                    <div class="">                       
-                          
+
+                    <div class="" id='canvas_container'>                       
+                          <div id="sorting_container" class="d-flex"></div>
                     </div>
                 </div>
             </div>
@@ -258,31 +302,291 @@
     </div>
 </div>
 <script>
-{% for training_metric in run.metrics.all %}
-        {% for metric in training_metric.metrics %}
-        {{metric.trial_id|safe}}
-        {% endfor %}
-    {% endfor %}
-    let metrics = new Map();
-    {% for training_metric in run.metrics.all %}
-        {% for metric in training_metric.metrics %}
-            if (metrics.has({{metric.trial_id}})) {
-                let epochs = metrics.get({{metric.trial_id}});
-                if (epochs.has({{metric.current}})) {
-                    {% for metric_name in metric.metrics %}
-                        epochs.get({{metric.current}}).push({"{{metric_name}}":{% get_metric metric.metrics metric_name %}});
-                    {% endfor %}
-                } else{
-                    let values = [];
-                    {% for metric_name in metric.metrics %}
-                        values.push({"{{metric_name}}":{% get_metric metric.metrics metric_name %}});
-                    {% endfor %}
-                    epochs.set({{metric.current}}, values);
+    let run_metrics = {};
+    let trialOverviewChart = null;
+    document.addEventListener("DOMContentLoaded", () => {
+        let canvas = document.getElementById("canvas_trial_overview").getContext('2d');
+        trialOverviewChart = new Chart(canvas, {
+            type: 'line', // Choose the appropriate chart type
+            data: {
+                labels: [],
+                datasets: []
+            },
+            options: {
+                plugins: {
+                    colors: {
+                        forceOverride: true
+                    }
+                }
+            }
+        });
+
+        fetch("{% url 'api:autokeras:all_metrics' run.id %}").then(function(response) {
+            response.json().then(function(data) {
+                // update the appropriate UI component
+                run_metrics = data;
+
+                let metrics = [];
+                for(metric in run_metrics[0][0]) {
+                    metrics.push(metric);
+                    generateOption(metric, metric, $('#trial_overview_xaxis'));
+                    generateOption(metric, metric, $('#trial_overview_yaxis'));
+                }
+                generateSortSelect('canvas_container', metrics);
+
+
+                for (trial_id in run_metrics) {
+                    let trial_data = run_metrics[trial_id];
+                    let canvas_html = "<div class='has-background-white-bis my-5 p-3 rounded-lg'><h6 class='text-center mt-5'>Trial " + 
+                        (Number(trial_id)+1) + "</h6><div class='d-flex'><div class='col-9'><canvas class='h-100 w-100' id='canvas_trial_" + 
+                        trial_id + "'></canvas></div><div id='canvas_configure_" + trial_id + "' class='col-3'></div></div>" + 
+                        "<div class='row p-3 border-top mt-5' id='trial_details_container_" + trial_id + "'></div></div>";
+                    $("#canvas_container").append(canvas_html);                    
+                    build_graph(trial_id, trial_data);
+
+                    // now add teh checkbox to trial_selection for the trial overview
+                    let checkBoxHTML = '<div><input type="checkbox" data-trial=' + trial_id + ' class="form-check-inline" id="trial_checkbox_'+trial_id+'"><label for="trial_checkbox_'+trial_id+'">Trial '+(Number(trial_id)+1)+'</label></div>';
+                    $('#trial_selection').append(checkBoxHTML);
+                    $('#trial_checkbox_'+trial_id).change(function() {
+                        let trial_id = this.getAttribute('data-trial');
+                        if(this.checked) {
+                            trialOverviewChart.data.datasets.push({
+                                label: 'Trial '+(Number(trial_id)+1),
+                                data: dictToArray(run_metrics[trial_id],$("#trial_overview_yaxis").val()),
+                                id: trial_id
+                            });
+                            trialOverviewChart.update();
+                        } else {
+                            index = trialOverviewChart.data.datasets.findIndex(x => x.id == trial_id);
+                            trialOverviewChart.data.datasets.splice(index, 1);
+                            trialOverviewChart.update();
+                        }
+                    });
+                }
+            });
+        });
+        fetch("{% url 'api:autokeras:trial_details' run.id %}").then(function(response) {
+            response.json().then(function(data) {
+                // update the appropriate UI component
+                console.log(data);
+                // for every trial in data, append a div to trial_container_<trial_id> and fill in the values from data[trial_id]:
+                for (trial_id in data) {
+                    let trial_data = data[trial_id];
+                    let trial_html = "";
+                    for (hp in trial_data) {
+                        trial_html += "<div class='col-3'><span class='has-text-weight-bold'>" + hp + ":</span> " + trial_data[hp] + "</div>";
+                    }
+                    $("#trial_details_container_" + trial_id).append(trial_html);
+                }
+            });
+        });
+    });
+
+    function dictToArray(dict, key) {
+        let array = [];
+        for (let i in dict) {
+            array.push(dict[i][key]);
+        }
+        return array;
+    }
+
+    function trialOverviewX(event) {
+        let xaxis = $('#trial_overview_xaxis').val();
+        trialOverviewChart.data.labels = dictToArray(run_metrics[0], xaxis);
+        trialOverviewChart.update();
+    }
+
+    function trialOverviewY(event) {
+        let yaxis = $('#trial_overview_yaxis').val();
+        trialOverviewChart.data.datasets.forEach(function(dataset) {
+            dataset.data = dictToArray(run_metrics[dataset.id], yaxis);
+        });
+        trialOverviewChart.update();
+    }
+
+    function generateOption(value, text, parent) {
+        let optionY = document.createElement('option');
+        optionY.value = value;
+        optionY.text = text;
+        parent.append(optionY);
+    }
+    
+    function build_graph(trial_id, trial_data) {
+        $("#trial_details_container_"+trial_id).toggleClass("d-none");        
+
+        // first gety canvas element
+        let canvas = document.getElementById("canvas_trial_" + trial_id).getContext('2d');
+        var data = [];
+        var labels = [];
+
+        var dropdownX = document.createElement('select'); // Dropdown for X-axis
+        var dropdownY = document.createElement('select'); // Dropdown for Y-axis
+        var configButton = document.createElement('button'); // Button to configure the graph
+        var hideDetailsButton = document.createElement("button");
+
+        dropdownX.className='form-control mb-5';
+        dropdownY.className='form-control mb-3';
+        configButton.className='btn btn-primary my-2 col-8';
+        configButton.innerHTML = 'Set for all';
+        hideDetailsButton.className='btn btn-primary my-2 col-8';
+        hideDetailsButton.innerHTML = 'Show Details';
+        dropdownX.name = 'xaxis';
+        dropdownY.name = 'yaxis';
+
+        // get teh eopchs in there as well
+        let optionX = document.createElement('option');
+        optionX.value = 'epochs';
+        optionX.text = 'epochs';
+        dropdownX.appendChild(optionX);
+        
+        for (let key in trial_data[0]) {
+            if (trial_data[0].hasOwnProperty(key)) {
+                generateOption(key, key, dropdownX);
+                generateOption(key, key, dropdownY);
+            }
+        }
+        if(trial_data[0].hasOwnProperty('model_size')) {
+            $("#canvas_configure_"+trial_id).append('<span class="text-bold">Model size:</span> '+trial_data[0]['model_size'].toLocaleString()+'<br>');
+        }
+        $("#canvas_configure_"+trial_id).append('<label>X-Axis</label>');
+        $("#canvas_configure_"+trial_id).append(dropdownX);
+        $("#canvas_configure_"+trial_id).append('<label>Y-Axis</label>');
+        $("#canvas_configure_"+trial_id).append(dropdownY);
+        $("#canvas_configure_"+trial_id).append(configButton);
+        $("#canvas_configure_"+trial_id).append(hideDetailsButton);
+
+        let maxMetrics = getMaxValuesPerTrial(trial_data);
+        for (let metric in maxMetrics) {
+            if (maxMetrics.hasOwnProperty(metric)) {
+                $('#canvas_configure_'+trial_id).parent().parent().attr('data-max-'+metric, maxMetrics[metric]);
+            }
+        }
+
+        hideDetailsButton.addEventListener("click", function() {
+            $("#trial_details_container_"+trial_id).toggleClass("d-none");
+        });
+
+        configButton.addEventListener('click', function () {
+            var xaxis = document.getElementsByName('xaxis');
+            xaxis.forEach(element => {
+                element.value = dropdownX.value;
+                element.dispatchEvent(new Event('change'));
+            });
+            var yaxis = document.getElementsByName('yaxis');
+            yaxis.forEach(element => {
+                element.value = dropdownY.value;
+                element.dispatchEvent(new Event('change'));
+            });
+        });
+
+        dropdownX.addEventListener('change', function () {
+            labels=[];
+            if (dropdownX.value == 'epochs') {
+                for (let epoch in trial_data) {
+                    labels.push(epoch);
                 }
             } else {
-                metrics.set({{metric.trial_id}}, [{{metric.value}}]);
+                for (let epoch in trial_data) {
+                    labels.push(trial_data[epoch][dropdownX.value]);
+                }
             }
-        {% endfor %}
-    {% endfor %}
+            updateChart();
+        });
+
+        dropdownY.addEventListener('change', function () {
+            data =[];
+            for (let epoch in trial_data) {
+                data.push(trial_data[epoch][dropdownY.value]);
+            }
+            updateChart();
+        });
+
+        function updateChart() {
+            trialChart.data.labels = labels;
+            trialChart.data.datasets[0].data = data;
+            trialChart.update();
+            console.log('update');
+        }
+
+        for (let epoch in trial_data) {
+            data.push(trial_data[epoch][dropdownY.value]);
+            labels.push(epoch);
+        }
+
+        trialOverviewChart.data.labels = labels;
+
+        var trialChart = new Chart(canvas, {
+            type: 'line', // Choose the appropriate chart type
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: dropdownY.value,
+                    data: data,
+                }]
+            }
+        });
+    
+    }
+
+    function getMaxValuesPerTrial(trial_data) {
+        let maxValues = {};
+
+        for(const epoch in trial_data) {
+            for (let metric in trial_data[epoch]) {
+                if (trial_data[epoch].hasOwnProperty(metric)) {
+                    if (!maxValues[metric] || trial_data[epoch][metric] > maxValues[metric]) {
+                        maxValues[metric] = trial_data[epoch][metric];
+                    }
+                }
+            }
+        }
+        
+        return maxValues;
+    }
+
+    function sortDivsByMetric(parentDivId, metric, sortOrder) {
+    const parentDiv = document.getElementById(parentDivId);
+    const divs = Array.from(parentDiv.querySelectorAll('div.rounded-lg'));
+
+    divs.sort((a, b) => {
+        const aValue = parseFloat(a.dataset[`max${metric}`]);
+        const bValue = parseFloat(b.dataset[`max${metric}`]);
+        if (sortOrder === 'asc') {
+            return aValue - bValue;
+        } else {
+            return bValue - aValue;
+        }
+    });
+
+    divs.forEach(div => {
+        parentDiv.appendChild(div);
+    });
+}
+
+
+    function generateSortSelect(parentDivId, availableMetrics) {
+        const parentDiv = $('#sorting_container');
+
+        const select = document.createElement('select');
+        select.classList.add('form-control');
+        select.setAttribute('id', 'sortSelect');
+        select.addEventListener('change', function () {
+            const selectedOption = this.value;
+            const selectedMetric = selectedOption.split(':')[0];
+            const sortOrder = selectedOption.split(':')[1];
+            sortDivsByMetric(parentDivId, selectedMetric, sortOrder);
+        });
+
+        availableMetrics.forEach(metric => {
+            const metricCapitalized = metric.charAt(0).toUpperCase() + metric.slice(1);
+
+            generateOption(metricCapitalized + ':asc', metricCapitalized + ' (Ascending)', select);
+            generateOption(metricCapitalized + ':desc', metricCapitalized + ' (Descending)', select);
+        });
+
+        parentDiv.append('<label>Sort by</label>');
+        parentDiv.append(select);
+    }
+
 </script>
 {% endblock %}

@@ -23,6 +23,7 @@ def custom_on_epoch_end_decorator(original_on_epoch_end, run):
                     "current": epoch,
                     "run_id": run.id,
                     "metrics": metrics,
+                    "trial_id": logs["trial_id"],
                 },
             ],
         )

@@ -46,7 +46,6 @@ class AutoKerasCallback(tf.keras.callbacks.Callback):
                 "autokeras": True,
             },
         )
-        # now start energy measurement
 
         # resume the timer here
         self.timer.start()
@@ -54,9 +53,6 @@ class AutoKerasCallback(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=[], *args):
         # stop the timer here:
         epoch_time = self.timer.stop()
-
-        # stop energy measurement here and add it to the logs
-        # logs['energy_consumption'] = energy
 
         # so stop timesrs and then resume afterwards
         if "metrics" not in logs:
@@ -105,4 +101,14 @@ class AutoKerasCallback(tf.keras.callbacks.Callback):
         )
         metric.save()
         self.run.metrics.add(metric)
+        self.celery_task.update_state(
+            state="SUCCESS",
+            meta={
+                "current": 1,
+                "total": 1,
+                "run_id": self.run.id,
+                "metrics": metrics,
+                "autokeras": True,
+            },
+        )
         logger.info("Aurtokeras training ended ")

@@ -76,6 +76,26 @@ class AutoKerasModel(models.Model):
     layer_outputs: dict = {}
     inputs: dict = {}
     outputs: dict = {}
+    tuner_object = None
+
+    def build_tuner(self, run):
+        if not self.tuner_object:
+            self.tuner_object = get_class(
+                self.tuner.tuner_type.module_name, self.tuner.tuner_type.name
+            )
+            self.tuner_object.on_epoch_end = custom_on_epoch_end_decorator(
+                self.tuner_object.on_epoch_end, run
+            )
+            self.tuner_object.on_epoch_begin = custom_on_epoch_begin_decorator(
+                self.tuner_object.on_epoch_begin
+            )
+            self.tuner_object.on_trial_end = custom_on_trial_end_decorator(
+                self.tuner_object.on_trial_end
+            )
+            self.tuner_object.on_trial_begin = custom_on_trial_begin_decorator(
+                self.tuner_object.on_trial_begin
+            )
+
 
     def build_model(self, run: "AutoKerasRun"):
         # build the model here:
@@ -87,21 +107,7 @@ class AutoKerasModel(models.Model):
         # and ouputs is the other way around
         if not self.directory:
             self.directory = f"{self.project_name}_{self.id}"
-        custom_tuner = get_class(
-            self.tuner.tuner_type.module_name, self.tuner.tuner_type.name
-        )
-        custom_tuner.on_epoch_end = custom_on_epoch_end_decorator(
-            custom_tuner.on_epoch_end, run
-        )
-        custom_tuner.on_epoch_begin = custom_on_epoch_begin_decorator(
-            custom_tuner.on_epoch_begin
-        )
-        custom_tuner.on_trial_end = custom_on_trial_end_decorator(
-            custom_tuner.on_trial_end
-        )
-        custom_tuner.on_trial_begin = custom_on_trial_begin_decorator(
-            custom_tuner.on_trial_begin
-        )
+        self.build_tuner(run)
 
         self.auto_model = autokeras.AutoModel(
             inputs=self.inputs,
@@ -110,10 +116,34 @@ class AutoKerasModel(models.Model):
             max_trials=self.max_trials,
             project_name=self.project_name,
             directory="auto_model/" + self.directory,
-            tuner=custom_tuner,
+            tuner=self.tuner_object,
             metrics=self.get_metrics(),
             objective=keras_tuner.Objective(self.objective, direction="min"),
         )
+
+    def load_model(self, run: "AutoKerasRun"):
+        if len(self.inputs) == 0 or len(self.outputs) == 0:
+            for input_node in self.get_input_nodes():
+                self.layer_outputs[input_node] = self.inputs[input_node]
+                self.build_connected_layers(input_node)
+        if not self.directory:
+            self.directory = f"{self.project_name}_{self.id}"
+
+        self.build_tuner(run)
+
+        loaded_model = autokeras.AutoModel(
+            inputs=self.inputs,
+            outputs=self.outputs,
+            overwrite=False,
+            max_trials=self.max_trials,
+            project_name=self.project_name,
+            directory="auto_model/" + self.directory,
+            tuner=self.tuner_object,
+            metrics=self.get_metrics(),
+            objective=keras_tuner.Objective(self.objective, direction="min"),
+        )
+
+        return loaded_model
 
     def get_metrics(self):
         metrics = []
