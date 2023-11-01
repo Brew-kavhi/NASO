@@ -106,8 +106,8 @@ class AutoKerasModel(models.Model):
         # and ouputs is the other way around
         if len(self.directory) == 0 or not self.directory:
             self.directory = f"{self.project_name}_{self.id}"
+            self.save()
         self.build_tuner(run)
-        self.save()
 
         self.auto_model = autokeras.AutoModel(
             inputs=self.inputs,

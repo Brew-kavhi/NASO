@@ -308,7 +308,7 @@
     document.addEventListener("DOMContentLoaded", () => {
         let canvas = document.getElementById("canvas_trial_overview").getContext('2d');
         trialOverviewChart = new Chart(canvas, {
-            type: 'line', // Choose the appropriate chart type
+            type: 'line',
             data: {
                 labels: allEpochs,
                 datasets: []
@@ -324,7 +324,6 @@
 
         fetch("{% url 'api:autokeras:all_metrics' run.id %}").then(function(response) {
             response.json().then(function(data) {
-                // update the appropriate UI component
                 run_metrics = data;
 
                 let metrics = [];
@@ -418,14 +417,13 @@
     function build_graph(trial_id, trial_data) {
         $("#trial_details_container_"+trial_id).toggleClass("d-none");        
 
-        // first gety canvas element
         let canvas = document.getElementById("canvas_trial_" + trial_id).getContext('2d');
         var data = [];
         var labels = [];
 
-        var dropdownX = document.createElement('select'); // Dropdown for X-axis
-        var dropdownY = document.createElement('select'); // Dropdown for Y-axis
-        var configButton = document.createElement('button'); // Button to configure the graph
+        var dropdownX = document.createElement('select');
+        var dropdownY = document.createElement('select');
+        var configButton = document.createElement('button');
         var hideDetailsButton = document.createElement("button");
 
         dropdownX.className='form-control mb-5';
@@ -437,7 +435,6 @@
         dropdownX.name = 'xaxis';
         dropdownY.name = 'yaxis';
 
-        // get teh eopchs in there as well
         let optionX = document.createElement('option');
         optionX.value = 'epochs';
         optionX.text = 'epochs';
@@ -523,7 +520,7 @@
         }
 
         var trialChart = new Chart(canvas, {
-            type: 'line', // Choose the appropriate chart type
+            type: 'line',
             data: {
                 labels: labels,
                 datasets: [{

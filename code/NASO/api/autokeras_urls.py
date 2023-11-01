@@ -5,7 +5,7 @@ from .views import autokeras
 # autokeras api:
 urlpatterns = [
     path(
-        "autokeras/<int:pk>/metrics/<int:trial_id>/",
+        "autokeras/<int:pk>/metrics/<str:trial_id>/",
         autokeras.get_metrics,
         name="get_metrics",
     ),
