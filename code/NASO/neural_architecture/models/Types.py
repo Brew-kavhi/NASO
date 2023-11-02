@@ -86,7 +86,7 @@ class TypeInstance(models.Model):
                 type_name = getattr(
                     self, self._meta.get_field("node_type").attname, None
                 )
-            except:
+            except Exception:
                 type_name = "Unknown"
         return str(type_name) if type_name else ""
 

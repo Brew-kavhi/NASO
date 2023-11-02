@@ -54,15 +54,6 @@ class AutoKerasCallback(tf.keras.callbacks.Callback):
         # stop the timer here:
         epoch_time = self.timer.stop()
 
-        # so stop timesrs and then resume afterwards
-        if "metrics" not in logs:
-            logs["metrics"] = 0
-        for metric_name in self.run.model.metric_weights:
-            if metric_name in logs:
-                logs["metrics"] += (
-                    logs[metric_name] * self.run.model.metric_weights[metric_name]
-                )
-
         logs["execution_time"] = epoch_time
         logs["total_time"] = self.timer.get_total_time()
 
@@ -111,4 +102,4 @@ class AutoKerasCallback(tf.keras.callbacks.Callback):
                 "autokeras": True,
             },
         )
-        logger.info("Aurtokeras training ended ")
+        logger.info("Autokeras training ended ")

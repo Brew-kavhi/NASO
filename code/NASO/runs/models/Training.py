@@ -304,9 +304,6 @@ class TrainingMetric(models.Model):
                 raise ValidationError(
                     "TrainingMetrics.metrics.metrics should a dictionary of metricsname and value"
                 )
-            for key in item["metrics"]:
-                if math.isnan(item["metrics"][key]):
-                    item["metrics"][key] = None
 
     def save(self, *args, **kwargs):
         self.validate_json_data()

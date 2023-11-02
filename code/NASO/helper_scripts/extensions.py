@@ -1,20 +1,23 @@
-# Define a decorator function that wraps the on_epoch_end method
-import math
-
 from runs.models.Training import TrainingMetric
 
 
 def custom_on_epoch_end_decorator(original_on_epoch_end, run):
-    def on_epoch_end(self, trial, model, epoch, logs=None):
+    def on_epoch_end(self, trial, model, epoch, logs={}):
         if "model_size" not in logs:
             logs["model_size"] = model.count_params()
-        if "trial_id" not in logs:
-            logs["trial_id"] = trial.trial_id
+
+        if "metrics" not in logs:
+            logs["metrics"] = 0
+        for metric_name in run.model.metric_weights:
+            if metric_name in logs:
+                logs["metrics"] += (logs[metric_name]) * (
+                    run.model.metric_weights[metric_name]
+                )
 
         metrics = {}
         for key in logs:
-            if not math.isnan(logs[key]):
-                metrics[key] = logs[key]
+            metrics[key] = logs[key]
+        metrics["trial_id"] = trial.trial_id
 
         metric = TrainingMetric(
             epoch=epoch,
@@ -23,7 +26,7 @@ def custom_on_epoch_end_decorator(original_on_epoch_end, run):
                     "current": epoch,
                     "run_id": run.id,
                     "metrics": metrics,
-                    "trial_id": logs["trial_id"],
+                    "trial_id": trial.trial_id,
                 },
             ],
         )
