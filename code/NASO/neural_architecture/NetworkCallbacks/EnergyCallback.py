@@ -12,6 +12,7 @@ class EnergyCallback(tf.keras.callbacks.Callback):
     def __init__(self, run: AutoKerasRun, *args, **kwargs):
         super().__init__()
         self.run = run
+        self.trial_measurements = []
 
     def get_power_usage(self, gpu_index):
         result = subprocess.run(
@@ -28,17 +29,14 @@ class EnergyCallback(tf.keras.callbacks.Callback):
         power_usage = float(result.stdout.strip())  # Power usage in watts
         return power_usage
 
-    def get_total_time(self):
-        return round(self.timer.get_total_time(), 2)
-
     def on_epoch_begin(self, epoch, logs=[], *args):
         self.measurements = []
         measurement = self.get_power_usage(0)
         self.measurements.append(measurement)
 
     def on_epoch_end(self, epoch, logs=[], *args):
-        meausrement = self.get_power_usage(0)
-        self.measurements.append(meausrement)
+        measurement = self.get_power_usage(0)
+        self.measurements.append(measurement)
 
         # calculate average power usage:
         average_power_usage = sum(self.measurements) / len(self.measurements)

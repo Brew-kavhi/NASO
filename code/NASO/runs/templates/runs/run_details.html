@@ -325,33 +325,28 @@
         fetch("{% url 'api:autokeras:all_metrics' run.id %}").then(function(response) {
             response.json().then(function(data) {
                 run_metrics = data;
-
-                let metrics = [];
-                for(metric in run_metrics[0][0]) {
-                    metrics.push(metric);
-                    generateOption(metric, metric, $('#trial_overview_xaxis'));
-                    generateOption(metric, metric, $('#trial_overview_yaxis'));
-                }
-                generateSortSelect('canvas_container', metrics);
-
+                let firstTrialID = undefined;
 
                 for (trial_id in run_metrics) {
+                    if (!firstTrialID) {
+                        firstTrialID = trial_id;
+                    }
                     let trial_data = run_metrics[trial_id];
                     let canvas_html = "<div class='has-background-white-bis my-5 p-3 rounded-lg'><h6 class='text-center mt-5'>Trial " + 
-                        (Number(trial_id)+1) + "</h6><div class='d-flex'><div class='col-9'><canvas class='h-100 w-100' id='canvas_trial_" + 
+                        (trial_id) + "</h6><div class='d-flex'><div class='col-9'><canvas class='h-100 w-100' id='canvas_trial_" + 
                         trial_id + "'></canvas></div><div id='canvas_configure_" + trial_id + "' class='col-3'></div></div>" + 
                         "<div class='row p-3 border-top mt-5' id='trial_details_container_" + trial_id + "'></div></div>";
                     $("#canvas_container").append(canvas_html);                    
                     build_graph(trial_id, trial_data);
 
                     // now add teh checkbox to trial_selection for the trial overview
-                    let checkBoxHTML = '<div><input type="checkbox" data-trial=' + trial_id + ' class="form-check-inline" id="trial_checkbox_'+trial_id+'"><label for="trial_checkbox_'+trial_id+'">Trial '+(Number(trial_id)+1)+'</label></div>';
+                    let checkBoxHTML = '<div><input type="checkbox" data-trial=' + trial_id + ' class="form-check-inline" id="trial_checkbox_'+trial_id+'"><label for="trial_checkbox_'+trial_id+'">Trial '+(trial_id)+'</label></div>';
                     $('#trial_selection').append(checkBoxHTML);
                     $('#trial_checkbox_'+trial_id).change(function() {
                         let trial_id = this.getAttribute('data-trial');
                         if(this.checked) {
                             trialOverviewChart.data.datasets.push({
-                                label: 'Trial '+(Number(trial_id)+1),
+                                label: 'Trial '+(trial_id),
                                 data: dictToArray(run_metrics[trial_id],$("#trial_overview_yaxis").val()),
                                 id: trial_id
                             });
@@ -362,7 +357,15 @@
                             trialOverviewChart.update();
                         }
                     });
+                    
                 }
+                let metrics = [];
+                for(metric in run_metrics[firstTrialID][0]) {
+                    metrics.push(metric);
+                    generateOption(metric, metric, $('#trial_overview_xaxis'));
+                    generateOption(metric, metric, $('#trial_overview_yaxis'));
+                }
+                generateSortSelect('canvas_container', metrics);
             });
         });
         fetch("{% url 'api:autokeras:trial_details' run.id %}").then(function(response) {
