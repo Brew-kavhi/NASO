@@ -5,12 +5,15 @@ from .views import autokeras
 # autokeras api:
 urlpatterns = [
     path(
-        "autokeras/<int:pk>/metrics/<str:trial_id>/",
+        "<int:pk>/metrics/<str:trial_id>/",
         autokeras.get_metrics,
         name="get_metrics",
     ),
-    path("autokeras/<int:pk>/metrics/", autokeras.get_all_metrics, name="all_metrics"),
     path(
-        "autokeras/<int:pk>/trials/", autokeras.get_trial_details, name="trial_details"
+        "<int:pk>/metrics/<str:trial_id>/download",
+        autokeras.download_metrics,
+        name="download_metrics",
     ),
+    path("<int:pk>/metrics/", autokeras.get_all_metrics, name="all_metrics"),
+    path("<int:pk>/trials/", autokeras.get_trial_details, name="trial_details"),
 ]

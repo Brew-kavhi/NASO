@@ -1,4 +1,6 @@
-from django.http import JsonResponse
+import csv
+
+from django.http import HttpResponse, JsonResponse
 from keras_tuner.engine.trial import TrialStatus
 
 from neural_architecture.models.AutoKeras import AutoKerasRun
@@ -13,14 +15,36 @@ def get_metrics(request, pk, trial_id):
     for metric in metrics:
         epoch = metric.epoch
         for measure in metric.metrics:
-            if trial_id == measure.trial_id:
+            if "trial_id" in measure and trial_id == measure["trial_id"]:
                 # add it to the array
                 if epoch in epochal_metrics:
-                    epochal_metrics[epoch].append(measure)
+                    epochal_metrics[epoch] = measure["metrics"]
                 else:
-                    epochal_metrics[epoch] = measure
+                    epochal_metrics[epoch] = measure["metrics"]
 
-            return epochal_metrics
+    return epochal_metrics
+
+
+def download_metrics(request, pk, trial_id):
+    json_data = get_metrics(request, pk, trial_id)
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="data_' + trial_id + '.csv"'
+
+    # Convert JSON to CSV
+    writer = csv.writer(response)
+    rows = []
+    header = ["epochs"]
+    for key, value in json_data.items():
+        data = [key]
+        for metric in value:
+            data.append(value[metric])
+            if metric not in header:
+                header.append(metric)
+        rows.append(data)
+    writer.writerow(header)
+    writer.writerows(rows)
+
+    return response
 
 
 def get_all_metrics(request, pk):
@@ -36,9 +60,7 @@ def get_all_metrics(request, pk):
                 if measure["trial_id"] in trial_metrics:
                     # add it to the array
                     if epoch in trial_metrics[measure["trial_id"]]:
-                        trial_metrics[measure["trial_id"]][epoch].append(
-                            measure["metrics"]
-                        )
+                        trial_metrics[measure["trial_id"]][epoch] = measure["metrics"]
                     else:
                         trial_metrics[measure["trial_id"]][epoch] = measure["metrics"]
                 else:
