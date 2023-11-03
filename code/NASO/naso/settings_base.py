@@ -68,7 +68,10 @@ INSTALLED_APPS = [
     "crispy_forms",
     "crispy_bootstrap5",
     "django_celery_results",
+    'flake8'
 ]
+
+TEST_RUNNER = 'flake8.main.Flake8TestRunner'
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
