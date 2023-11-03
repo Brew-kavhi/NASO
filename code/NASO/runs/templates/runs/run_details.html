@@ -246,7 +246,7 @@
         </div>
     </div>
     <div class="accordion" id="trial_overview">
-        <div class="card">
+        <div class="card" style="overflow:visible">
             <div data-toggle="collapse" data-target="#collapse_trials" class="card-header d-flex justify-content-between is-align-items-center" id="heading_trials">
                 <h5 class="my-2">
                     Trial overview
@@ -257,7 +257,7 @@
             <div id="collapse_trials" class="collapse" aria-labelledby="heading_trials" data-parent="#trial_overview">
                 <div class="card-body d-flex">
                     <div class="col-9" id='trial_overview_container'>
-                        <canvas class='h-100 w-100' id='canvas_trial_overview'></canvas>
+                        <canvas class='h-100 w-100' id='canvas_trial_overview' width="400" height="400"></canvas>
                     </div>
                     <div class="col-3">
                         <div class="axis-selection">
@@ -314,9 +314,37 @@
                 datasets: []
             },
             options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: {
+                            display: true,
+                            text: 'Epochs' // Set the dynamic X-axis title
+                        }
+                    },
+                    y: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Loss' // Set the dynamic Y-axis title
+                        }
+                    }
+                },
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
                 plugins: {
                     colors: {
                         forceOverride: true
+                    },
+                    tooltip: {
+                        enabled: false,
+                        position: 'nearest',
+                        external: externalTooltipHandler
                     }
                 }
             }
@@ -334,7 +362,7 @@
                     let trial_data = run_metrics[trial_id];
                     let canvas_html = "<div class='has-background-white-bis my-5 p-3 rounded-lg'><h6 class='text-center mt-5'>Trial " + 
                         (trial_id) + "</h6><div class='d-flex'><div class='col-9'><canvas class='h-100 w-100' id='canvas_trial_" + 
-                        trial_id + "'></canvas></div><div id='canvas_configure_" + trial_id + "' class='col-3'></div></div>" + 
+                        trial_id + "' width='400' height='400'></canvas></div><div id='canvas_configure_" + trial_id + "' class='col-3'></div></div>" + 
                         "<div class='row p-3 border-top mt-5' id='trial_details_container_" + trial_id + "'></div></div>";
                     $("#canvas_container").append(canvas_html);                    
                     build_graph(trial_id, trial_data);
@@ -347,7 +375,7 @@
                         if(this.checked) {
                             trialOverviewChart.data.datasets.push({
                                 label: 'Trial '+(trial_id),
-                                data: dictToArray(run_metrics[trial_id],$("#trial_overview_yaxis").val()),
+                                data: dictToArray(run_metrics[trial_id],$("#trial_overview_yaxis").val(), $('#trial_overview_xaxis').val()),
                                 id: trial_id
                             });
                             trialOverviewChart.update();
@@ -366,8 +394,14 @@
                     generateOption(metric, metric, $('#trial_overview_yaxis'));
                 }
                 generateSortSelect('canvas_container', metrics);
+
+                fetchTrialDetails();
             });
         });
+        
+    });
+
+    function fetchTrialDetails() {
         fetch("{% url 'api:autokeras:trial_details' run.id %}").then(function(response) {
             response.json().then(function(data) {
                 // for every trial in data, append a div to trial_container_<trial_id> and fill in the values from data[trial_id]:
@@ -381,32 +415,147 @@
                 }
             });
         });
-    });
+    }
 
-    function dictToArray(dict, key) {
+    function dictToArray(dict, key, xAxisMetric='epochs') {
         let array = [];
         for (let i in dict) {
-            array.push(dict[i][key]);
+            var label = '';
+            if (xAxisMetric == 'epochs') {
+                label = i.toString();
+            } else {
+                label = dict[i][xAxisMetric].toString();
+            }
+            array.push({y:dict[i][key], x: label});
         }
         return array;
     }
 
+    const getOrCreateTooltip = (chart) => {
+        let tooltipEl = chart.canvas.parentNode.querySelector('div');
+
+        if (!tooltipEl) {
+            tooltipEl = document.createElement('div');
+            tooltipEl.style.background = 'rgba(0, 0, 0, 0.7)';
+            tooltipEl.style.borderRadius = '3px';
+            tooltipEl.style.color = 'white';
+            tooltipEl.style.opacity = 1;
+            tooltipEl.style.pointerEvents = 'none';
+            tooltipEl.style.position = 'absolute';
+            tooltipEl.style.transform = 'translate(-50%, 0)';
+            tooltipEl.style.width = 'max-content';
+            tooltipEl.style.zIndex = 9999;
+            const table = document.createElement('table');
+            table.style.margin = '0px';
+
+            tooltipEl.appendChild(table);
+            chart.canvas.parentNode.appendChild(tooltipEl);
+        }
+
+        return tooltipEl;
+    };
+
+    const externalTooltipHandler = (context) => {
+        // Tooltip Element
+        const {chart, tooltip} = context;
+        const tooltipEl = getOrCreateTooltip(chart);
+
+        // Hide if no tooltip
+        if (tooltip.opacity === 0) {
+            tooltipEl.style.opacity = 0;
+            return;
+        }
+
+        let dataIndex = tooltip.dataPoints[0].dataIndex;
+        
+        // Set Text
+        if (tooltip.body) {
+            const titleLines = tooltip.title || [];
+            const bodyLines = tooltip.body.map(b => b.lines);
+
+            const tableHead = document.createElement('thead');
+
+            titleLines.forEach(title => {
+                const tr = document.createElement('tr');
+                tr.style.borderWidth = 0;
+
+                const th = document.createElement('th');
+                th.style.borderWidth = 0;
+                th.style.color = 'white';
+                const text = document.createTextNode($('#trial_overview_xaxis').val() + " " + title);
+
+                th.appendChild(text);
+                tr.appendChild(th);
+                tableHead.appendChild(tr);
+            });
+
+            const tableBody = document.createElement('tbody');
+            bodyLines.forEach((body, i) => {
+                let metrics = run_metrics[tooltip.dataPoints[i].dataset.id][dataIndex];
+                const colors = tooltip.labelColors[i];
+                const span = document.createElement('span');
+                span.style.background = colors.backgroundColor;
+                span.style.borderColor = colors.borderColor;
+                span.style.borderWidth = '2px';
+                span.style.height = '10px';
+                span.style.width = '10px';
+                span.style.display = 'inline-block';
+
+                const tr = document.createElement('tr');
+                tr.style.backgroundColor = 'inherit';
+                tr.style.borderWidth = 0;
+
+                const td = document.createElement('td');
+                td.style.borderWidth = 0;
+
+                let bodyText = body + ', Modelsize: ' + metrics['model_size'].toLocaleString()
+                if ('trial_energy_consumption' in metrics) {
+                    bodyText += ', Energy: ' + metrics['trial_energy_consumption'].toLocaleString() + ' W';
+                }
+                const text = document.createTextNode(bodyText);
+
+                td.appendChild(span);
+                td.appendChild(text);
+                tr.appendChild(td);
+                tableBody.appendChild(tr);
+            });
+
+            const tableRoot = tooltipEl.querySelector('table');
+
+            // Remove old children
+            while (tableRoot.firstChild) {
+                tableRoot.firstChild.remove();
+            }
+
+            // Add new children
+            tableRoot.appendChild(tableHead);
+            tableRoot.appendChild(tableBody);
+        }
+
+        const {offsetLeft: positionX, offsetTop: positionY} = chart.canvas;
+
+        // Display, position, and set styles for font
+        tooltipEl.style.opacity = 1;
+        tooltipEl.style.left = positionX + tooltip.caretX + 'px';
+        tooltipEl.style.top = positionY + tooltip.caretY + 'px';
+    };
+
     function trialOverviewX(event) {
         let xaxis = $('#trial_overview_xaxis').val();
-        if (xaxis == 'epochs') {
-            trialOverviewChart.data.labels = allEpochs;
-            trialOverviewChart.update();
-        } else {
-            trialOverviewChart.data.labels = dictToArray(run_metrics[0], xaxis);
-            trialOverviewChart.update();
-        }
+        let yaxis = $('#trial_overview_yaxis').val();
+        trialOverviewChart.data.datasets.forEach(function(dataset) {
+            dataset.data = dictToArray(run_metrics[dataset.id], yaxis, xaxis);
+        });
+        trialOverviewChart.options.scales.x.title.text = xaxis;
+        trialOverviewChart.update();
     }
 
     function trialOverviewY(event) {
         let yaxis = $('#trial_overview_yaxis').val();
         trialOverviewChart.data.datasets.forEach(function(dataset) {
-            dataset.data = dictToArray(run_metrics[dataset.id], yaxis);
+            dataset.data = dictToArray(run_metrics[dataset.id], yaxis, $('#trial_overview_xaxis').val());
         });
+        trialOverviewChart.options.scales.y.title.text = yaxis;
         trialOverviewChart.update();
     }
 
@@ -507,8 +656,8 @@
         });
 
         function updateChart() {
-            trialChart.data.labels = labels;
-            trialChart.data.datasets[0].data = data;
+            trialChart.data.labels = [];
+            trialChart.data.datasets[0].data = dictToArray(trial_data, dropdownY.value, dropdownX.value);
             trialChart.update();
             console.log('update');
         }
@@ -530,7 +679,21 @@
                 datasets: [{
                     label: dropdownY.value,
                     data: data,
+                    id: trial_id,
                 }]
+            },
+            options: {
+                scales: {
+                    x: {
+                        type:'linear'
+                    }
+                },
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
             }
         });
     
@@ -553,23 +716,23 @@
     }
 
     function sortDivsByMetric(parentDivId, metric, sortOrder) {
-    const parentDiv = document.getElementById(parentDivId);
-    const divs = Array.from(parentDiv.querySelectorAll('div.rounded-lg'));
+        const parentDiv = document.getElementById(parentDivId);
+        const divs = Array.from(parentDiv.querySelectorAll('div.rounded-lg'));
 
-    divs.sort((a, b) => {
-        const aValue = parseFloat(a.dataset[`max${metric}`]);
-        const bValue = parseFloat(b.dataset[`max${metric}`]);
-        if (sortOrder === 'asc') {
-            return aValue - bValue;
-        } else {
-            return bValue - aValue;
-        }
-    });
+        divs.sort((a, b) => {
+            const aValue = parseFloat(a.dataset[`max${metric}`]);
+            const bValue = parseFloat(b.dataset[`max${metric}`]);
+            if (sortOrder === 'asc') {
+                return aValue - bValue;
+            } else {
+                return bValue - aValue;
+            }
+        });
 
-    divs.forEach(div => {
-        parentDiv.appendChild(div);
-    });
-}
+        divs.forEach(div => {
+            parentDiv.appendChild(div);
+        });
+    }
 
 
     function generateSortSelect(parentDivId, availableMetrics) {
