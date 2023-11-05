@@ -3,12 +3,15 @@ import inspect
 
 from django.core.management.base import BaseCommand
 
-from neural_architecture.models.AutoKeras import (AutoKerasNodeType,
-                                                  AutoKerasTunerType)
+from neural_architecture.models.AutoKeras import AutoKerasNodeType, AutoKerasTunerType
 from neural_architecture.models.Dataset import DatasetLoader
-from neural_architecture.models.Types import (CallbackType, LossType,
-                                              MetricType, NetworkLayerType,
-                                              OptimizerType)
+from neural_architecture.models.Types import (
+    CallbackType,
+    LossType,
+    MetricType,
+    NetworkLayerType,
+    OptimizerType,
+)
 
 
 class Command(BaseCommand):
@@ -38,17 +41,19 @@ class Command(BaseCommand):
                         )
                     else:
                         arguments.append(
-                            {"name": param_name, "default": "", "type": "unknown"}
+                            {"name": param_name, "default": "", "dtype": "unknown"}
                         )
             try:
-                _, _ = OptimizerType.objects.get_or_create(
+                optimizer, _ = OptimizerType.objects.get_or_create(
                     module_name="tensorflow.keras.optimizers",
                     name=class_name,
                     keras_native_optimizer=True,
-                    required_arguments=arguments,
                 )
+
+                optimizer.required_arguments = arguments
+                optimizer.save()
             except Exception as e:
-                print(f"Class: {class_name} has error {e}")
+                print(f"Optimizer Class: {class_name} has error {e}")
 
         # now the losses:
         losses_module = importlib.import_module("tensorflow.keras.losses")
@@ -69,15 +74,16 @@ class Command(BaseCommand):
                         )
                     else:
                         arguments.append(
-                            {"name": param_name, "default": "", "type": "unknown"}
+                            {"name": param_name, "default": "", "dtype": "unknown"}
                         )
             try:
-                _, _ = LossType.objects.get_or_create(
+                loss, _ = LossType.objects.get_or_create(
                     module_name="tensorflow.keras.losses",
                     name=class_name,
                     keras_native_loss=True,
-                    required_arguments=arguments,
                 )
+                loss.required_arguments = arguments
+                loss.save()
             except Exception as e:
                 print(f"Class: {class_name} has error {e}")
 
@@ -99,15 +105,16 @@ class Command(BaseCommand):
                         )
                     else:
                         arguments.append(
-                            {"name": param_name, "default": "", "type": "unknown"}
+                            {"name": param_name, "default": "", "dtype": "unknown"}
                         )
             try:
-                _, _ = MetricType.objects.get_or_create(
+                metric, _ = MetricType.objects.get_or_create(
                     module_name="tensorflow.keras.metrics",
                     name=class_name,
                     keras_native_metric=True,
-                    required_arguments=arguments,
                 )
+                metric.required_arguments = arguments
+                metric.save()
             except Exception as e:
                 print(f"Class: {class_name} has error {e}")
 
@@ -131,15 +138,16 @@ class Command(BaseCommand):
                         )
                     else:
                         arguments.append(
-                            {"name": param_name, "default": "", "type": "unknown"}
+                            {"name": param_name, "default": "", "dtype": "unknown"}
                         )
             try:
-                _, _ = NetworkLayerType.objects.get_or_create(
+                layer, _ = NetworkLayerType.objects.get_or_create(
                     module_name="tensorflow.keras.layers",
                     name=class_name,
                     keras_native_layer=True,
-                    required_arguments=arguments,
                 )
+                layer.required_arguments = arguments
+                layer.save()
             except Exception as e:
                 self.stdout.write(
                     self.style.ERROR(f"Class {class_name} has errors: {e}")
@@ -164,15 +172,16 @@ class Command(BaseCommand):
                         )
                     else:
                         arguments.append(
-                            {"name": param_name, "default": "", "type": "unknown"}
+                            {"name": param_name, "default": "", "dtype": "unknown"}
                         )
             try:
-                _, _ = CallbackType.objects.get_or_create(
+                callback, _ = CallbackType.objects.get_or_create(
                     module_name="tensorflow.keras.callbacks",
                     name=class_name,
                     keras_native_callback=True,
-                    required_arguments=arguments,
                 )
+                callback.required_arguments = arguments
+                callback.save()
             except Exception as e:
                 self.stdout.write(
                     self.style.ERROR(f"Class {class_name} has errors: {e}")
@@ -208,16 +217,17 @@ class Command(BaseCommand):
                                 {
                                     "name": param_name,
                                     "default": "",
-                                    "type": "unknown",
+                                    "dtype": "unknown",
                                 }
                             )
                 try:
-                    _, _ = AutoKerasNodeType.objects.get_or_create(
+                    autokeras_node, _ = AutoKerasNodeType.objects.get_or_create(
                         module_name="autokeras." + module,
                         name=class_name,
                         autokeras_type=module,
-                        required_arguments=arguments,
                     )
+                    autokeras_node.required_arguments = arguments
+                    autokeras_node.save()
                 except Exception as e:
                     self.stdout.write(
                         self.style.ERROR(
@@ -227,7 +237,7 @@ class Command(BaseCommand):
 
         tuners_module = importlib.import_module("autokeras.tuners")  # blocks
         tuners = inspect.getmembers(tuners_module, inspect.isclass)
-
+        self.stdout.write(self.style.SUCCESS(f"Importing Autokeras tuners"))
         for class_name, class_obj in tuners:
             constructor = inspect.signature(class_obj.__init__)
             arguments = []
@@ -243,19 +253,20 @@ class Command(BaseCommand):
                         )
                     else:
                         arguments.append(
-                            {"name": param_name, "default": "", "type": "unknown"}
+                            {"name": param_name, "default": "", "dtype": "unknown"}
                         )
             try:
-                _, _ = AutoKerasTunerType.objects.get_or_create(
+                tuner, _ = AutoKerasTunerType.objects.get_or_create(
                     module_name="autokeras.tuners",
                     name=class_name,
-                    native_tuner=True,
-                    required_arguments=arguments,
+                    native_tuner=False,
                 )
+                tuner.required_arguments = arguments
+                tuner.save()
             except Exception as e:
                 self.stdout.write(
                     self.style.ERROR(
-                        f"Class {class_name} from {'autokeras.' + module} has errors: {e}"
+                        f"Class {class_name} from {'autokeras.tuners.' + class_name} has errors: {e}"
                     )
                 )
 

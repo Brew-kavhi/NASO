@@ -3,14 +3,19 @@ from crispy_forms.layout import HTML, Column, Field, Layout, Row, Submit
 from django import forms
 from django.urls import reverse_lazy
 
-from neural_architecture.models.AutoKeras import (AutoKerasNodeType,
-                                                  AutoKerasTunerType)
+from neural_architecture.models.AutoKeras import AutoKerasNodeType, AutoKerasTunerType
 from neural_architecture.models.Dataset import DatasetLoader
-from neural_architecture.models.Templates import (AutoKerasNetworkTemplate,
-                                                  KerasNetworkTemplate)
-from neural_architecture.models.Types import (CallbackType, LossType,
-                                              MetricType, NetworkLayerType,
-                                              OptimizerType)
+from neural_architecture.models.Templates import (
+    AutoKerasNetworkTemplate,
+    KerasNetworkTemplate,
+)
+from neural_architecture.models.Types import (
+    CallbackType,
+    LossType,
+    MetricType,
+    NetworkLayerType,
+    OptimizerType,
+)
 
 
 class NewRunForm(forms.Form):
@@ -71,13 +76,13 @@ class NewRunForm(forms.Form):
         required=False, initial=False, label="Use multiprocessing"
     )
 
-    dataset_loaders = forms.ModelMultipleChoiceField(
+    dataset_loaders = forms.ModelChoiceField(
         label="Dataset Loaders",
         queryset=DatasetLoader.objects.all(),
-        required=False,
+        widget=forms.Select(attrs={"class": "select2 w-100"}),
     )
 
-    dataset = forms.ChoiceField(choices=(), required=False)
+    dataset = forms.CharField(label="Dataset", required=False)
     dataset_is_supervised = forms.BooleanField(initial=True, required=False)
 
     extra_context = {}
@@ -144,8 +149,7 @@ class NewRunForm(forms.Form):
             ),
             HTML(
                 """<br>
-            <div class='d-flex mb-5' id='networkgraph'>
-            
+            <div class='d-flex mb-5' id='networkgraph'>            
                 <div id="graph-container" style="height:30em; border-radius: 10px" class='bg-white mr-3 col-lg-8'>
                 <h2 id='graph_header' class='m-2' >Graph</h2>
                 </div>
@@ -445,8 +449,7 @@ class NewAutoKerasRunForm(forms.Form):
                 """<div id='metric_weights_arguments' class='card rounded-3 d-none'></div>
                 <br>
             <div class='d-flex mb-5' id='networkgraph'>
-            
-                <div id="graph-container" style="height:30em; border-radius: 10px" class='bg-white mr-3 col-lg-8'>
+            <div id="graph-container" style="height:30em; border-radius: 10px" class='bg-white mr-3 col-lg-8'>
                 <h2 id='autokeras-graph_header' class='m-2' >Graph</h2>
                 </div>
                 <div id="form-container" class='col-lg-4'>

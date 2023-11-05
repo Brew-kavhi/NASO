@@ -8,9 +8,13 @@ from helper_scripts.importing import get_callback, get_object
 from naso.settings_base import APP_VERSION
 from neural_architecture.models.Architecture import NetworkConfiguration
 from neural_architecture.models.Dataset import Dataset
-from neural_architecture.models.Types import (CallbackType, LossType,
-                                              MetricType, OptimizerType,
-                                              TypeInstance)
+from neural_architecture.models.Types import (
+    CallbackType,
+    LossType,
+    MetricType,
+    OptimizerType,
+    TypeInstance,
+)
 from neural_architecture.validators import validate_dtype
 
 
@@ -62,6 +66,7 @@ class NetworkHyperparameters(models.Model):
                 self.optimizer.instance_type.module_name,
                 self.optimizer.instance_type.name,
                 self.optimizer.additional_arguments,
+                self.optimizer.instance_type.required_arguments,
             )
 
         model_metrics = ["accuracy"]
@@ -73,9 +78,9 @@ class NetworkHyperparameters(models.Model):
                         metric.instance_type.module_name,
                         metric.instance_type.name,
                         metric.additional_arguments,
+                        metric.instance_type.required_arguments,
                     )
                 )
-        model_metrics = ["accuracy"]
 
         model_loss = "sparse_categorical_crossentropy"
         if self.loss:
@@ -83,6 +88,7 @@ class NetworkHyperparameters(models.Model):
                 self.loss.instance_type.module_name,
                 self.loss.instance_type.name,
                 self.loss.additional_arguments,
+                self.loss.instance_type.required_arguments,
             )
 
         return {
@@ -213,7 +219,7 @@ class Run(models.Model):
 
     naso_app_version = models.CharField(max_length=10, default=APP_VERSION)
 
-    git_hash = models.CharField(max_length=40, blank=True, null=True)
+    git_hash = models.CharField(max_length=40, blank=True)
 
     dataset = models.ForeignKey(
         Dataset, on_delete=models.deletion.SET_NULL, null=True, blank=True
@@ -260,6 +266,9 @@ class NetworkTraining(Run):
         "TrainingMetric", on_delete=models.deletion.CASCADE, null=True
     )
 
+    def __str__(self):
+        return self.network_config.name
+
 
 class TrainingMetric(models.Model):
     """
@@ -304,6 +313,11 @@ class TrainingMetric(models.Model):
                 raise ValidationError(
                     "TrainingMetrics.metrics.metrics should a dictionary of metricsname and value"
                 )
+            for metric in item["metrics"]:
+                if isinstance(item["metrics"][metric], float) and math.isnan(
+                    item["metrics"][metric]
+                ):
+                    item["metrics"][metric] = None
 
     def save(self, *args, **kwargs):
         self.validate_json_data()

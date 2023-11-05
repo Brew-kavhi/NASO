@@ -42,7 +42,7 @@ def get_callback(callback_definition):
 def get_arguments_as_dict(additional_arguments, required_arguments):
     arguments = {}
     for argument in additional_arguments:
-        if not argument["value"] == "undefined":
+        if argument["value"] != "undefined":
             # check for dtype:
             arguments[argument["name"]] = argument["value"]
             for required_arg in required_arguments:
@@ -57,6 +57,25 @@ def get_arguments_as_dict(additional_arguments, required_arguments):
                             logger.error(
                                 f"Fehler: Parameter {argument['name']} muss als Zahl gegeben sein: {e}"
                             )
+                    elif required_arg["dtype"] == "float":
+                        try:
+                            arguments[argument["name"]] = float(argument["value"])
+                        except Exception as e:
+                            logger.error(
+                                f"Fehler: Parameter {argument['name']} muss als Kommazahl gegeben sein: {e}"
+                            )
+                    elif required_arg["dtype"] == "bool":
+                        if argument["value"] == "true":
+                            argument["value"] = True
+                        elif argument["value"] == "false":
+                            argument["value"] = False
+                        else:
+                            try:
+                                arguments[argument["name"]] = bool(argument["value"])
+                            except Exception as e:
+                                logger.error(
+                                    f"Fehler: Parameter {argument['name']} muss als Boolean gegeben sein: {e}"
+                                )
                     continue
 
     return arguments

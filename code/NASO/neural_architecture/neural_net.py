@@ -3,10 +3,12 @@ from loguru import logger
 
 from celery import shared_task
 from neural_architecture.models.Architecture import NetworkConfiguration
-from neural_architecture.NetworkCallbacks.CeleryUpdateCallback import \
-    CeleryUpdateCallback
-from neural_architecture.NetworkCallbacks.EvaluationBaseCallback import \
-    EvaluationBaseCallback
+from neural_architecture.NetworkCallbacks.CeleryUpdateCallback import (
+    CeleryUpdateCallback,
+)
+from neural_architecture.NetworkCallbacks.EvaluationBaseCallback import (
+    EvaluationBaseCallback,
+)
 from runs.models.Training import NetworkTraining, TrainingMetric
 
 logger.add("net.log", backtrace=True, diagnose=True)
@@ -118,9 +120,8 @@ class NeuralNetwork:
         eval_metric = TrainingMetric(
             neural_network=self.training_config,
             epoch=self.training_config.fit_parameters.epochs + 1,
+            metrics=[{"metrics": metrics, "time": time}],
         )
-        print(metrics)
-        eval_metric.metrics = [{"metrics": metrics, "time": time}]
         eval_metric.save()
         self.training_config.final_metrics = eval_metric
         self.training_config.save()

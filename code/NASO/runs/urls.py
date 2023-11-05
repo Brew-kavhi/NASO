@@ -3,8 +3,7 @@ from django.urls import path
 from neural_architecture.models.Dataset import get_datasets
 from runs.views.ListRuns import ListRuns, delete_autokeras_run, delete_run
 from runs.views.NewRun import NewAutoKerasRun, NewRun
-from runs.views.RunDetails import (AutoKerasRunDetails, RunDetails,
-                                   TrainingProgress)
+from runs.views.RunDetails import AutoKerasRunDetails, RunDetails, TrainingProgress
 
 urlpatterns = [
     path("", ListRuns.as_view(), name="list"),

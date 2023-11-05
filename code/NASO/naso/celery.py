@@ -42,7 +42,6 @@ def get_celery_task_state(task_id):
     """
     result = AsyncResult(task_id)
     context = {"state": ""}
-    retries = 0
     for _ in range(10):
         try:
             context = {
@@ -65,7 +64,6 @@ def get_celery_task_state(task_id):
 
             print("Retrying due to DisabledBackend")
             time.sleep(1)  # Exponential backoff
-        retries += 1
     return context
 
 
@@ -88,10 +86,8 @@ def get_tasks():
                 list(task_collection), key=lambda d: d["time_start"]
             )
 
-            if training_tasks:
-                # sort by time_start
-                if training_tasks[-1]["id"]:
-                    return {"training_task_id": training_tasks[-1]["id"]}
+            if training_tasks and training_tasks[-1]["id"]:
+                return {"training_task_id": training_tasks[-1]["id"]}
     return {}
 
 
