@@ -1,9 +1,13 @@
+import tensorflow as tf
 from django.db import models
 
 from helper_scripts.importing import get_object
 from neural_architecture.models.Graphs import Graph
-from neural_architecture.models.Types import (ActivationFunctionType,
-                                              NetworkLayerType, TypeInstance)
+from neural_architecture.models.Types import (
+    ActivationFunctionType,
+    NetworkLayerType,
+    TypeInstance,
+)
 from neural_architecture.validators import validate_dtype
 
 
@@ -61,9 +65,9 @@ class NetworkConfiguration(models.Model):
     outputs: dict = {}  #
 
     def build_model(self):
-        for input_node in self.get_input_nodes():
-            self.layer_outputs[input_node] = self.inputs[input_node]
-            self.build_connected_layers(input_node)
+        self.inputs["input_node"] = tf.keras.Input((28, 28))
+        self.layer_outputs["input_node"] = self.inputs["input_node"]
+        self.build_connected_layers("input_node")
         return (self.inputs, self.outputs)
 
     def edges_from_source(self, node_id):
@@ -79,18 +83,6 @@ class NetworkConfiguration(models.Model):
     def is_head_node(self, node_id):
         # it is a head node, if this node is not a source:
         return not len(self.edges_from_source(node_id))
-
-    def get_input_nodes(self):
-        # input nodes are nodes that are no target. but at list one source:
-        for node in self.node_to_layer_id:
-            incoming_edges = self.edges_to_target(node)
-            if len(incoming_edges) == 0:
-                # check if this node is a source somewhere:
-                outgoing_nodes = self.edges_from_source(node)
-                if len(outgoing_nodes) > 0:
-                    self.inputs[node] = self.get_block_for_node(node)
-
-        return self.inputs
 
     def get_block_for_node(self, node_id):
         node_id = self.node_to_layer_id[node_id]

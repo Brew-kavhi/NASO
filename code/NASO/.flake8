@@ -12,4 +12,4 @@ exclude:
     naso/static,
     venv
 
-ignore: E402
+extend-ignore: E402, DJ08

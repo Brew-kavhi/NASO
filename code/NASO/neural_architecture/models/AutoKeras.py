@@ -3,13 +3,20 @@ import keras_tuner
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from helper_scripts.extensions import (custom_on_epoch_begin_decorator,
-                                       custom_on_epoch_end_decorator,
-                                       custom_on_trial_begin_decorator,
-                                       custom_on_trial_end_decorator)
+from helper_scripts.extensions import (
+    custom_on_epoch_begin_decorator,
+    custom_on_epoch_end_decorator,
+    custom_on_trial_begin_decorator,
+    custom_on_trial_end_decorator,
+)
 from helper_scripts.importing import get_class, get_object
-from runs.models.Training import (CallbackFunction, LossFunction, Metric, Run,
-                                  TrainingMetric)
+from runs.models.Training import (
+    CallbackFunction,
+    LossFunction,
+    Metric,
+    Run,
+    TrainingMetric,
+)
 
 from .Dataset import Dataset
 from .Types import BaseType, TypeInstance
@@ -53,7 +60,7 @@ class AutoKerasModel(models.Model):
     project_name = models.CharField(max_length=100, default="auto_model")
     blocks = models.ManyToManyField(AutoKerasNode, related_name="Blocks")
     max_trials = models.IntegerField(default=100)
-    directory = models.CharField(max_length=100, null=True, default=None)
+    directory = models.CharField(max_length=100, default=None)
     objective = models.CharField(max_length=100, default="val_loss")
     tuner = models.ForeignKey(
         AutoKerasTuner, null=True, on_delete=models.deletion.SET_NULL

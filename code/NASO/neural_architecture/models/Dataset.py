@@ -54,7 +54,7 @@ class Dataset(models.Model):
     description = models.TextField()
     upload_date = models.DateTimeField(auto_now_add=True)
     data_dir = models.CharField(
-        default=os.path.join(BASE_DIR, "datasets"), max_length=100, null=True
+        default=os.path.join(BASE_DIR, "datasets"), max_length=100
     )
     as_supervised = models.BooleanField(default=True)
     dataset_loader = models.ForeignKey(
@@ -81,7 +81,7 @@ class LocalDataset(models.Model):
     file = models.FileField(upload_to="datasets/")
     name = models.CharField(max_length=64)
     dataloader = models.ForeignKey(DatasetLoader, on_delete=models.CASCADE, null=True)
-    remote_source = models.CharField(max_length=255, null=True)
+    remote_source = models.CharField(max_length=255)
 
 
 class TensorflowDatasetLoader(DatasetLoaderInterface):

@@ -8,20 +8,30 @@ from django.views.generic.base import TemplateView
 
 from naso.models.page import PageSetup
 from neural_architecture.autokeras import run_autokeras
-from neural_architecture.models.Architecture import (NetworkConfiguration,
-                                                     NetworkLayer)
-from neural_architecture.models.AutoKeras import (AutoKerasModel,
-                                                  AutoKerasNode, AutoKerasRun,
-                                                  AutoKerasTuner)
+from neural_architecture.models.Architecture import NetworkConfiguration, NetworkLayer
+from neural_architecture.models.AutoKeras import (
+    AutoKerasModel,
+    AutoKerasNode,
+    AutoKerasRun,
+    AutoKerasTuner,
+)
 from neural_architecture.models.Dataset import Dataset
-from neural_architecture.models.Templates import (AutoKerasNetworkTemplate,
-                                                  KerasNetworkTemplate)
+from neural_architecture.models.Templates import (
+    AutoKerasNetworkTemplate,
+    KerasNetworkTemplate,
+)
 from neural_architecture.neural_net import run_neural_net
 from runs.forms.NewRunForm import NewAutoKerasRunForm, NewRunForm
-from runs.models.Training import (CallbackFunction, EvaluationParameters,
-                                  FitParameters, LossFunction, Metric,
-                                  NetworkHyperparameters, NetworkTraining,
-                                  Optimizer)
+from runs.models.Training import (
+    CallbackFunction,
+    EvaluationParameters,
+    FitParameters,
+    LossFunction,
+    Metric,
+    NetworkHyperparameters,
+    NetworkTraining,
+    Optimizer,
+)
 
 
 class NewRun(TemplateView):
@@ -37,24 +47,17 @@ class NewRun(TemplateView):
         for key, value in request_params:
             if key.startswith("optimizer_argument_"):
                 argument_name = key[len("optimizer_argument_") :]
-                optimizer_argument = {}
-                optimizer_argument["name"] = argument_name
-                optimizer_argument["value"] = value
+                optimizer_argument = {"name": argument_name, "value": value}
                 optimizer_arguments.append(optimizer_argument)
             elif key.startswith("loss_argument_"):
                 argument_name = key[len("loss_argument_") :]
-                loss_argument = {}
-                loss_argument["name"] = argument_name
-                loss_argument["value"] = value
+                loss_argument = {"name": argument_name, "value": value}
                 loss_arguments.append(loss_argument)
             elif key.startswith("metric_argument_"):
                 # this is metric, get the metric key and check if there isa already a metric definition
                 metric_id = int(key.split("_")[2])
                 argument_name = "_".join(key.split("_")[3:])
-                metrics_argument = {}
-
-                metrics_argument["name"] = argument_name
-                metrics_argument["value"] = value
+                metrics_argument = {"name": argument_name, "value": value}
                 if metric_id not in metrics_arguments:
                     metrics_arguments[metric_id] = [metrics_argument]
                 else:
@@ -102,7 +105,7 @@ class NewRun(TemplateView):
             nodes = [
                 {
                     "id": layer.name,
-                    "label": f"{layer.layer_type.name} ({layer.id})",
+                    "label": f"{layer.name} ({layer.id})",
                     "x": random.random() / 10.0,
                     "y": layer.id + random.random() / 5.0,
                     "size": 3,
@@ -134,7 +137,6 @@ class NewRun(TemplateView):
             self.context.update(form.get_extra_context())
         else:
             self.context = {"page": self.page.get_context()}
-        print(self.context)
 
         self.context["form"] = form
 
@@ -170,9 +172,7 @@ class NewRun(TemplateView):
                 metrics = []
 
                 for metric_type in selected_metrics:
-                    metric_arguments = []
-                    if metric_type.id in metrics_arguments:
-                        metric_arguments = metrics_arguments[metric_type.id]
+                    metric_arguments = metrics_arguments.get(metric_type.id, [])
                     metric, _ = Metric.objects.get_or_create(
                         instance_type=metric_type, additional_arguments=metric_arguments
                     )
@@ -214,6 +214,7 @@ class NewRun(TemplateView):
 
                 template = form.cleaned_data["network_template"]
                 if template:
+                    network_config.node_to_layer_id = template.node_to_layer_id
                     network_config.layers.set(template.layers)
                     network_config.connections = template.connections
                 else:
@@ -283,24 +284,17 @@ class NewAutoKerasRun(TemplateView):
         for key, value in request_dict.items():
             if key.startswith("tuner_argument_"):
                 argument_name = key[len("tuner_argument_") :]
-                tuner_argument = {}
-                tuner_argument["name"] = argument_name
-                tuner_argument["value"] = value
+                tuner_argument = {"name": argument_name, "value": value}
                 tuner_arguments.append(tuner_argument)
             elif key.startswith("loss_argument_"):
                 argument_name = key[len("loss_argument_") :]
-                loss_argument = {}
-                loss_argument["name"] = argument_name
-                loss_argument["value"] = value
+                loss_argument = {"name": argument_name, "value": value}
                 loss_arguments.append(loss_argument)
             elif key.startswith("metric_argument_"):
                 # this is metric, get the metric key and check if there isa already a metric definition
                 metric_id = int(key.split("_")[2])
                 argument_name = "_".join(key.split("_")[3:])
-                metrics_argument = {}
-
-                metrics_argument["name"] = argument_name
-                metrics_argument["value"] = value
+                metrics_argument = {"name": argument_name, "value": value}
                 if metric_id not in metrics_arguments:
                     metrics_arguments[metric_id] = [metrics_argument]
                 else:
@@ -310,10 +304,7 @@ class NewAutoKerasRun(TemplateView):
                 # this is metric, get the metric key and check if there isa already a metric definition
                 callback_id = int(key.split("_")[2])
                 argument_name = "_".join(key.split("_")[3:])
-                callbacks_argument = {}
-
-                callbacks_argument["name"] = argument_name
-                callbacks_argument["value"] = value
+                callbacks_argument = {"name": argument_name, "value": value}
                 if callback_id not in callbacks_arguments:
                     callbacks_arguments[callback_id] = [callbacks_argument]
                 else:
@@ -428,9 +419,7 @@ class NewAutoKerasRun(TemplateView):
             metrics = []
 
             for metric_type in selected_metrics:
-                metric_arguments = []
-                if metric_type.id in metrics_arguments:
-                    metric_arguments = metrics_arguments[metric_type.id]
+                metric_arguments = metrics_arguments.get(metric_type.id, [])
                 metric, _ = Metric.objects.get_or_create(
                     instance_type=metric_type, additional_arguments=metric_arguments
                 )
@@ -441,9 +430,7 @@ class NewAutoKerasRun(TemplateView):
             callbacks = []
 
             for callback_type in selected_callbacks:
-                callback_arguments = []
-                if callback_type.id in callbacks_arguments:
-                    callback_arguments = callbacks_arguments[callback_type.id]
+                callback_arguments = callbacks_arguments.get(callback_type.id, [])
                 callback, _ = CallbackFunction.objects.get_or_create(
                     instance_type=callback_type, additional_arguments=callback_arguments
                 )

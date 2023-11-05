@@ -186,7 +186,7 @@ function handleCallbackChange(selectElement) {
 function renderMetricWeights() {
     // render a card with fields to set the weights for each metric in the ObjectiveOptions
     let metric_weight = $('#metric_weights_arguments');
-    if (metric_weight) {
+    if (metric_weight.length > 0) {
         metric_weight.empty();
         metric_weight.removeClass('p-5');
         
