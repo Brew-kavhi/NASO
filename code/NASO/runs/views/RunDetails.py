@@ -37,7 +37,7 @@ class AutoKerasRunDetails(TemplateView):
         self.page.title = run.model.project_name
         self.page.actions = []
         self.page.add_pageaction(
-            reverse_lazy("runs:new_autokeras") + "?rerun=" + str(run.pk),
+            reverse_lazy("runs:autokeras:new") + "?rerun=" + str(run.pk),
             "Run again",
             color="primary",
         )

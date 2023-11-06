@@ -334,7 +334,6 @@ class NewAutoKerasRun(TemplateView):
             form.initial["max_model_size"] = autokeras_run.model.max_model_size
             form.initial["objective"] = autokeras_run.model.objective
             form.initial["max_trials"] = autokeras_run.model.max_trials
-            form.initial["directory"] = autokeras_run.model.directory
 
             form.initial["loss"] = autokeras_run.model.loss.instance_type
             form.initial["metrics"] = [

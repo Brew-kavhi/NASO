@@ -153,6 +153,27 @@ class AutoKerasModel(models.Model):
 
         return loaded_model
 
+    def load_trial(self, run: "AutoKerasRun", trial_id: str):
+        loaded_model = self.load_model(run)
+        data = run.dataset.get_data()
+        train_dataset = data[0]
+        if len(data) > 1:
+            test_dataset = data[1]
+        else:
+            test_dataset = train_dataset
+
+        # need this for the input shapes and so on
+        dataset, _ = loaded_model._convert_to_dataset(
+            train_dataset, y=None, validation_data=test_dataset, batch_size=32
+        )
+        loaded_model._analyze_data(dataset)
+        loaded_model._build_hyper_pipeline(dataset)
+
+        # finally build the model from the hyperparameters
+        trial = loaded_model.tuner.oracle.trials[trial_id]
+        loaded_model.tuner._prepare_model_build(trial.hyperparameters, x=dataset)
+        return loaded_model.tuner._try_build(trial.hyperparameters)
+
     def get_metrics(self):
         metrics = []
         for metric in self.metrics.all():

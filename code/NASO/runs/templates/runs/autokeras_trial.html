@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load get_values %}
+
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex flex-wrap">
+                {% for item in hp %}
+                <div class="col-4">
+                    <strong>{{item}}</strong>: {% get_attribute_tag hp item %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <br>
+    {% crispy form %}
+</div>
+{% block javascript %}
+
+<script>
+    const False = false;
+    const True = true;
+    const None = undefined;
+    var metricOptions = [
+        {% for metric in form.metrics.field.queryset %}
+    {
+        "id": {{ metric.id }},
+        "name": "{{ metric.name }}",
+            "jsonConfig": {{ metric.required_arguments|safe }},
+    },
+    {% endfor %}
+    ];
+    var callbackOptions = [
+        {% for callback in form.callbacks.field.queryset %}
+    {
+        "id": {{ callback.id }},
+        "name": "{{ callback.name }}",
+            "jsonConfig": {{ callback.required_arguments|safe|default:"{}" }},
+            "metrics": {{ callback.registers_metrics|safe|default:"[]"}}
+    },
+    {% endfor %}
+    ];
+
+</script>
+{{block.super}}
+{% endblock javascript %}
+{% endblock %}

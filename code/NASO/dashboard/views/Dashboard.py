@@ -27,7 +27,7 @@ class Dashboard(TemplateView):
                 run = AutoKerasRun.objects.get(id=task["run_id"])
                 task["name"] = run.model.project_name
                 task["link"] = reverse_lazy(
-                    "runs:autokeras_details", kwargs={"pk": run.id}
+                    "runs:autokeras:details", kwargs={"pk": run.id}
                 )
             else:
                 run = NetworkTraining.objects.get(id=task["run_id"])
@@ -47,7 +47,7 @@ class Dashboard(TemplateView):
                             "name": run.project_name,
                             "id": run.id,
                             "link": reverse_lazy(
-                                "runs:autokeras_details",
+                                "runs:autokeras:details",
                                 kwargs={"pk": run_details["run_id"]},
                             ),
                         }

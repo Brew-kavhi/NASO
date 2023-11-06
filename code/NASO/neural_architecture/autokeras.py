@@ -47,3 +47,36 @@ def run_autokeras(self, run_id):
         self.update_state(state="FAILED")
 
     self.update_state(state="SUCCESS")
+
+
+@shared_task(bind=True)
+def run_autokeras_trial(self, run_id, trial_id, epochs):
+    run = AutoKerasRun.objects.get(pk=run_id)
+    autokeras_model = run.model
+    loaded_model = autokeras_model.load_model(run)
+
+    data = run.dataset.get_data()
+
+    train_dataset = data[0]
+    if len(data) > 1:
+        test_dataset = data[1]
+    else:
+        test_dataset = train_dataset
+
+    try:
+        # load the datasets from the documentation in here
+        with open("net.log", "w") as f, redirect_stdout(f):
+            autokeras_model.load_trial(run, trial_id)
+            loaded_model.tuner._build_and_fit_model(
+                loaded_model.tuner.oracle.trials[trial_id], epochs=epochs
+            )
+
+        # Evaluate the best model with testing data.
+        print(autokeras_model.evaluate(test_dataset))
+    except Exception:
+        logger.error(
+            "Failure while executing the autokeras model: " + traceback.format_exc()
+        )
+        self.update_state(state="FAILED")
+
+    self.update_state(state="SUCCESS")
