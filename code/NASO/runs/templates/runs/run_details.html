@@ -648,11 +648,42 @@
         });
 
         dropdownY.addEventListener('change', function () {
-            data =[];
-            for (let epoch in trial_data) {
-                data.push(trial_data[epoch][dropdownY.value]);
+            if (dropdownY.value =='metrics') {
+                // show stacked bar chart:
+                let weights = {{run.model.metric_weights | safe  }};
+                let trialEpochs = [];
+                let index = 0;
+                for (const metricName in weights) {
+                    let barData  = [];
+                    for (epoch in trial_data) {
+                        trialEpochs.push(epoch);
+                        barData.push(weights[metricName] * Number(trial_data[epoch][metricName]));
+                    }
+                    trialChart.data.datasets[index] = {
+                        label: metricName,
+                        data:  barData, 
+                    };
+                    index +=1;
+                }
+                trialChart.data.labels = trialEpochs;
+                trialChart.options.scales.x.stacked = true;
+                trialChart.options.scales.y.stacked = true;
+                trialChart.config.type = 'bar';
+                trialChart.update();
+            } else {
+                data =[];
+                for (let epoch in trial_data) {
+                    data.push(trial_data[epoch][dropdownY.value]);
+                }
+                trialChart.data.datasets = [{label:dropdownY.value}]
+                trialChart.options.scales = {
+                    x: {
+                        type:'linear'
+                    }
+                };
+                trialChart.config.type = 'line';
+                updateChart();
             }
-            updateChart();
         });
 
         function updateChart() {
