@@ -80,6 +80,7 @@ class AutoKerasModel(models.Model):
     epochs = models.IntegerField(default=1000)
 
     auto_model: autokeras.AutoModel = None
+    loaded_model: autokeras.AutoModel = None
     layer_outputs: dict = {}
     inputs: dict = {}
     outputs: dict = {}
@@ -139,7 +140,7 @@ class AutoKerasModel(models.Model):
 
         self.build_tuner(run)
 
-        loaded_model = autokeras.AutoModel(
+        self.loaded_model = autokeras.AutoModel(
             inputs=self.inputs,
             outputs=self.outputs,
             overwrite=False,
@@ -151,10 +152,13 @@ class AutoKerasModel(models.Model):
             objective=keras_tuner.Objective(self.objective, direction="min"),
         )
 
-        return loaded_model
+        return self.loaded_model
 
     def load_trial(self, run: "AutoKerasRun", trial_id: str):
-        loaded_model = self.load_model(run)
+        if not self.loaded_model:
+            self.loaded_model = self.load_model(run)
+
+        # build a dataset to set the inputs size and everything.
         data = run.dataset.get_data()
         train_dataset = data[0]
         if len(data) > 1:
@@ -163,16 +167,38 @@ class AutoKerasModel(models.Model):
             test_dataset = train_dataset
 
         # need this for the input shapes and so on
-        dataset, _ = loaded_model._convert_to_dataset(
+        _, hp, _, _ = self.prepare_data_for_trial(train_dataset, test_dataset, trial_id)
+        return self.loaded_model.tuner._try_build(hp)
+
+    def prepare_data_for_trial(self, train_dataset, test_dataset, trial_id: str):
+        if not self.loaded_model:
+            raise Exception("load model first")
+        if not trial_id:
+            raise Exception("Supply a Trial id")
+        trial = self.get_trial(trial_id)
+
+        # convert dataset to a shape , that autokeras can use.
+        dataset, _ = self.loaded_model._convert_to_dataset(
             train_dataset, y=None, validation_data=test_dataset, batch_size=32
         )
-        loaded_model._analyze_data(dataset)
-        loaded_model._build_hyper_pipeline(dataset)
+        self.loaded_model._analyze_data(dataset)
+        self.loaded_model._build_hyper_pipeline(dataset)
 
-        # finally build the model from the hyperparameters
-        trial = loaded_model.tuner.oracle.trials[trial_id]
-        loaded_model.tuner._prepare_model_build(trial.hyperparameters, x=dataset)
-        return loaded_model.tuner._try_build(trial.hyperparameters)
+        # finally prepare model and dataset again for the structure of the model. this also reformats the labels
+        (
+            pipeline,
+            trial_data,
+            validation_data,
+        ) = self.loaded_model.tuner._prepare_model_build(
+            trial.hyperparameters, x=dataset
+        )
+        return (pipeline, trial.hyperparameters, trial_data, validation_data)
+
+    def get_trial(self, trial_id):
+        if not self.loaded_model:
+            raise Exception("load model first")
+        trial = self.loaded_model.tuner.oracle.trials[trial_id]
+        return trial
 
     def get_metrics(self):
         metrics = []

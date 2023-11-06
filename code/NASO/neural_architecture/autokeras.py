@@ -53,7 +53,6 @@ def run_autokeras(self, run_id):
 def run_autokeras_trial(self, run_id, trial_id, epochs):
     run = AutoKerasRun.objects.get(pk=run_id)
     autokeras_model = run.model
-    loaded_model = autokeras_model.load_model(run)
 
     data = run.dataset.get_data()
 
@@ -66,10 +65,11 @@ def run_autokeras_trial(self, run_id, trial_id, epochs):
     try:
         # load the datasets from the documentation in here
         with open("net.log", "w") as f, redirect_stdout(f):
-            autokeras_model.load_trial(run, trial_id)
-            loaded_model.tuner._build_and_fit_model(
-                loaded_model.tuner.oracle.trials[trial_id], epochs=epochs
+            trial_model = autokeras_model.load_trial(run, trial_id)
+            _, _, dataset, validation_data = run.model.prepare_data_for_trial(
+                train_dataset, test_dataset, trial_id
             )
+            trial_model.fit(dataset, epochs=epochs)
 
         # Evaluate the best model with testing data.
         print(autokeras_model.evaluate(test_dataset))

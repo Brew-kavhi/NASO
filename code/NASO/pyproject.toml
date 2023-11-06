@@ -28,6 +28,7 @@ loguru = "^0.7.2"
 tensorflow = "2.14.0"
 autokeras = "^1.1.0"
 tensorflow-datasets = "^4.9.3"
+tensorflow-model-optimization = "^0.7.5"
 
 
 [build-system]
