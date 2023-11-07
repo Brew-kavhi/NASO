@@ -71,7 +71,6 @@ INSTALLED_APPS = [
     "flake8",
 ]
 
-TEST_RUNNER = "flake8.main.Flake8TestRunner"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

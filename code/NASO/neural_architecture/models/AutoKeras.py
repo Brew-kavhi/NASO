@@ -168,7 +168,19 @@ class AutoKerasModel(models.Model):
 
         # need this for the input shapes and so on
         _, hp, _, _ = self.prepare_data_for_trial(train_dataset, test_dataset, trial_id)
-        return self.loaded_model.tuner._try_build(hp)
+        trial_model = self.loaded_model.tuner._try_build(hp)
+        weights_path = self.get_trial_checkpoint_path(trial_id)
+        trial_model.load_weights(weights_path)
+        trial_model.compile(
+            optimizer=trial_model.optimizer,
+            loss=trial_model.loss,
+            metrics=self.get_metrics(),
+        )
+        print(trial_model.summary())
+        return trial_model
+
+    def get_trial_checkpoint_path(self, trial_id):
+        return f"auto_model/{self.directory}/{self.project_name}/trial_{trial_id}/checkpoint"
 
     def prepare_data_for_trial(self, train_dataset, test_dataset, trial_id: str):
         if not self.loaded_model:
@@ -178,7 +190,7 @@ class AutoKerasModel(models.Model):
         trial = self.get_trial(trial_id)
 
         # convert dataset to a shape , that autokeras can use.
-        dataset, _ = self.loaded_model._convert_to_dataset(
+        dataset, validation_data = self.loaded_model._convert_to_dataset(
             train_dataset, y=None, validation_data=test_dataset, batch_size=32
         )
         self.loaded_model._analyze_data(dataset)
@@ -190,7 +202,7 @@ class AutoKerasModel(models.Model):
             trial_data,
             validation_data,
         ) = self.loaded_model.tuner._prepare_model_build(
-            trial.hyperparameters, x=dataset
+            trial.hyperparameters, x=dataset, validation_data=validation_data
         )
         return (pipeline, trial.hyperparameters, trial_data, validation_data)
 

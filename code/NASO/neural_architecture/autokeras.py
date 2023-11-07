@@ -69,10 +69,12 @@ def run_autokeras_trial(self, run_id, trial_id, epochs):
             _, _, dataset, validation_data = run.model.prepare_data_for_trial(
                 train_dataset, test_dataset, trial_id
             )
-            trial_model.fit(dataset, epochs=epochs)
+            trial_model.fit(
+                dataset, epochs=epochs, callbacks=autokeras_model.get_callbacks(run)
+            )
 
-        # Evaluate the best model with testing data.
-        print(autokeras_model.evaluate(test_dataset))
+            # Evaluate the best model with testing data.
+            print(trial_model.evaluate(validation_data))
     except Exception:
         logger.error(
             "Failure while executing the autokeras model: " + traceback.format_exc()

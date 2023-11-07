@@ -21,7 +21,41 @@
 </div>
 {% block javascript %}
 
+{{block.super}}
 <script>
+    $(document).ready(function() {
+        {% if metric_configs %}
+        // load the metric values
+                let existing_metrics = {{metric_configs | safe}};
+                for (const metric of existing_metrics) {
+                    for(const argument of metric['arguments']) {
+                        let fields = document.getElementsByName('metric_argument_' + metric['id'] + "_" + argument.name);
+                        if (fields[0]) {
+                            fields[0].value = argument.value;
+                        }
+                    }
+                }
+                delete existing_metrics;
+            {% endif %}
+            {% if callbacks_configs %}
+                // load the callback values
+                let existing_callbacks = {{callbacks_configs | safe}};
+                for (const callback of existing_callbacks) {
+                    for(const argument of callback['arguments']) {
+                        let fields = document.getElementsByName('callback_argument_' + callback['id'] + "_" + argument.name);
+                        if (fields[0]) {
+                            fields[0].value = argument.value;
+                        }
+                    }
+                }
+                delete existing_callbacks;
+                {% endif %}
+                handleMetricChange($('#{{form.metrics.auto_id}}'));
+                handleCallbackChange($('#{{form.callbacks.auto_id}}'));
+               
+
+        }
+        );
     const False = false;
     const True = true;
     const None = undefined;
@@ -46,6 +80,5 @@
     ];
 
 </script>
-{{block.super}}
 {% endblock javascript %}
 {% endblock %}

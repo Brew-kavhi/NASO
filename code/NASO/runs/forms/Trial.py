@@ -35,6 +35,8 @@ class RerunTrialForm(forms.Form):
     dataset = forms.CharField(label="Dataset", required=False)
     dataset_is_supervised = forms.BooleanField(initial=True, required=False)
 
+    extra_context = {}
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
@@ -124,3 +126,12 @@ class RerunTrialForm(forms.Form):
             )
 
         return callback_choices
+
+    def load_metric_configs(self, arguments):
+        self.extra_context["metric_configs"] = arguments
+
+    def load_callbacks_configs(self, arguments):
+        self.extra_context["callbacks_configs"] = arguments
+
+    def get_extra_context(self):
+        return self.extra_context

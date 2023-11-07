@@ -161,17 +161,14 @@ class NewRun(TemplateView):
                 )
 
                 # Create LossFunction object (similarly for Metric objects)
-                loss_type = form.cleaned_data["loss"]
                 loss_function, _ = LossFunction.objects.get_or_create(
-                    instance_type=loss_type, additional_arguments=loss_arguments
+                    instance_type=form.cleaned_data["loss"], additional_arguments=loss_arguments
                 )
 
                 # Handle multiple selected metrics
-                selected_metrics = form.cleaned_data["metrics"]
-
                 metrics = []
 
-                for metric_type in selected_metrics:
+                for metric_type in form.cleaned_data["metrics"]:
                     metric_arguments = metrics_arguments.get(metric_type.id, [])
                     metric, _ = Metric.objects.get_or_create(
                         instance_type=metric_type, additional_arguments=metric_arguments
@@ -268,6 +265,7 @@ class NewRun(TemplateView):
                     request, messages.SUCCESS, "Training wurde gestartet."
                 )
                 return redirect("dashboard:index")
+            return redirect(request.path)
 
 
 class NewAutoKerasRun(TemplateView):
@@ -407,17 +405,14 @@ class NewAutoKerasRun(TemplateView):
             ) = self.get_typewise_arguments(dict(request.POST.items()))
 
             # Create LossFunction object (similarly for Metric objects)
-            loss_type = form.cleaned_data["loss"]
             loss_function, _ = LossFunction.objects.get_or_create(
-                instance_type=loss_type, additional_arguments=loss_arguments
+                instance_type=form.cleaned_data["loss"], additional_arguments=loss_arguments
             )
 
             # Handle multiple selected metrics
-            selected_metrics = form.cleaned_data["metrics"]
-
             metrics = []
 
-            for metric_type in selected_metrics:
+            for metric_type in form.cleaned_data["metrics"]:
                 metric_arguments = metrics_arguments.get(metric_type.id, [])
                 metric, _ = Metric.objects.get_or_create(
                     instance_type=metric_type, additional_arguments=metric_arguments
@@ -425,10 +420,9 @@ class NewAutoKerasRun(TemplateView):
                 metrics.append(metric)
 
             # Handle multiple selected callbacks
-            selected_callbacks = form.cleaned_data["callbacks"]
             callbacks = []
 
-            for callback_type in selected_callbacks:
+            for callback_type in form.cleaned_data["callbacks"]:
                 callback_arguments = callbacks_arguments.get(callback_type.id, [])
                 callback, _ = CallbackFunction.objects.get_or_create(
                     instance_type=callback_type, additional_arguments=callback_arguments
@@ -436,9 +430,8 @@ class NewAutoKerasRun(TemplateView):
                 callbacks.append(callback)
 
             # Create Optimizer object
-            tuner_type = form.cleaned_data["tuner"]
             tuner, _ = AutoKerasTuner.objects.get_or_create(
-                tuner_type=tuner_type,
+                tuner_type=form.cleaned_data["tuner"],
                 additional_arguments=tuner_arguments,
             )
 
@@ -505,3 +498,4 @@ class NewAutoKerasRun(TemplateView):
             run_autokeras.delay(run.id)
             messages.add_message(request, messages.SUCCESS, "Training wurde gestartet.")
             return redirect("dashboard:index")
+        return redirect(request.path)

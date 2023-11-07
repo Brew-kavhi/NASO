@@ -1,6 +1,6 @@
 import json
 
-from django.http import HttpResponse
+from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic.base import TemplateView, View
 
@@ -12,7 +12,7 @@ from neural_architecture.models.AutoKeras import AutoKerasRun
 class TrainingProgress(View):
     def get(self, request, task_id):
         context = get_celery_task_state(task_id)
-        return HttpResponse(json.dumps(context), content_type="application/json")
+        return JsonResponse(context, safe=False)
 
 
 class RunDetails(TemplateView):

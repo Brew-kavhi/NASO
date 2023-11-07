@@ -3,7 +3,7 @@ from django.urls import path
 from runs.views.ListRuns import delete_autokeras_run
 from runs.views.NewRun import NewAutoKerasRun
 from runs.views.RunDetails import AutoKerasRunDetails
-from runs.views.Trial import TrialView
+from runs.views.trial import TrialView
 
 urlpatterns = [
     path(
