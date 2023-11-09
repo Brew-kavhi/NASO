@@ -1,6 +1,6 @@
 from django.urls import path
 
-from dashboard.views.Dashboard import Dashboard, kill_task
+from dashboard.views.dashboard import Dashboard, kill_task
 
 urlpatterns = [
     path("", Dashboard.as_view(), name="index"),

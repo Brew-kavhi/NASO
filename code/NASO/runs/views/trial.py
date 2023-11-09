@@ -3,9 +3,11 @@ from django.views.generic.base import TemplateView
 
 from naso.models.page import PageSetup
 from neural_architecture.autokeras import run_autokeras_trial
-from neural_architecture.models.AutoKeras import AutoKerasRun
-from neural_architecture.models.Dataset import Dataset
-from runs.forms.Trial import RerunTrialForm
+from neural_architecture.models.autokeras import AutoKerasRun
+from neural_architecture.models.model_runs import KerasModel, KerasModelRun
+from runs.forms.trial import RerunTrialForm
+from runs.models.training import EvaluationParameters, FitParameters
+from runs.views.new_run import build_dataset
 
 
 class TrialView(TemplateView):
@@ -16,10 +18,11 @@ class TrialView(TemplateView):
     def get(self, request, run_id, trial_id, *args, **kwargs):
         run = AutoKerasRun.objects.get(pk=run_id)
         # TODO sometimes this leads to memory overflow and then the whole app gets stucked
+        # better load the hp from a file, instead of loading the models
         try:
-            loaded_model = run.model.load_model(run)
-            trial = loaded_model.tuner.oracle.trials[str(trial_id)]
-            hp = trial.hyperparameters.values
+            # loaded_model = run.model.load_model(run)
+            # trial = loaded_model.tuner.oracle.trials[str(trial_id)]
+            hp = {}  # trial.hyperparameters.values
         except Exception:
             hp = {}
 
@@ -58,18 +61,29 @@ class TrialView(TemplateView):
     def post(self, request, run_id, trial_id, *args, **kwargs):
         form = RerunTrialForm(request.POST)
         if form.is_valid():
-            run = AutoKerasRun.objects.get(pk=run_id)
+            autokeras_run = AutoKerasRun.objects.get(pk=run_id)
 
-            dataset = form.cleaned_data["dataset"]
-            dataset_is_supervised = form.cleaned_data["dataset_is_supervised"]
-            data, _ = Dataset.objects.get_or_create(
-                name=dataset,
-                as_supervised=dataset_is_supervised,
-                dataset_loader=form.cleaned_data["dataset_loaders"],
+            eval_params = EvaluationParameters.objects.create(callbacks=[])
+            fit_params = FitParameters.objects.create(
+                epochs=form.cleaned_data["epochs"], callbacks=[]
             )
-            new_run = AutoKerasRun.objects.create(dataset=data, model=run.model)
-            run_autokeras_trial.delay(new_run.id, trial_id, form.cleaned_data["epochs"])
+
+            keras_model = KerasModel.objects.create(
+                name=f"{autokeras_run.model.project_name}_trial_{str(trial_id)}",
+                description=f"""Fine tuning of trial {str(trial_id)} from Autokeras run 
+                {autokeras_run.model.project_name}""",
+                evaluation_parameters=eval_params,
+                fit_parameters=fit_params,
+            )
+
+            keras_model_run = KerasModelRun.objects.create(
+                dataset=build_dataset(form.cleaned_data),
+                model=keras_model,
+            )
+
+            # load the model in the worker function to be sure, enough memory is available
+            run_autokeras_trial.delay(run_id, trial_id, keras_model_run.id)
             return redirect("dashboard:index")
         self.context["form"] = form
-        self.context['hp'] = {}
+        self.context["hp"] = {}
         return self.render_to_response(self.context)

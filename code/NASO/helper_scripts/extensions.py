@@ -1,18 +1,19 @@
-from runs.models.Training import TrainingMetric
+from runs.models.training import TrainingMetric
 
 
 def custom_on_epoch_end_decorator(original_on_epoch_end, run):
-    def on_epoch_end(self, trial, model, epoch, logs={}):
+    def on_epoch_end(self, trial, model, epoch, logs=None):
         if "model_size" not in logs:
             logs["model_size"] = model.count_params()
 
         if "metrics" not in logs:
             logs["metrics"] = 0
-        for metric_name in run.model.metric_weights:
-            if metric_name in logs:
-                logs["metrics"] += (logs[metric_name]) * (
-                    run.model.metric_weights[metric_name]
-                )
+        if hasattr(run.model, "metric_weights"):
+            for metric_name in run.model.metric_weights:
+                if metric_name in logs:
+                    logs["metrics"] += (logs[metric_name]) * (
+                        run.model.metric_weights[metric_name]
+                    )
 
         metrics = {}
         for key in logs:

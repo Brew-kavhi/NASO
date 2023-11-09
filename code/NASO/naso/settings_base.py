@@ -30,7 +30,7 @@ SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG", default=True)
 
 APP_TITLE = config("APP_TITLE", default="NASO")
-APP_VERSION = config("APP_VERSION", default="0.1.1")
+APP_VERSION = "0.1.2"
 
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"

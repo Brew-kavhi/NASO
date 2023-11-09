@@ -8,7 +8,7 @@ from plugins.models.plugins import Plugin
 
 class PluginForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
-        super(PluginForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.layout = Layout(
             "python_file",

@@ -36,7 +36,7 @@ class BaseType(models.Model):
 
     def save(self, *args, **kwargs):
         self.validate_json_data()
-        super(BaseType, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
 class OptimizerType(BaseType):
@@ -70,11 +70,6 @@ class TypeInstance(models.Model):
     class Meta:
         abstract = True
 
-    def get_instance(self):
-        raise NotImplementedError(
-            "This should return an object of this type, with all the parameters"
-        )
-
     def __str__(self):
         # Use getattr to access the 'type' property based on the subclass
         try:
@@ -102,7 +97,7 @@ class TypeInstance(models.Model):
 
     def save(self, *args, **kwargs):
         self.validate_json_data()
-        super(TypeInstance, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def print_all_fields(self):
         print(self._meta.fields)

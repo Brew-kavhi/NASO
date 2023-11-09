@@ -1,10 +1,11 @@
 [MASTER]
 load-plugins=pylint_django
 django-settings-module=naso.settings_local
-ignore=migrations
+ignore=migrations,celery, sample_plugins, pyproject.toml, INIT.sh, INSTALL.sh, README.md, CONTRIBUTE.md, net.log, poetry.lock, requirements.txt, db.sqlite3
+
 
 [FORMAT]
-max-line-length=120
+max-line-length=130
 
 [MESSAGES CONTROL]
 disable=missing-docstring

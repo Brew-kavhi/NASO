@@ -1,20 +1,28 @@
 function updateProgress (progressUrl) {
     fetch(progressUrl).then(function(response) {
-        response.json().then(function(data) {
-            // update the appropriate UI components
-            
-            setProgress(data.state, data.details);
-            if (data.state === "PROGRESS") {
-                setTimeout(updateProgress, 1000, progressUrl);
-            }
-            if (!"state" in data) {
-                setTimeout(updateProgress, 1000, progressUrl);
-            }
-            if(data.state === 'SUCCESS') {
-                // display a toast message training is finished
-                toastr.success("Training beendet", 'INFO');
-            }
-        });
+        if (response.ok) {
+            response.json().then(function(data) {
+                // update the appropriate UI components
+                
+                setProgress(data.state, data.details);
+                if (data.state === "PROGRESS") {
+                    setTimeout(updateProgress, 1000, progressUrl);
+                }
+                else if (!"state" in data) {
+                    setTimeout(updateProgress, 1000, progressUrl);
+                }
+                if(data.state === 'SUCCESS') {
+                    // display a toast message training is finished
+                    toastr.success("Training beendet", 'INFO');
+                }
+            });
+        } else {
+            throw new Error('Something went wrong');
+        }
+    })
+    .catch((error) => {
+        console.log(error);
+        setTimeout(updateProgress, 2000, progressUrl);
     });
 }
 
@@ -29,11 +37,12 @@ function setProgress(state, details) {
     
             element.children[0].innerText = "Epoche " + details.current + " von " + details.total;
         });
-        if (details.metrics.accuracy) {
+        
+        if (details.metrics.loss) {
             $('#training-tags').empty();
             console.log(details);
             $('#training-tags').append(
-                '<div class="tag is-light is-info ">Curent accuracy: ' + details.metrics.accuracy + '</div>'
+                '<div class="tag is-light is-info ">Curent loss: ' + details.metrics.loss + '</div>'
             );
         }
 

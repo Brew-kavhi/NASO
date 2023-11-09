@@ -1,9 +1,9 @@
 from django.urls import include, path
 
-from neural_architecture.models.Dataset import get_datasets
-from runs.views.ListRuns import ListRuns, delete_run
-from runs.views.NewRun import NewRun
-from runs.views.RunDetails import RunDetails, TrainingProgress
+from neural_architecture.models.dataset import get_datasets
+from runs.views.list_runs import ListRuns, delete_run
+from runs.views.new_run import NewRun
+from runs.views.run_details import RunDetails, TrainingProgress
 
 urlpatterns = [
     path("", ListRuns.as_view(), name="list"),

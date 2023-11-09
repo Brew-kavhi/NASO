@@ -4,8 +4,10 @@ from contextlib import redirect_stdout
 from loguru import logger
 
 from celery import shared_task
-from neural_architecture.models.AutoKeras import AutoKerasRun
-from neural_architecture.NetworkCallbacks.AutoKerasCallback import AutoKerasCallback
+from neural_architecture.models.autokeras import AutoKerasRun
+from neural_architecture.models.model_runs import KerasModelRun
+from neural_architecture.NetworkCallbacks.autokeras_callback import AutoKerasCallback
+from neural_architecture.NetworkCallbacks.keras_model_callback import KerasModelCallback
 
 logger.add("net.log", backtrace=True, diagnose=True)
 
@@ -17,19 +19,13 @@ def run_autokeras(self, run_id):
     run = AutoKerasRun.objects.get(pk=run_id)
     autokeras_model = run.model
 
-    data = run.dataset.get_data()
-
-    train_dataset = data[0]
-    if len(data) > 1:
-        test_dataset = data[1]
-    else:
-        test_dataset = train_dataset
+    (train_dataset, test_dataset) = run.dataset.get_data()
 
     callback = AutoKerasCallback(self, run)
 
     try:
         # load the datasets from the documentation in here
-        with open("net.log", "w") as f, redirect_stdout(f):
+        with open("net.log", "w", encoding="UTF-8") as _f, redirect_stdout(_f):
             autokeras_model.build_model(run)
             autokeras_model.fit(
                 train_dataset,
@@ -50,31 +46,27 @@ def run_autokeras(self, run_id):
 
 
 @shared_task(bind=True)
-def run_autokeras_trial(self, run_id, trial_id, epochs):
+def run_autokeras_trial(self, run_id, trial_id, keras_model_run_id):
     run = AutoKerasRun.objects.get(pk=run_id)
-    autokeras_model = run.model
+    keras_model_run = KerasModelRun.objects.get(pk=keras_model_run_id)
+    (train_dataset, validation_dataset) = run.model.save_trial_as_model(
+        run, keras_model_run, trial_id
+    )
+    model = keras_model_run.model
 
-    data = run.dataset.get_data()
-
-    train_dataset = data[0]
-    if len(data) > 1:
-        test_dataset = data[1]
-    else:
-        test_dataset = train_dataset
+    log_callback = KerasModelCallback(self, keras_model_run)
 
     try:
         # load the datasets from the documentation in here
-        with open("net.log", "w") as f, redirect_stdout(f):
-            trial_model = autokeras_model.load_trial(run, trial_id)
-            _, _, dataset, validation_data = run.model.prepare_data_for_trial(
-                train_dataset, test_dataset, trial_id
-            )
-            trial_model.fit(
-                dataset, epochs=epochs, callbacks=autokeras_model.get_callbacks(run)
+        with open("net.log", "w", encoding="UTF-8") as _f, redirect_stdout(_f):
+            model.fit(
+                train_dataset,
+                verbose=2,
+                callbacks=[log_callback],
             )
 
             # Evaluate the best model with testing data.
-            print(trial_model.evaluate(validation_data))
+            print(model.evaluate(validation_dataset))
     except Exception:
         logger.error(
             "Failure while executing the autokeras model: " + traceback.format_exc()

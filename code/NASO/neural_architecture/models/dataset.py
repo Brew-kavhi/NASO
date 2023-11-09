@@ -8,7 +8,7 @@ from django.http import JsonResponse
 from sklearn import datasets
 
 from helper_scripts.importing import get_class
-from plugins.interfaces.Dataset import DatasetLoaderInterface
+from plugins.interfaces.dataset import DatasetLoaderInterface
 
 
 class DatasetLoader(models.Model):
@@ -28,7 +28,7 @@ class DatasetLoader(models.Model):
             raise TypeError(
                 f"DatasetLoader {self} is not a subclass of tfds.core.DatasetBuilder"
             )
-        super(DatasetLoader, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -36,10 +36,20 @@ class DatasetLoader(models.Model):
     def load_dataset_loader(self):
         return get_class(self.module_name, self.class_name)()
 
-    def get_data(self, *args, **kwargs):
+    def get_data(self, *args, **kwargs) -> (tf.data.Dataset, tf.data.Dataset):
+        """
+        Returns a tuple of two tf.data.Dataset objects, the first one is the training dataset,
+        the second one is the test dataset
+        """
         if not self.dataset_loader:
             self.dataset_loader = self.load_dataset_loader()
-        return self.dataset_loader.get_data(*args, **kwargs)
+        data = self.dataset_loader.get_data(*args, **kwargs)
+        train_dataset = data[0]
+        if len(data) > 1:
+            test_dataset = data[1]
+        else:
+            test_dataset = train_dataset
+        return (train_dataset, test_dataset)
 
     def get_datasets(self):
         if not self.dataset_loader:

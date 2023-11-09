@@ -3,14 +3,14 @@ import csv
 from django.http import HttpResponse, JsonResponse
 from keras_tuner.engine.trial import TrialStatus
 
-from neural_architecture.models.AutoKeras import AutoKerasRun
+from neural_architecture.models.autokeras import AutoKerasRun
 
 
 def get_metrics(request, pk, trial_id):
     autokeras_run = AutoKerasRun.objects.get(pk=pk)
     metrics = autokeras_run.metrics.all()
 
-    epochal_metrics = dict()
+    epochal_metrics = {}
     # filter by trial_id in the metric:
     for metric in metrics:
         epoch = metric.epoch
@@ -51,7 +51,7 @@ def get_all_metrics(request, pk):
     autoekras_run = AutoKerasRun.objects.get(pk=pk)
     metrics = autoekras_run.metrics.all()
 
-    trial_metrics = dict()
+    trial_metrics = {}
     # filter by trial_id in the metric:
     for metric in metrics:
         epoch = metric.epoch
@@ -64,7 +64,7 @@ def get_all_metrics(request, pk):
                     else:
                         trial_metrics[measure["trial_id"]][epoch] = measure["metrics"]
                 else:
-                    trial_metrics[measure["trial_id"]] = dict()
+                    trial_metrics[measure["trial_id"]] = {}
                     trial_metrics[measure["trial_id"]][epoch] = measure["metrics"]
 
     return JsonResponse(trial_metrics, safe=True)

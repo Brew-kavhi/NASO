@@ -1,7 +1,7 @@
 from django.db import models
 
-from neural_architecture.models.Architecture import NetworkLayer
-from neural_architecture.models.AutoKeras import AutoKerasNode
+from neural_architecture.models.architecture import NetworkLayer
+from neural_architecture.models.autokeras import AutoKerasNode
 
 
 class KerasNetworkTemplate(models.Model):

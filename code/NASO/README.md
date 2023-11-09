@@ -2,6 +2,9 @@ NASO
 ===
 NAS stands for neural architecture search and optimization. It offers an easy way tp configure and conduct neural architecture search and optimzation using a graph basd language to define the search space. This can all be done using a grpahical user interface, naely a webapp coded in django. 
 
+# About
+This codebase provides a django webapp to easily configure and run neural networks in tensorflow/keras. You have mutliple options, namely solo runs or autokeras search, which searches for a suited network architecture on its own. Furthermore, the results (the metrics) are displayed in nice graphs to simplify and speed up research processes. Of course, this data can be downloaded and the graphs can be adjusted to your requirements. In addition to that, the system is extendable through plugins. This feature however is not fully implemented yet and needs further adjustments to allow for more integrations.
+
 # Installation
 You need poetry installed.
 ```apt install poetry```
@@ -14,15 +17,15 @@ Next you need to install all the dependencies with poetry:
 ```poetry install```
 
 You may need to install tensorflow and autokeras separately by executing:
-```poetry run pip intall tensorflow autokeras```
-For async task io we use celery. This is automatically installed with poetry, but for the backend and message quieing, we need to install an additional server, namely a rabbitmq server. This handles all our task states and everything. Install the message queue with the following command:
+```poetry run pip intall .```
+For async task io we use celery. This is automatically installed with poetry, but for the backend and message quieing, we need to install an additional server, namely a rabbitmq server (optional, see below). This handles all our task states and everything. Install the message queue with the following command:
 ```sudo apt-get install rabbitmq-server```
 
-If its not possible to start or install a rabbitmq server. you can ask me (Marius Goehring) for an alternative. This server does not need to run locally, so you can use any other hosted rabbitmq instance. I have one running for this purpose.
+If its not possible to start or install a rabbitmq server. you can ask me (Marius Goehring) for an alternative. This server does not need to run locally, so you can use any other **hosted rabbitmq instance**. I have one running for this purpose.
 
 ## Configuration
 
-Last step is to configure the environment. This roject uses python-decouple to laod environment variables into the django app. This is important to keep sensitive information local and to have all the config in one place. You can find a sample configuration in the file .envrc. just copy it to a file named .env and adjust it to your needs. Here you also need to configure the rabbitmq server instance. This env file also holds the database connection credentials. This is only necessary if you are using something else than sqlite, which is preconfigured in the project settings. So if you are using SQLite, because you might not be able to install a proper SQL-database server, you need to change the database settings in the file naso/settings.py. 
+Last step is to configure the environment. This roject uses python-decouple to laod environment variables into the django app. This is important to keep sensitive information local and to have all the config in one place. You can find a sample configuration in the file .envrc. just copy it to a file named .env and adjust it to your needs. Here you also need to configure the rabbitmq server instance. This env file also holds the database connection credentials. This is only necessary if you are using something else than sqlite, which is preconfigured in the project settings. So if you are using SQLite, because you might not be able to install a proper SQL-database server, you need to change the database settings in the file naso/settings_local.py. 
 
 # Execution
 If you are starting it for the first time, you need to migrate the database:
@@ -48,6 +51,9 @@ Add this. We use networkX as the tool to create graphs that describe the network
 
 # Development
 Run 
-```poetry run black .``` for formatting and 
 ```poetry run isort .``` for sorting the imports
-```poety run flake8 .``` will do a basic code check, but somewhow crashes my server, so maybe needs a better configuration
+```poetry run black .``` for formatting and 
+```poety run flake8 .``` will do a basic code check
+For enhanced testing and pep8 style enforcement, you can execute ```poetry run pylint *```. Note that this still, throws a lot of errors and warnings, which will be fixed in future commits.
+
+Django tests are still to be implemented.

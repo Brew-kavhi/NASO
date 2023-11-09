@@ -2,10 +2,11 @@ from unittest.mock import MagicMock, patch
 
 from django.test import RequestFactory, TestCase
 
-from neural_architecture.models.AutoKeras import AutoKerasRun
-from runs.forms.Trial import RerunTrialForm
-from runs.models.Training import CallbackFunction, Metric
+from neural_architecture.models.autokeras import AutoKerasRun
+from runs.forms.trial import RerunTrialForm
+from runs.models.training import CallbackFunction, Metric
 from runs.views.trial import TrialView
+
 
 # TODO check these tests
 class TrialViewTestCase(TestCase):

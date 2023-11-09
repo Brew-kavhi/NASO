@@ -6,8 +6,8 @@ from django.shortcuts import get_object_or_404
 from django.views.generic.base import TemplateView
 
 from naso.models.page import PageSetup
-from neural_architecture.models.AutoKeras import AutoKerasRun
-from runs.models.Training import NetworkTraining
+from neural_architecture.models.autokeras import AutoKerasRun
+from runs.models.training import NetworkTraining
 
 
 class ListRuns(TemplateView):

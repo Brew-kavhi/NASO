@@ -10,31 +10,43 @@ def get_class(module_name: str, class_name: str):
 
 
 def get_object(
-    module_name: str, class_name: str, additional_arguments, required_arguments=[]
+    module_name: str, class_name: str, additional_arguments, required_arguments=None
 ):
+    if required_arguments is None:
+        required_arguments = []
     try:
         module = importlib.import_module(module_name)
         class_instance = getattr(module, class_name)
         return class_instance(
             **get_arguments_as_dict(additional_arguments, required_arguments)
         )
-    except Exception as e:
+    except ImportError as _e:
         logger.critical(
-            f"Immporting Class {class_name} from module {module_name} failed: {e}"
+            f"Importing Class {class_name} from module {module_name} failed: {_e}"
+        )
+        return class_instance()
+    except Exception as _e:
+        logger.critical(
+            f"Immporting Class {class_name} from module {module_name} failed: {_e}"
         )
         return class_instance()
 
 
-def get_callback(callback_definition):
+def get_callback(callback_definition, required_arguments=None):
+    if required_arguments is None:
+        required_arguments = []
     try:
         module = importlib.import_module(callback_definition["module_name"])
         class_instance = getattr(module, callback_definition["class_name"])
         return class_instance(
-            **get_arguments_as_dict(callback_definition["additional_arguments"])
+            **get_arguments_as_dict(
+                callback_definition["additional_arguments"], required_arguments
+            )
         )
-    except Exception as e:
+    except Exception as _e:
         logger.critical(
-            f"Importing Callback {callback_definition['class_name']} from module {callback_definition['module_name']} failed: {e}"
+            f"Importing Callback {callback_definition['class_name']} from "
+            + f"module {callback_definition['module_name']} failed: {_e}"
         )
         return class_instance
 
@@ -47,38 +59,42 @@ def get_arguments_as_dict(additional_arguments, required_arguments):
             arguments[argument["name"]] = argument["value"]
             for required_arg in required_arguments:
                 if argument["name"] == required_arg["name"]:
-                    if required_arg["dtype"] == "int":
-                        try:
-                            if is_int(argument["value"]):
-                                arguments[argument["name"]] = int(argument["value"])
-                            else:
-                                arguments[argument["name"]] = float(argument["value"])
-                        except Exception as e:
-                            logger.error(
-                                f"Fehler: Parameter {argument['name']} muss als Zahl gegeben sein: {e}"
-                            )
-                    elif required_arg["dtype"] == "float":
-                        try:
-                            arguments[argument["name"]] = float(argument["value"])
-                        except Exception as e:
-                            logger.error(
-                                f"Fehler: Parameter {argument['name']} muss als Kommazahl gegeben sein: {e}"
-                            )
-                    elif required_arg["dtype"] == "bool":
-                        if argument["value"] == "true":
-                            argument["value"] = True
-                        elif argument["value"] == "false":
-                            argument["value"] = False
-                        else:
-                            try:
-                                arguments[argument["name"]] = bool(argument["value"])
-                            except Exception as e:
-                                logger.error(
-                                    f"Fehler: Parameter {argument['name']} muss als Boolean gegeben sein: {e}"
-                                )
+                    build_argument(argument, required_arg, arguments)
                     continue
 
     return arguments
+
+
+def build_argument(argument, required_argument, arguments):
+    if required_argument["dtype"] == "int":
+        try:
+            if is_int(argument["value"]):
+                arguments[argument["name"]] = int(argument["value"])
+            else:
+                arguments[argument["name"]] = float(argument["value"])
+        except ValueError as _e:
+            logger.error(
+                f"Fehler: Parameter {argument['name']} muss als Zahl gegeben sein: {_e}"
+            )
+    elif required_argument["dtype"] == "float":
+        try:
+            arguments[argument["name"]] = float(argument["value"])
+        except ValueError as _e:
+            logger.error(
+                f"Fehler: Parameter {argument['name']} muss als Kommazahl gegeben sein: {_e}"
+            )
+    elif required_argument["dtype"] == "bool":
+        if argument["value"] == "true":
+            argument["value"] = True
+        elif argument["value"] == "false":
+            argument["value"] = False
+        else:
+            try:
+                arguments[argument["name"]] = bool(argument["value"])
+            except ValueError as _e:
+                logger.error(
+                    f"Fehler: Parameter {argument['name']} muss als Boolean gegeben sein: {_e}"
+                )
 
 
 def is_int(string):
