@@ -3,9 +3,9 @@ import inspect
 
 from django.core.management.base import BaseCommand
 
-from neural_architecture.models.AutoKeras import AutoKerasNodeType, AutoKerasTunerType
-from neural_architecture.models.Dataset import DatasetLoader
-from neural_architecture.models.Types import (
+from neural_architecture.models.autokeras import AutoKerasNodeType, AutoKerasTunerType
+from neural_architecture.models.dataset import DatasetLoader
+from neural_architecture.models.types import (
     CallbackType,
     LossType,
     MetricType,
@@ -275,7 +275,7 @@ class Command(BaseCommand):
 
         # load the energy callback:
         call, _ = CallbackType.objects.get_or_create(
-            module_name="neural_architecture.NetworkCallbacks.EnergyCallback",
+            module_name="neural_architecture.NetworkCallbacks.energy_callback",
             name="EnergyCallback",
             keras_native_callback=False,
             required_arguments=[],
@@ -291,14 +291,14 @@ class Command(BaseCommand):
 
 
 def load_dataset_loaders():
-    DatasetLoader.objects.get_or_create(
-        module_name="neural_architecture.models.Dataset",
+    dataset, _ = DatasetLoader.objects.get_or_create(
+        module_name="neural_architecture.models.dataset",
         class_name="TensorflowDatasetLoader",
         name="Tensorflow Datasets",
         description="These are all the datasets that are available in tensorflow_datasets.",
     )
-    DatasetLoader.objects.get_or_create(
-        module_name="neural_architecture.models.Dataset",
+    dataset, _ = DatasetLoader.objects.get_or_create(
+        module_name="neural_architecture.models.dataset",
         class_name="SkLearnDatasetLoader",
         name="SkLearn Datasets",
         description="These are all the datasets that are available in sklearn.",

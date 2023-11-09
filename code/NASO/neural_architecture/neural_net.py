@@ -2,14 +2,14 @@ import tensorflow as tf
 from loguru import logger
 
 from celery import shared_task
-from neural_architecture.models.Architecture import NetworkConfiguration
-from neural_architecture.NetworkCallbacks.CeleryUpdateCallback import (
+from neural_architecture.models.architecture import NetworkConfiguration
+from neural_architecture.NetworkCallbacks.celery_update_callback import (
     CeleryUpdateCallback,
 )
-from neural_architecture.NetworkCallbacks.EvaluationBaseCallback import (
+from neural_architecture.NetworkCallbacks.evaluation_base_callback import (
     EvaluationBaseCallback,
 )
-from runs.models.Training import NetworkTraining, TrainingMetric
+from runs.models.training import NetworkTraining, TrainingMetric
 
 logger.add("net.log", backtrace=True, diagnose=True)
 
@@ -21,10 +21,10 @@ def run_neural_net(self, training_id):
 
     update_call = CeleryUpdateCallback(self, run=training)
     try:
-        nn = NeuralNetwork(training)
-        nn.run_from_config(training, update_call)
-    except Exception as e:
-        logger.error("Failure while training the network: " + str(e))
+        _nn = NeuralNetwork(training)
+        _nn.run_from_config(training, update_call)
+    except Exception as _e:
+        logger.error("Failure while training the network: " + str(_e))
         self.update_state(state="FAILED")
 
     self.update_state(state="SUCCESS")
@@ -32,6 +32,8 @@ def run_neural_net(self, training_id):
 
 class NeuralNetwork:
     celery_callback = None
+    train_dataset = None
+    test_dataset = None
 
     def __init__(self, training_config: NetworkTraining = None):
         if training_config:
@@ -64,16 +66,16 @@ class NeuralNetwork:
 
     def load_data(self):
         # TODO this needs to customer adjustable
-        data = self.training_config.dataset.get_data()
+        (
+            self.train_dataset,
+            self.test_dataset,
+        ) = self.training_config.dataset.get_data()
 
-        self.train_dataset = data[0]
-        if len(data) > 1:
-            self.test_dataset = data[1]
-        else:
-            self.test_dataset = self.train_dataset
         logger.success("Data is loaded.")
 
     def train(self, training_config: NetworkTraining = None):
+        if training_config:
+            self.training_config = training_config
         fit_parameters = self.training_config.fit_parameters
         epochs = fit_parameters.epochs
         batch_size = fit_parameters.batch_size

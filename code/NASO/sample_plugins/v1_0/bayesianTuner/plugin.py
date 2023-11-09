@@ -1,8 +1,8 @@
 # from django.db import transaction
 from autokeras import tuners
 
-from neural_architecture.models.AutoKeras import AutoKerasTunerType
-from plugins.interfaces.Commands import InstallerInterface
+from neural_architecture.models.autokeras import AutoKerasTunerType
+from plugins.interfaces.commands import InstallerInterface
 
 # @transaction.atomic
 

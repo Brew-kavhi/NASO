@@ -1,7 +1,9 @@
 import autokeras
 import keras_tuner
+import tensorflow as tf
 from django.core.exceptions import ValidationError
 from django.db import models
+from keras import backend as K
 
 from helper_scripts.extensions import (
     custom_on_epoch_begin_decorator,
@@ -10,7 +12,8 @@ from helper_scripts.extensions import (
     custom_on_trial_end_decorator,
 )
 from helper_scripts.importing import get_class, get_object
-from runs.models.Training import (
+from neural_architecture.models.model_runs import KerasModelRun
+from runs.models.training import (
     CallbackFunction,
     LossFunction,
     Metric,
@@ -18,8 +21,7 @@ from runs.models.Training import (
     TrainingMetric,
 )
 
-from .Dataset import Dataset
-from .Types import BaseType, TypeInstance
+from .types import BaseType, TypeInstance
 
 
 # This handles all python classses.
@@ -42,12 +44,13 @@ class AutoKerasTunerType(BaseType):
             self.native_tuner = False
             if not self.module_name or len(self.module_name) == 0:
                 raise ValidationError(
-                    "If the tuner is not a native AutoKeras Tuner we need a class to import the tuner from, module_name cannot be empty."
+                    """If the tuner is not a native AutoKeras Tuner we need a class to import the tuner
+                    from, module_name cannot be empty."""
                 )
         else:
             self.module_name = None
             self.native_tuner = True
-        super(AutoKerasTunerType, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
 class AutoKerasTuner(TypeInstance):
@@ -80,12 +83,13 @@ class AutoKerasModel(models.Model):
     epochs = models.IntegerField(default=1000)
 
     auto_model: autokeras.AutoModel = None
+    loaded_model: autokeras.AutoModel = None
     layer_outputs: dict = {}
     inputs: dict = {}
     outputs: dict = {}
     tuner_object = None
 
-    def build_tuner(self, run):
+    def build_tuner(self, run: "AutoKerasRun"):
         if not self.tuner_object:
             self.tuner_object = get_class(
                 self.tuner.tuner_type.module_name, self.tuner.tuner_type.name
@@ -139,7 +143,7 @@ class AutoKerasModel(models.Model):
 
         self.build_tuner(run)
 
-        loaded_model = autokeras.AutoModel(
+        self.loaded_model = autokeras.AutoModel(
             inputs=self.inputs,
             outputs=self.outputs,
             overwrite=False,
@@ -151,7 +155,81 @@ class AutoKerasModel(models.Model):
             objective=keras_tuner.Objective(self.objective, direction="min"),
         )
 
-        return loaded_model
+        return self.loaded_model
+
+    def load_trial(self, run: "AutoKerasRun", trial_id: str):
+        if not self.loaded_model:
+            self.loaded_model = self.load_model(run)
+
+        # build a dataset to set the inputs size and everything.
+        (train_dataset, test_dataset) = run.dataset.get_data()
+
+        # need this for the input shapes and so on
+        _, hp, _, _ = self.prepare_data_for_trial(train_dataset, test_dataset, trial_id)
+        trial_model = self.loaded_model.tuner._try_build(hp)
+        weights_path = self.get_trial_checkpoint_path(trial_id)
+        trial_model.load_weights(weights_path)
+        trial_model.compile(
+            optimizer=trial_model.optimizer,
+            loss=trial_model.loss,
+            metrics=self.get_metrics(),
+        )
+        print(trial_model.summary())
+        return trial_model
+
+    def save_trial_as_model(
+        self, run: "AutoKerasRun", keras_model_run: KerasModelRun, trial_id: str
+    ) -> (tf.data.Dataset, tf.data.Dataset):
+        """
+        This method saves a trial as a KerasModel and returns the train and the validation dataset
+        """
+        keras_model_run.model.metrics.set(self.metrics.all())
+
+        trial_model = self.load_trial(run, trial_id)
+        keras_model_run.model.set_model(trial_model)
+        (train_data, validation_data) = keras_model_run.dataset.get_data()
+        (_, _, train_dataset, validation_dataset) = self.prepare_data_for_trial(
+            train_data, validation_data, trial_id
+        )
+
+        # free up the memory
+        K.clear_session()
+        return (train_dataset, validation_dataset)
+
+    def get_trial_checkpoint_path(self, trial_id) -> str:
+        return f"auto_model/{self.directory}/{self.project_name}/trial_{trial_id}/checkpoint"
+
+    def prepare_data_for_trial(
+        self, train_dataset, test_dataset, trial_id: str
+    ) -> tuple:
+        if not self.loaded_model:
+            raise ValueError("load model first")
+        if not trial_id:
+            raise Exception("Supply a Trial id")
+        trial = self.get_trial(trial_id)
+
+        # convert dataset to a shape , that autokeras can use.
+        dataset, validation_data = self.loaded_model._convert_to_dataset(
+            train_dataset, y=None, validation_data=test_dataset, batch_size=32
+        )
+        self.loaded_model._analyze_data(dataset)
+        self.loaded_model._build_hyper_pipeline(dataset)
+
+        # finally prepare model and dataset again for the structure of the model. this also reformats the labels
+        (
+            pipeline,
+            trial_data,
+            validation_data,
+        ) = self.loaded_model.tuner._prepare_model_build(
+            trial.hyperparameters, x=dataset, validation_data=validation_data
+        )
+        return (pipeline, trial.hyperparameters, trial_data, validation_data)
+
+    def get_trial(self, trial_id):
+        if not self.loaded_model:
+            raise Exception("load model first")
+        trial = self.loaded_model.tuner.oracle.trials[trial_id]
+        return trial
 
     def get_metrics(self):
         metrics = []
@@ -246,21 +324,20 @@ class AutoKerasModel(models.Model):
     # calls the fit method of the autokeras model
     def fit(self, *args, **kwargs):
         if not self.auto_model:
-            raise Exception("Model has not been built yet.")
+            raise ValueError("Model has not been built yet.")
         self.auto_model.fit(*args, **kwargs)
 
     def predict(self, *args, **kwargs):
         if not self.auto_model:
-            raise Exception("Model has not been built yet.")
+            raise ValueError("Model has not been built yet.")
         self.auto_model.predict(*args, **kwargs)
 
     def evaluate(self, *args, **kwargs):
         if not self.auto_model:
-            raise Exception("Model has not been built yet.")
+            raise ValueError("Model has not been built yet.")
         self.auto_model.evaluate(*args, **kwargs)
 
 
 class AutoKerasRun(Run):
     model = models.ForeignKey(AutoKerasModel, on_delete=models.deletion.CASCADE)
     metrics = models.ManyToManyField(TrainingMetric, related_name="autokeras_metrics")
-    dataset = models.ForeignKey(Dataset, models.deletion.SET_NULL, null=True)

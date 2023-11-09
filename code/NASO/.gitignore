@@ -42,6 +42,7 @@ share/python-wheels/
 MANIFEST
 auto_model/
 trial*/
+keras_models/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

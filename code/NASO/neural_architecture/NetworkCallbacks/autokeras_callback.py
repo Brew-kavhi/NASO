@@ -3,9 +3,9 @@ import math
 import tensorflow as tf
 from loguru import logger
 
-from helper_scripts.Timer import Timer
-from neural_architecture.models.AutoKeras import AutoKerasRun
-from runs.models.Training import TrainingMetric
+from helper_scripts.timer import Timer
+from neural_architecture.models.autokeras import AutoKerasRun
+from runs.models.training import TrainingMetric
 
 
 class AutoKerasCallback(tf.keras.callbacks.Callback):

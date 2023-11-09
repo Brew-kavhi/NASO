@@ -1,16 +1,21 @@
 [MASTER]
 load-plugins=pylint_django
-django-settings-module=naso.settings
-ignore=migrations
+django-settings-module=naso.settings_local
+ignore=migrations,celery, sample_plugins, pyproject.toml, INIT.sh, INSTALL.sh, README.md, CONTRIBUTE.md, net.log, poetry.lock, requirements.txt, db.sqlite3
+
 
 [FORMAT]
-max-line-length=120
+max-line-length=130
 
 [MESSAGES CONTROL]
-disable=missing-docstring,invalid-name
+disable=missing-docstring
 
 [DESIGN]
 max-parents=13
 
+[REPORTS]
+output-format = colorized
+
 [TYPECHECK]
 generated-members=REQUEST,acl_users,aq_parent,"[a-zA-Z]+_set{1,2}",save,delete
+init-import=no

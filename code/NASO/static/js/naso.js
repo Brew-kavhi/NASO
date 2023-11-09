@@ -102,7 +102,6 @@ function handleMetricChange(selectElement) {
             
             for (const argumentName of selectedMetric.jsonConfig) {
                 metricContainerHTML += addInputField(argumentName, 'metric_argument_' + selectedMetric.id + '_');
-                
             }
             
             metricContainerHTML += '</div></div>';
@@ -113,16 +112,13 @@ function handleMetricChange(selectElement) {
                     metricObjectiveOptions.set(selectedMetric.id, $('#metric_argument_' + selectedMetric.id + '_name').val());
                     //add onchange listener to the objective field
                     $('#metric_argument_' + selectedMetric.id + '_name').attr('metric_id', selectedMetric.id);
-                    $('#metric_argument_' + selectedMetric.id + '_name').change(function() {    
-                        console.log('metricchange');
+                    $('#metric_argument_' + selectedMetric.id + '_name').change(function() { 
                         metricObjectiveOptions.set(Number($(this).attr('metric_id')), $(this).val());
                         renderMetricWeights();
                     });
                     break;
                 }
-            }
-            
-            
+            }         
         }
     }
     renderMetricWeights();
@@ -316,4 +312,4 @@ function addInputField(argument, prefix) {
     return '';   
 }
 
-let metricWeights = new Map();
+metricWeights = new Map();

@@ -1,8 +1,8 @@
 from django.urls import path
 
-from plugins.views.NewPlugin import NewPlugin, UninstallPlugin
-from plugins.views.PluginDetails import PluginDetails
-from plugins.views.PluginList import PluginList
+from plugins.views.new_plugin import NewPlugin, UninstallPlugin
+from plugins.views.plugin_details import PluginDetails
+from plugins.views.plugin_list import PluginList
 
 urlpatterns = [
     path("", PluginList.as_view(), name="list"),

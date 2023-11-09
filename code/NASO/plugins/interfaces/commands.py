@@ -24,14 +24,9 @@ class InstallerInterface(ABC):
         """
         This method installs the plugin.
         """
-        pass
 
     @abstractmethod
     def uninstall(self):
         """
         Uninstalls the plugin and removes all associated files and configurations.
         """
-        pass
-
-
-# your_plugin.py

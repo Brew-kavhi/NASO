@@ -1,38 +1,20 @@
-from crispy_forms.helper import FormHelper
 from crispy_forms.layout import HTML, Column, Field, Layout, Row, Submit
 from django import forms
 from django.urls import reverse_lazy
 
-from neural_architecture.models.AutoKeras import AutoKerasNodeType, AutoKerasTunerType
-from neural_architecture.models.Dataset import DatasetLoader
-from neural_architecture.models.Templates import (
+from neural_architecture.models.autokeras import AutoKerasNodeType, AutoKerasTunerType
+from neural_architecture.models.templates import (
     AutoKerasNetworkTemplate,
     KerasNetworkTemplate,
 )
-from neural_architecture.models.Types import (
-    CallbackType,
-    LossType,
-    MetricType,
-    NetworkLayerType,
-    OptimizerType,
-)
+from neural_architecture.models.types import NetworkLayerType, OptimizerType
+from runs.forms.base import BaseRun, BaseRunWithCallback
 
 
-class NewRunForm(forms.Form):
-    name = forms.CharField(label="Network Name", max_length=100)
+class NewRunForm(BaseRun):
     optimizer = forms.ModelChoiceField(
         label="Optimizer",
         queryset=OptimizerType.objects.all(),
-    )
-    loss = forms.ModelChoiceField(
-        label="Loss Function",
-        queryset=LossType.objects.all(),
-    )
-    metrics = forms.ModelMultipleChoiceField(
-        label="Metrics",
-        queryset=MetricType.objects.all(),
-        required=False,
-        widget=forms.SelectMultiple(attrs={"class": "select2 w-100"}),
     )
     layers = forms.ModelChoiceField(
         label="Layer",
@@ -44,10 +26,6 @@ class NewRunForm(forms.Form):
         label="Steps per execution", required=False, initial=1
     )
     jit_compile = forms.BooleanField(label="JIT Compile", required=False)
-    save_network_as_template = forms.BooleanField(
-        label="Als Vorlage speichern", required=False
-    )
-    network_template_name = forms.CharField(label="Vorlagename", required=False)
     network_template = forms.ModelChoiceField(
         label="Vorlage",
         queryset=KerasNetworkTemplate.objects.all(),
@@ -76,42 +54,17 @@ class NewRunForm(forms.Form):
         required=False, initial=False, label="Use multiprocessing"
     )
 
-    dataset_loaders = forms.ModelChoiceField(
-        label="Dataset Loaders",
-        queryset=DatasetLoader.objects.all(),
-        widget=forms.Select(attrs={"class": "select2 w-100"}),
-    )
-
-    dataset = forms.CharField(label="Dataset", required=False)
-    dataset_is_supervised = forms.BooleanField(initial=True, required=False)
-
-    extra_context = {}
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.helper = FormHelper()
-        self.helper.form_method = "post"
-        self.helper.form_id = "start_new_run"
         self.helper.form_action = reverse_lazy("runs:new")
-        self.helper.form_class = "form-horizontal"
-        self.helper.label_class = "col-lg-2"
-        self.helper.field_class = "col-lg-10"
+
         self.helper.layout = Layout(
             HTML('<div class="row mb-3"><h2>Training konfigurieren</h2></div>'),
             Field("name"),
-            Field(
-                "metrics",
-                css_class="chosen-select select2 w-100",
-                data_placeholder="Select Metrics",
-                multiple="multiple",
-            ),
-            HTML(
-                "<div id='metrics-arguments' class='card rounded-3 d-flex flex-row flex-wrap'></div>"
-            ),
+            self.metric_html(),
             Field("optimizer", css_class="select2 w-100 mt-3"),
             HTML("<div id='optimizer-arguments' class='card rounded-3'></div>"),
-            Field("loss", css_class="select2 w-100 mt-3"),
-            HTML("<div id='loss-arguments' class='card rounded-3'></div>"),
+            self.loss_html(),
             HTML('<div class="clearfix"></div>'),
             Row(
                 # Column("epochs", css_class="form-group col-6 mb-0"),
@@ -192,86 +145,21 @@ class NewRunForm(forms.Form):
                 Column(Field("network_template_name")),
                 Column(Field("network_template")),
             ),
-            Row(
-                HTML(
-                    """
-                    <h2>Dataset</h2>
-                    """
-                ),
-                css_class="border-top pt-3",
-            ),
-            Row(
-                Column(
-                    Field(
-                        "dataset_loaders",
-                        css_class="chosen-select select2 w-100",
-                        wrapper_class="align-items-center",
-                    )
-                ),
-                Column(
-                    Field(
-                        "dataset",
-                        css_class="autocomplete w-100",
-                    )
-                ),
-                Column(Field("dataset_is_supervised"), css_class="col-3"),
-                css_class="align-items-center",
-            ),
+            self.dataloader_html(),
             Submit("customer-general-edit", "Training starten"),
         )
 
         self.fields["optimizer"].widget.attrs[
             "onchange"
         ] = "handleOptimizerChange(this)"
-        self.fields["loss"].widget.attrs["onchange"] = "handleLossChange(this)"
-        self.fields["metrics"].widget.attrs["onchange"] = "handleMetricChange(this)"
+
         self.fields["layers"].widget.attrs["onchange"] = "handleLayerChange(this)"
-        self.fields["dataset_loaders"].widget.attrs[
-            "onchange"
-        ] = "handleDatasetLoaderChange(this)"
 
-        self.fields["metrics"].widget.choices = self.get_metric_choices()
         self.fields["optimizer"].widget.choices = self.get_optimizer_choices()
-        self.fields["loss"].widget.choices = self.get_loss_choices()
         self.fields["layers"].widget.choices = self.get_layer_choices()
-
-    def load_graph(self, nodes, edges):
-        self.extra_context["nodes"] = nodes
-        self.extra_context["edges"] = edges
 
     def load_optimizer_config(self, arguments):
         self.extra_context["optimizer_config"] = arguments
-
-    def load_loss_config(self, arguments):
-        self.extra_context["loss_config"] = arguments
-
-    def load_metric_configs(self, arguments):
-        self.extra_context["metric_configs"] = arguments
-
-    def get_extra_context(self):
-        return self.extra_context
-
-    def get_metric_choices(self):
-        metric_choices = []
-        modules = MetricType.objects.values_list("module_name", flat=True).distinct()
-
-        for module in modules:
-            metrics = MetricType.objects.filter(module_name=module)
-            metric_choices.append(
-                (module, [(metric.id, metric.name) for metric in metrics])
-            )
-
-        return metric_choices
-
-    def get_loss_choices(self):
-        loss_choices = []
-        modules = LossType.objects.values_list("module_name", flat=True).distinct()
-
-        for module in modules:
-            losses = LossType.objects.filter(module_name=module)
-            loss_choices.append((module, [(loss.id, loss.name) for loss in losses]))
-
-        return loss_choices
 
     def get_layer_choices(self):
         layer_choices = []
@@ -298,8 +186,7 @@ class NewRunForm(forms.Form):
         return optimizer_choices
 
 
-class NewAutoKerasRunForm(forms.Form):
-    name = forms.CharField(label="Network Name", max_length=100)
+class NewAutoKerasRunForm(BaseRunWithCallback):
     tuner = forms.ModelChoiceField(
         label="Tuner",
         required=False,
@@ -313,22 +200,6 @@ class NewAutoKerasRunForm(forms.Form):
         widget=forms.Select(
             attrs={"class": "select2", "style": "width: -webkit-fill-available"}
         ),
-    )
-    loss = forms.ModelChoiceField(
-        label="Loss Function",
-        queryset=LossType.objects.all(),
-    )
-    metrics = forms.ModelMultipleChoiceField(
-        label="Metrics",
-        queryset=MetricType.objects.all(),
-        required=False,
-        widget=forms.SelectMultiple(attrs={"class": "select2 w-100"}),
-    )
-    callbacks = forms.ModelMultipleChoiceField(
-        label="Callbacks",
-        queryset=CallbackType.objects.all(),
-        required=False,
-        widget=forms.SelectMultiple(attrs={"class": "select2 w-100"}),
     )
     max_model_size = forms.IntegerField(
         label="Max Model size",
@@ -355,10 +226,6 @@ class NewAutoKerasRunForm(forms.Form):
         widget=forms.Textarea(attrs={"type": "text"}),
     )
 
-    save_network_as_template = forms.BooleanField(
-        label="Als Vorlage speichern", required=False
-    )
-    network_template_name = forms.CharField(label="Vorlagename", required=False)
     network_template = forms.ModelChoiceField(
         label="Vorlage",
         queryset=AutoKerasNetworkTemplate.objects.all(),
@@ -368,54 +235,16 @@ class NewAutoKerasRunForm(forms.Form):
 
     directory = forms.CharField(label="Directory", required=False)
 
-    dataset_loaders = forms.ModelChoiceField(
-        label="Dataset Loaders",
-        queryset=DatasetLoader.objects.all(),
-        widget=forms.Select(attrs={"class": "select2 w-100"}),
-        required=False,
-    )
-
-    dataset = forms.CharField(label="Dataset", required=False)
-    dataset_is_supervised = forms.BooleanField(initial=True, required=False)
-
-    extra_context = {}
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.helper = FormHelper()
-        self.helper.form_method = "post"
-        self.helper.form_id = "start_new_run"
-        self.helper.form_action = reverse_lazy("runs:new_autokeras")
-        self.helper.form_class = "form-horizontal"
-        self.helper.label_class = "col-lg-2"
-        self.helper.field_class = "col-lg-10"
+        self.helper.form_action = reverse_lazy("runs:autokeras:new")
+
         self.helper.layout = Layout(
             HTML('<div class="row mb-3"><h2>Autokeras konfigurieren</h2></div>'),
             Field("name"),
-            Field(
-                "metrics",
-                css_class="chosen-select select2 w-100",
-                data_placeholder="Select Metrics",
-                multiple="multiple",
-            ),
-            HTML(
-                """
-                <div id='metrics-arguments' class='card rounded-3 d-flex flex-row flex-wrap'></div>
-                """
-            ),
-            Field(
-                "loss",
-                css_class="select2 w-100 mt-3",
-                data_placeholder="Select Loss function",
-            ),
-            HTML("<div id='loss-arguments' class='card rounded-3'></div>"),
-            Field(
-                "callbacks",
-                css_class="select2 w-100 mt-3",
-                data_placeholder="Select Callbacks",
-                multiple="multiple",
-            ),
-            HTML("<div id='callbacks-arguments' class='card rounded-3'></div>"),
+            self.metric_html(),
+            self.loss_html(),
+            self.callback_html(),
             Field(
                 "tuner", data_placeholder="Select Tuner", css_class="select2 w-100 mt-3"
             ),
@@ -487,67 +316,18 @@ class NewAutoKerasRunForm(forms.Form):
                 Column(Field("network_template_name")),
                 Column(Field("network_template")),
             ),
-            Row(
-                HTML(
-                    """
-                    <h2>Dataset</h2>
-                    """
-                ),
-                css_class="border-top pt-3",
-            ),
-            Row(
-                Column(
-                    Field(
-                        "dataset_loaders",
-                        css_class="chosen-select select2 w-100",
-                        wrapper_class="align-items-center",
-                    )
-                ),
-                Column(
-                    Field(
-                        "dataset",
-                        css_class="autocomplete w-100",
-                    )
-                ),
-                Column(Field("dataset_is_supervised"), css_class="col-3"),
-                css_class="align-items-center",
-            ),
+            self.dataloader_html(),
             Submit("customer-general-edit", "Training starten"),
         )
 
         self.fields["tuner"].widget.attrs["onchange"] = "handleKerasTunerChange(this)"
         self.fields["layers"].widget.attrs["onchange"] = "handleKerasBlockChange(this)"
-        self.fields["metrics"].widget.attrs["onchange"] = "handleMetricChange(this)"
-        self.fields["loss"].widget.attrs["onchange"] = "handleLossChange(this)"
-        self.fields["callbacks"].widget.attrs["onchange"] = "handleCallbackChange(this)"
-        self.fields["dataset_loaders"].widget.attrs[
-            "onchange"
-        ] = "handleDatasetLoaderChange(this)"
 
-        self.fields["loss"].widget.choices = self.get_loss_choices()
-        self.fields["metrics"].widget.choices = self.get_metric_choices()
         self.fields["tuner"].widget.choices = self.get_tuner_choices()
         self.fields["layers"].widget.choices = self.get_layer_choices()
-        self.fields["callbacks"].widget.choices = self.get_callbacks_choices()
-
-    def load_graph(self, nodes, edges):
-        self.extra_context["nodes"] = nodes
-        self.extra_context["edges"] = edges
 
     def load_tuner_config(self, arguments):
         self.extra_context["tuner_config"] = arguments
-
-    def load_metric_configs(self, arguments):
-        self.extra_context["metric_configs"] = arguments
-
-    def load_callbacks_configs(self, arguments):
-        self.extra_context["callbacks_configs"] = arguments
-
-    def load_loss_config(self, arguments):
-        self.extra_context["loss_config"] = arguments
-
-    def get_extra_context(self):
-        return self.extra_context
 
     def get_layer_choices(self):
         layer_choices = []
@@ -572,37 +352,3 @@ class NewAutoKerasRunForm(forms.Form):
             tuner_choices.append((module, [(tuner.id, tuner.name) for tuner in tuners]))
 
         return tuner_choices
-
-    def get_loss_choices(self):
-        loss_choices = []
-        modules = LossType.objects.values_list("module_name", flat=True).distinct()
-
-        for module in modules:
-            losses = LossType.objects.filter(module_name=module)
-            loss_choices.append((module, [(loss.id, loss.name) for loss in losses]))
-
-        return loss_choices
-
-    def get_metric_choices(self):
-        metric_choices = []
-        modules = MetricType.objects.values_list("module_name", flat=True).distinct()
-
-        for module in modules:
-            metrics = MetricType.objects.filter(module_name=module)
-            metric_choices.append(
-                (module, [(metric.id, metric.name) for metric in metrics])
-            )
-
-        return metric_choices
-
-    def get_callbacks_choices(self):
-        callback_choices = []
-        modules = CallbackType.objects.values_list("module_name", flat=True).distinct()
-
-        for module in modules:
-            callbacks = CallbackType.objects.filter(module_name=module)
-            callback_choices.append(
-                (module, [(callback.id, callback.name) for callback in callbacks])
-            )
-
-        return callback_choices

@@ -8,21 +8,21 @@ from django.views.generic.base import TemplateView
 
 from naso.models.page import PageSetup
 from neural_architecture.autokeras import run_autokeras
-from neural_architecture.models.Architecture import NetworkConfiguration, NetworkLayer
-from neural_architecture.models.AutoKeras import (
+from neural_architecture.models.architecture import NetworkConfiguration, NetworkLayer
+from neural_architecture.models.autokeras import (
     AutoKerasModel,
     AutoKerasNode,
     AutoKerasRun,
     AutoKerasTuner,
 )
-from neural_architecture.models.Dataset import Dataset
-from neural_architecture.models.Templates import (
+from neural_architecture.models.dataset import Dataset
+from neural_architecture.models.templates import (
     AutoKerasNetworkTemplate,
     KerasNetworkTemplate,
 )
 from neural_architecture.neural_net import run_neural_net
-from runs.forms.NewRunForm import NewAutoKerasRunForm, NewRunForm
-from runs.models.Training import (
+from runs.forms.new_run_form import NewAutoKerasRunForm, NewRunForm
+from runs.models.training import (
     CallbackFunction,
     EvaluationParameters,
     FitParameters,
@@ -142,6 +142,33 @@ class NewRun(TemplateView):
 
         return self.render_to_response(self.context)
 
+    def build_config(self, form_data, layers, connections):
+        network_config = NetworkConfiguration(name=form_data["name"])
+        network_config.save()
+        template = form_data["network_template"]
+        if template:
+            network_config.node_to_layer_id = template.node_to_layer_id
+            network_config.layers.set(template.layers)
+            network_config.connections = template.connections
+        else:
+            node_to_layers = {}
+            for layer in layers:
+                if layer["id"] == "input_node":
+                    continue
+                naso_layer, _ = NetworkLayer.objects.get_or_create(
+                    layer_type_id=layer["naso_type"],
+                    name=layer["id"],
+                    additional_arguments=layer["additional_arguments"],
+                )
+                naso_layer.save()
+                node_to_layers[layer["id"]] = naso_layer.id
+                network_config.layers.add(naso_layer)
+
+            network_config.connections = connections
+            network_config.node_to_layer_id = node_to_layers
+        network_config.save()
+        return network_config
+
     def post(self, request, *args, **kwargs):
         if "epochs" in request.POST:
             form = NewRunForm(request.POST)
@@ -154,29 +181,10 @@ class NewRun(TemplateView):
                 ) = self.get_typewise_arguments(request.POST.items())
 
                 # Create Optimizer object
-                optimizer_type = form.cleaned_data["optimizer"]
                 optimizer, _ = Optimizer.objects.get_or_create(
-                    instance_type=optimizer_type,
+                    instance_type=form.cleaned_data["optimizer"],
                     additional_arguments=optimizer_arguments,
                 )
-
-                # Create LossFunction object (similarly for Metric objects)
-                loss_type = form.cleaned_data["loss"]
-                loss_function, _ = LossFunction.objects.get_or_create(
-                    instance_type=loss_type, additional_arguments=loss_arguments
-                )
-
-                # Handle multiple selected metrics
-                selected_metrics = form.cleaned_data["metrics"]
-
-                metrics = []
-
-                for metric_type in selected_metrics:
-                    metric_arguments = metrics_arguments.get(metric_type.id, [])
-                    metric, _ = Metric.objects.get_or_create(
-                        instance_type=metric_type, additional_arguments=metric_arguments
-                    )
-                    metrics.append(metric)
 
                 hyper_parameters = NetworkHyperparameters(
                     run_eagerly=form.cleaned_data["run_eagerly"],
@@ -184,11 +192,15 @@ class NewRun(TemplateView):
                     jit_compile=form.cleaned_data["jit_compile"],
                 )
                 hyper_parameters.optimizer = optimizer
-                hyper_parameters.loss = loss_function
+                hyper_parameters.loss = build_loss_function(
+                    form.cleaned_data, loss_arguments
+                )
 
                 hyper_parameters.save()
 
-                hyper_parameters.metrics.set(metrics)
+                hyper_parameters.metrics.set(
+                    build_metrics(form.cleaned_data, metrics_arguments)
+                )
 
                 training = NetworkTraining()
                 training.hyper_parameters = hyper_parameters
@@ -198,7 +210,7 @@ class NewRun(TemplateView):
                     batch_size=form.cleaned_data["batch_size"],
                     callbacks=[],
                 )
-                callbacks = []
+
                 fit_parameters, _ = FitParameters.objects.get_or_create(
                     epochs=form.cleaned_data["epochs"],
                     batch_size=form.cleaned_data["batch_size"],
@@ -206,57 +218,25 @@ class NewRun(TemplateView):
                     steps_per_epoch=form.cleaned_data["steps_per_epoch"],
                     workers=form.cleaned_data["workers"],
                     use_multiprocessing=form.cleaned_data["use_multiprocessing"],
-                    callbacks=callbacks,
+                    callbacks=[],
                 )
 
-                network_config = NetworkConfiguration(name=form.cleaned_data["name"])
-                network_config.save()
-
-                template = form.cleaned_data["network_template"]
-                if template:
-                    network_config.node_to_layer_id = template.node_to_layer_id
-                    network_config.layers.set(template.layers)
-                    network_config.connections = template.connections
-                else:
-                    layers = json.loads(request.POST.get("nodes"))
-                    connections = json.loads(request.POST.get("edges"))
-
-                    node_to_layers = {}
-                    for layer in layers:
-                        if layer["id"] == "input_node":
-                            continue
-                        naso_layer, _ = NetworkLayer.objects.get_or_create(
-                            layer_type_id=layer["naso_type"],
-                            name=layer["id"],
-                            additional_arguments=layer["additional_arguments"],
-                        )
-                        naso_layer.save()
-                        node_to_layers[layer["id"]] = naso_layer.id
-                        network_config.layers.add(naso_layer)
-
-                    network_config.connections = connections
-                    network_config.node_to_layer_id = node_to_layers
-                network_config.save()
+                network_config = self.build_config(
+                    form_data=form.cleaned_data,
+                    layers=json.loads(request.POST.get("nodes")),
+                    connections=json.loads(request.POST.get("edges")),
+                )
 
                 if form.cleaned_data["save_network_as_template"]:
-                    template = KerasNetworkTemplate.objects.create(
-                        name=form.cleaned_data["network_template_name"],
-                        connections=connections,
-                        node_to_layer_id=node_to_layers,
+                    create_network_template(
+                        form.cleaned_data["network_template_name"],
+                        False,
+                        network_config.layers.all(),
+                        network_config.connections,
+                        network_config.node_to_layer_id,
                     )
-                    template.layers.set(network_config.layers.all())
-                    template.save()
 
-                # generate the dataset:
-                dataset = form.cleaned_data["dataset"]
-                dataset_is_supervised = form.cleaned_data["dataset_is_supervised"]
-                data, _ = Dataset.objects.get_or_create(
-                    name=dataset,
-                    as_supervised=dataset_is_supervised,
-                    dataset_loader=form.cleaned_data["dataset_loaders"],
-                )
-
-                training.dataset = data
+                training.dataset = build_dataset(form.cleaned_data)
                 training.network_config = network_config
                 training.fit_parameters = fit_parameters
                 training.evaluation_parameters = eval_parameters
@@ -268,6 +248,69 @@ class NewRun(TemplateView):
                     request, messages.SUCCESS, "Training wurde gestartet."
                 )
                 return redirect("dashboard:index")
+        return redirect(request.path)
+
+
+def build_dataset(form_data):
+    data, _ = Dataset.objects.get_or_create(
+        name=form_data["dataset"],
+        as_supervised=form_data["dataset_is_supervised"],
+        dataset_loader=form_data["dataset_loaders"],
+    )
+    return data
+
+
+def build_loss_function(form_data, loss_arguments):
+    loss_function, _ = LossFunction.objects.get_or_create(
+        instance_type=form_data["loss"],
+        additional_arguments=loss_arguments,
+    )
+    return loss_function
+
+
+def build_metrics(form_data, metrics_arguments):
+    metrics = []
+
+    for metric_type in form_data["metrics"]:
+        metric_arguments = metrics_arguments.get(metric_type.id, [])
+        metric, _ = Metric.objects.get_or_create(
+            instance_type=metric_type, additional_arguments=metric_arguments
+        )
+        metrics.append(metric)
+    return metrics
+
+
+def build_callbacks(form_data, callbacks_arguments):
+    callbacks = []
+
+    for callback_type in form_data["callbacks"]:
+        callback_arguments = callbacks_arguments.get(callback_type.id, [])
+        callback, _ = CallbackFunction.objects.get_or_create(
+            instance_type=callback_type, additional_arguments=callback_arguments
+        )
+        callbacks.append(callback)
+    return callbacks
+
+
+def create_network_template(
+    template_name, is_autokeras, layers, connections, node_to_layers
+):
+    if is_autokeras:
+        template = AutoKerasNetworkTemplate.objects.create(
+            name=template_name,
+            connections=connections,
+            node_to_layer_id=node_to_layers,
+        )
+        template.blocks.set(layers)
+        template.save()
+    else:
+        template = KerasNetworkTemplate.objects.create(
+            name=template_name,
+            connections=connections,
+            node_to_layer_id=node_to_layers,
+        )
+        template.layers.set(layers)
+        template.save()
 
 
 class NewAutoKerasRun(TemplateView):
@@ -284,12 +327,10 @@ class NewAutoKerasRun(TemplateView):
         for key, value in request_dict.items():
             if key.startswith("tuner_argument_"):
                 argument_name = key[len("tuner_argument_") :]
-                tuner_argument = {"name": argument_name, "value": value}
-                tuner_arguments.append(tuner_argument)
+                tuner_arguments.append({"name": argument_name, "value": value})
             elif key.startswith("loss_argument_"):
                 argument_name = key[len("loss_argument_") :]
-                loss_argument = {"name": argument_name, "value": value}
-                loss_arguments.append(loss_argument)
+                loss_arguments.append({"name": argument_name, "value": value})
             elif key.startswith("metric_argument_"):
                 # this is metric, get the metric key and check if there isa already a metric definition
                 metric_id = int(key.split("_")[2])
@@ -334,7 +375,6 @@ class NewAutoKerasRun(TemplateView):
             form.initial["max_model_size"] = autokeras_run.model.max_model_size
             form.initial["objective"] = autokeras_run.model.objective
             form.initial["max_trials"] = autokeras_run.model.max_trials
-            form.initial["directory"] = autokeras_run.model.directory
 
             form.initial["loss"] = autokeras_run.model.loss.instance_type
             form.initial["metrics"] = [
@@ -395,6 +435,40 @@ class NewAutoKerasRun(TemplateView):
 
         return self.render_to_response(self.context)
 
+    def build_model(self, form_data, tuner, loss, weights):
+        model = AutoKerasModel.objects.create(
+            project_name=form_data["name"],
+            max_trials=form_data["max_trials"],
+            directory=form_data["directory"],
+            tuner=tuner,
+            objective=form_data["objective"],
+            max_model_size=form_data["max_model_size"],
+            loss=loss,
+            epochs=form_data["max_epochs"],
+        )
+        model.metric_weights = weights
+        template = form_data["network_template"]
+        if template:
+            model.node_to_layer_id = template.node_to_layer_id
+            model.connections = template.connections
+            model.blocks.set(template.blocks.all())
+        else:
+            node_to_layers = {}
+            for layer in form_data["nodes"]:
+                autokeras_layer, _ = AutoKerasNode.objects.get_or_create(
+                    node_type_id=layer["naso_type"],
+                    name=layer["id"],
+                    additional_arguments=layer["additional_arguments"],
+                )
+                autokeras_layer.save()
+                node_to_layers[layer["id"]] = autokeras_layer.id
+                model.blocks.add(autokeras_layer)
+
+            model.node_to_layer_id = node_to_layers
+            model.connections = form_data["edges"]
+        model.save()
+        return model
+
     def post(self, request, *args, **kwargs):
         form = NewAutoKerasRunForm(request.POST)
         if form.is_valid():
@@ -407,102 +481,40 @@ class NewAutoKerasRun(TemplateView):
                 weights,
             ) = self.get_typewise_arguments(dict(request.POST.items()))
 
-            # Create LossFunction object (similarly for Metric objects)
-            loss_type = form.cleaned_data["loss"]
-            loss_function, _ = LossFunction.objects.get_or_create(
-                instance_type=loss_type, additional_arguments=loss_arguments
-            )
-
-            # Handle multiple selected metrics
-            selected_metrics = form.cleaned_data["metrics"]
-
-            metrics = []
-
-            for metric_type in selected_metrics:
-                metric_arguments = metrics_arguments.get(metric_type.id, [])
-                metric, _ = Metric.objects.get_or_create(
-                    instance_type=metric_type, additional_arguments=metric_arguments
-                )
-                metrics.append(metric)
-
-            # Handle multiple selected callbacks
-            selected_callbacks = form.cleaned_data["callbacks"]
-            callbacks = []
-
-            for callback_type in selected_callbacks:
-                callback_arguments = callbacks_arguments.get(callback_type.id, [])
-                callback, _ = CallbackFunction.objects.get_or_create(
-                    instance_type=callback_type, additional_arguments=callback_arguments
-                )
-                callbacks.append(callback)
-
             # Create Optimizer object
-            tuner_type = form.cleaned_data["tuner"]
             tuner, _ = AutoKerasTuner.objects.get_or_create(
-                tuner_type=tuner_type,
+                tuner_type=form.cleaned_data["tuner"],
                 additional_arguments=tuner_arguments,
             )
 
-            model = AutoKerasModel.objects.create(
-                project_name=form.cleaned_data["name"],
-                max_trials=form.cleaned_data["max_trials"],
-                directory=form.cleaned_data["directory"],
+            form.cleaned_data["nodes"] = json.loads(request.POST.get("nodes"))
+            form.cleaned_data["edges"] = json.loads(request.POST.get("edges"))
+
+            model = self.build_model(
+                form_data=form.cleaned_data,
                 tuner=tuner,
-                objective=form.cleaned_data["objective"],
-                max_model_size=form.cleaned_data["max_model_size"],
-                loss=loss_function,
-                epochs=form.cleaned_data["max_epochs"],
+                loss=build_loss_function(form.cleaned_data, loss_arguments),
+                weights=weights,
             )
-            layers = json.loads(request.POST.get("nodes"))
-            connections = json.loads(request.POST.get("edges"))
-
-            model.metric_weights = weights
-
-            template = form.cleaned_data["network_template"]
-            if template:
-                model.node_to_layer_id = template.node_to_layer_id
-                model.connections = template.connections
-                model.blocks.set(template.blocks.all())
-            else:
-                node_to_layers = {}
-                for layer in layers:
-                    autokeras_layer, _ = AutoKerasNode.objects.get_or_create(
-                        node_type_id=layer["naso_type"],
-                        name=layer["id"],
-                        additional_arguments=layer["additional_arguments"],
-                    )
-                    autokeras_layer.save()
-                    node_to_layers[layer["id"]] = autokeras_layer.id
-                    model.blocks.add(autokeras_layer)
-
-                model.node_to_layer_id = node_to_layers
-                model.connections = connections
-            model.save()
 
             if form.cleaned_data["save_network_as_template"]:
-                template = AutoKerasNetworkTemplate.objects.create(
-                    name=form.cleaned_data["network_template_name"],
-                    connections=connections,
-                    node_to_layer_id=node_to_layers,
+                create_network_template(
+                    form.cleaned_data["network_template_name"],
+                    True,
+                    model.blocks.all(),
+                    model.connections,
+                    model.node_to_layer_id,
                 )
-                template.blocks.set(model.blocks.all())
-                template.save()
 
-            dataset = form.cleaned_data["dataset"]
-            dataset_is_supervised = form.cleaned_data["dataset_is_supervised"]
-            data, _ = Dataset.objects.get_or_create(
-                name=dataset,
-                as_supervised=dataset_is_supervised,
-                dataset_loader=form.cleaned_data["dataset_loaders"],
-            )
-            model.metrics.set(metrics)
-            model.callbacks.set(callbacks)
+            model.metrics.set(build_metrics(form.cleaned_data, metrics_arguments))
+            model.callbacks.set(build_callbacks(form.cleaned_data, callbacks_arguments))
 
             run = AutoKerasRun.objects.create(
-                dataset=data,
+                dataset=build_dataset(form.cleaned_data),
                 model=model,
             )
 
             run_autokeras.delay(run.id)
             messages.add_message(request, messages.SUCCESS, "Training wurde gestartet.")
             return redirect("dashboard:index")
+        return redirect(request.path)

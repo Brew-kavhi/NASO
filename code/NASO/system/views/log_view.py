@@ -8,7 +8,7 @@ class LogFileView(TemplateView):
         context = super().get_context_data(**kwargs)
         log_file_path = "net.log"  # Adjust the path to your log file
         try:
-            with open(log_file_path, "r") as log_file:
+            with open(log_file_path, "r", encoding="utf-8") as log_file:
                 log_content = log_file.read()
 
             context["log_content"] = log_content

@@ -9,17 +9,39 @@ from naso.celery import (
     kill_celery_task,
 )
 from naso.models.page import PageSetup
-from neural_architecture.models.AutoKeras import AutoKerasRun
-from runs.models.Training import NetworkTraining
+from neural_architecture.models.autokeras import AutoKerasRun
+from neural_architecture.models.model_runs import KerasModelRun
+from runs.models.training import NetworkTraining
 
 
 class Dashboard(TemplateView):
+    """
+    A view that renders the dashboard page.
+
+    Attributes:
+        template_name (str): The name of the template to be rendered.
+        page (PageSetup): An instance of the PageSetup class that sets up the page.
+        context (dict): A dictionary containing the context data to be passed to the template.
+    """
+
     template_name = "dashboard/dashboard.html"
 
     page = PageSetup(title="Dashboard")
     context = {"page": page.get_context()}
 
     def get(self, request, *args, **kwargs):
+        """
+        Handles GET requests and returns the rendered template with the context data.
+
+        Args:
+            request (HttpRequest): The HTTP request object.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            HttpResponse: The HTTP response object containing the rendered template with the context data.
+        """
+
         self.context["celery"] = get_tasks()
         self.context["registered_tasks"] = get_registered_tasks()
         for task in self.context["registered_tasks"]:
@@ -27,8 +49,12 @@ class Dashboard(TemplateView):
                 run = AutoKerasRun.objects.get(id=task["run_id"])
                 task["name"] = run.model.project_name
                 task["link"] = reverse_lazy(
-                    "runs:autokeras_details", kwargs={"pk": run.id}
+                    "runs:autokeras:details", kwargs={"pk": run.id}
                 )
+            elif task["is_autokeras_trial"]:
+                run = KerasModelRun.objects.get(id=task["run_id"])
+                task["name"] = run.model.name
+                task["link"] = reverse_lazy("runs:list")
             else:
                 run = NetworkTraining.objects.get(id=task["run_id"])
                 task["name"] = run.network_config.name
@@ -47,9 +73,16 @@ class Dashboard(TemplateView):
                             "name": run.project_name,
                             "id": run.id,
                             "link": reverse_lazy(
-                                "runs:autokeras_details",
+                                "runs:autokeras:details",
                                 kwargs={"pk": run_details["run_id"]},
                             ),
+                        }
+                    elif "autokeras_trial" in run_details:
+                        run = KerasModelRun.objects.get(id=run_details["run_id"])
+                        self.context["run"] = {
+                            "name": run.model.name,
+                            "id": run.id,
+                            "link": reverse_lazy("runs:list"),
                         }
                     else:
                         run = NetworkTraining.objects.get(

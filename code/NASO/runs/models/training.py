@@ -6,9 +6,9 @@ from django.db import models
 from helper_scripts.git import get_current_git_hash
 from helper_scripts.importing import get_callback, get_object
 from naso.settings_base import APP_VERSION
-from neural_architecture.models.Architecture import NetworkConfiguration
-from neural_architecture.models.Dataset import Dataset
-from neural_architecture.models.Types import (
+from neural_architecture.models.architecture import NetworkConfiguration
+from neural_architecture.models.dataset import Dataset
+from neural_architecture.models.types import (
     CallbackType,
     LossType,
     MetricType,
@@ -145,7 +145,7 @@ class EvaluationParameters(models.Model):
 
     def save(self, *args, **kwargs):
         self.validate_callbacks_data()
-        super(EvaluationParameters, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
 class FitParameters(models.Model):
@@ -204,7 +204,7 @@ class FitParameters(models.Model):
 
     def save(self, *args, **kwargs):
         self.validate_callbacks_data()
-        super(FitParameters, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
 class Run(models.Model):
@@ -236,7 +236,7 @@ class Run(models.Model):
         """
         if not self.git_hash:
             self.git_hash = get_current_git_hash()
-        super(Run, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
 class NetworkTraining(Run):
@@ -321,7 +321,7 @@ class TrainingMetric(models.Model):
 
     def save(self, *args, **kwargs):
         self.validate_json_data()
-        super(TrainingMetric, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Neural Network {self.neural_network} - Epoch {self.epoch}"

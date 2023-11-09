@@ -608,6 +608,8 @@
         $("#canvas_configure_"+trial_id).append(configButton);
         $("#canvas_configure_"+trial_id).append(hideDetailsButton);
         $('#canvas_configure_'+trial_id).append('<a href="{% url 'api:autokeras:all_metrics' run.id %}'+ trial_id + '/download" class="my-2 col-8 btn btn-primary">Download CSV</a>');
+        let trialLink = "{% url 'runs:autokeras:trial' run.id 'naso.trial_id' %}".replace('naso.trial_id', trial_id);
+        $('#canvas_configure_'+trial_id).append('<br><a href="' + trialLink + '" class="btn btn-primary col-8 my-2">Rerun</a> ');
 
         let maxMetrics = getMaxValuesPerTrial(trial_data);
         for (let metric in maxMetrics) {

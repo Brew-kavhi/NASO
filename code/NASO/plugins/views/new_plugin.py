@@ -9,22 +9,48 @@ from django.views.generic.base import TemplateView
 from loguru import logger
 
 from naso.models.page import PageSetup
-from plugins.forms.PluginForm import PluginForm
+from plugins.forms.plugin_form import PluginForm
 from plugins.models.plugins import Plugin
 
 
 class NewPlugin(TemplateView):
+    """
+    A view for uploading a new plugin.
+
+    Attributes:
+    - template_name (str): The name of the HTML template to use for rendering the view.
+    - page (PageSetup): An instance of the PageSetup class for setting up the page context.
+    - context (dict): A dictionary containing the context variables to be passed to the template.
+
+    Methods:
+    - get(self, request, *args, **kwargs): Renders the view for a GET request.
+    - post(self, request, *args, **kwargs): Handles form submission for a POST request.
+    """
+
     template_name = "plugins/upload_plugin.html"
 
     page = PageSetup(title="Plugins", description="Neu")
     context = {"page": page.get_context()}
 
     def get(self, request, *args, **kwargs):
+        """
+        Renders the view for a GET request.
+
+        Returns:
+        - A response object containing the rendered template.
+        """
         form = PluginForm()
         self.context["form"] = form
         return self.render_to_response(self.context)
 
     def post(self, request, *args, **kwargs):
+        """
+        Handles form submission for a POST request.
+
+        Returns:
+        - A response object containing the rendered template, with form errors if the form is invalid.
+        - A redirect response to the plugins:list URL if the form is valid.
+        """
         form = PluginForm(request.POST, request.FILES)
         if form.is_valid():
             plugin = form.save(commit=False)

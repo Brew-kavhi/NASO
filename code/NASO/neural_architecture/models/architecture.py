@@ -3,7 +3,7 @@ from django.db import models
 
 from helper_scripts.importing import get_object
 from neural_architecture.models.Graphs import Graph
-from neural_architecture.models.Types import (
+from neural_architecture.models.types import (
     ActivationFunctionType,
     NetworkLayerType,
     TypeInstance,
