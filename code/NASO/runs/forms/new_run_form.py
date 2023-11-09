@@ -64,8 +64,7 @@ class NewRunForm(BaseRun):
             self.metric_html(),
             Field("optimizer", css_class="select2 w-100 mt-3"),
             HTML("<div id='optimizer-arguments' class='card rounded-3'></div>"),
-            Field("loss", css_class="select2 w-100 mt-3"),
-            HTML("<div id='loss-arguments' class='card rounded-3'></div>"),
+            self.loss_html(),
             HTML('<div class="clearfix"></div>'),
             Row(
                 # Column("epochs", css_class="form-group col-6 mb-0"),

@@ -110,3 +110,5 @@ Werkzeug==3.0.0
 wrapt==1.14.1
 zipp==3.17.0
 tensorflow-model-optimization==0.7.5
+pylint==2.17.7
+pylint-django==2.5.5

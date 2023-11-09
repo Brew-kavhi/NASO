@@ -162,12 +162,7 @@ class AutoKerasModel(models.Model):
             self.loaded_model = self.load_model(run)
 
         # build a dataset to set the inputs size and everything.
-        data = run.dataset.get_data()
-        train_dataset = data[0]
-        if len(data) > 1:
-            test_dataset = data[1]
-        else:
-            test_dataset = train_dataset
+        (train_dataset, test_dataset) = run.dataset.get_data()
 
         # need this for the input shapes and so on
         _, hp, _, _ = self.prepare_data_for_trial(train_dataset, test_dataset, trial_id)
