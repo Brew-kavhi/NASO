@@ -49,6 +49,7 @@ class NewRun(TemplateView):
         optimizer_arguments = []
         loss_arguments = []
         metrics_arguments = {}
+        callbacks_arguments = {}
         for key, value in request_params:
             if key.startswith("optimizer_argument_"):
                 argument_name = key[len("optimizer_argument_") :]
@@ -58,6 +59,16 @@ class NewRun(TemplateView):
                 argument_name = key[len("loss_argument_") :]
                 loss_argument = {"name": argument_name, "value": value}
                 loss_arguments.append(loss_argument)
+            elif key.startswith("callback_argument_"):
+                # this is metric, get the metric key and check if there isa already a metric definition
+                callback_id = int(key.split("_")[2])
+                argument_name = "_".join(key.split("_")[3:])
+                callbacks_argument = {"name": argument_name, "value": value}
+                if callback_id not in callbacks_arguments:
+                    callbacks_arguments[callback_id] = [callbacks_argument]
+                else:
+                    callbacks_arguments[callback_id].append(callbacks_argument)
+
             elif key.startswith("metric_argument_"):
                 # this is metric, get the metric key and check if there isa already a metric definition
                 metric_id = int(key.split("_")[2])
@@ -67,7 +78,12 @@ class NewRun(TemplateView):
                     metrics_arguments[metric_id] = [metrics_argument]
                 else:
                     metrics_arguments[metric_id].append(metrics_argument)
-        return (optimizer_arguments, loss_arguments, metrics_arguments)
+        return (
+            optimizer_arguments,
+            loss_arguments,
+            metrics_arguments,
+            callbacks_arguments,
+        )
 
     def get(self, request, *args, **kwargs):
         # there is no training going on right now, so show form to start a new one
@@ -89,6 +105,10 @@ class NewRun(TemplateView):
             form.initial[
                 "optimizer"
             ] = training.hyper_parameters.optimizer.instance_type
+            form.initial["callbacks"] = [
+                callback.instance_type
+                for callback in training.fit_parameters.callbacks.all()
+            ]
             form.initial["metrics"] = [
                 metric.instance_type
                 for metric in training.hyper_parameters.metrics.all()
@@ -133,6 +153,15 @@ class NewRun(TemplateView):
                         "arguments": metric.additional_arguments,
                     }
                     for metric in training.hyper_parameters.metrics.all()
+                ]
+            )
+            form.load_callbacks_configs(
+                [
+                    {
+                        "id": callback.instance_type.id,
+                        "arguments": callback.additional_arguments,
+                    }
+                    for callback in training.fit_parameters.callbacks.all()
                 ]
             )
 
@@ -188,6 +217,7 @@ class NewRun(TemplateView):
                     optimizer_arguments,
                     loss_arguments,
                     metrics_arguments,
+                    callbacks_arguments,
                 ) = self.get_typewise_arguments(request.POST.items())
 
                 # Create Optimizer object
@@ -218,7 +248,9 @@ class NewRun(TemplateView):
                 eval_parameters, _ = EvaluationParameters.objects.get_or_create(
                     steps=form.cleaned_data["steps_per_execution"],
                     batch_size=form.cleaned_data["batch_size"],
-                    callbacks=[],
+                )
+                eval_parameters.callbacks.set(
+                    build_callbacks(form.cleaned_data, callbacks_arguments)
                 )
 
                 fit_parameters, _ = FitParameters.objects.get_or_create(
@@ -228,7 +260,9 @@ class NewRun(TemplateView):
                     steps_per_epoch=form.cleaned_data["steps_per_epoch"],
                     workers=form.cleaned_data["workers"],
                     use_multiprocessing=form.cleaned_data["use_multiprocessing"],
-                    callbacks=[],
+                )
+                fit_parameters.callbacks.set(
+                    build_callbacks(form.cleaned_data, callbacks_arguments)
                 )
 
                 network_config = self.build_config(

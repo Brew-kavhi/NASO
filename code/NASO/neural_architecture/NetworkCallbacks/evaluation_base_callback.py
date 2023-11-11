@@ -8,7 +8,6 @@ class EvaluationBaseCallback(tf.keras.callbacks.Callback):
         super().__init__()
         self.run = run
         # i need the epochs
-        self.additional_callbacks = run.evaluation_parameters.get_callbacks()
 
     def on_train_begin(self, logs=None):
         keys = list(logs.keys())

@@ -1,7 +1,6 @@
 import math
 
 import tensorflow as tf
-from loguru import logger
 
 from helper_scripts.timer import Timer
 from runs.models.training import NetworkTraining, TrainingMetric
@@ -16,8 +15,6 @@ class CeleryUpdateCallback(tf.keras.callbacks.Callback):
         self.run = run
         # i need the epochs here from the run.
         self.timer = Timer()
-        if run:
-            self.additional_callbacks = run.fit_parameters.get_callbacks()
 
     def get_total_time(self):
         return round(self.timer.get_total_time(), 2)
@@ -45,14 +42,6 @@ class CeleryUpdateCallback(tf.keras.callbacks.Callback):
                 "metrics": metrics,
             },
         )
-        if self.additional_callbacks:
-            for callback in self.additional_callbacks:
-                try:
-                    callback.on_epoch_begin(epoch, logs)
-                except Exception as _e:
-                    logger.critical(
-                        f"Callback {callback} threw an exception in epoch {epoch} begin:{_e}"
-                    )
 
         # resume the timer here
         self.timer.start()
@@ -81,11 +70,3 @@ class CeleryUpdateCallback(tf.keras.callbacks.Callback):
                 ],
             )
             metric.save()
-        if self.additional_callbacks:
-            for callback in self.additional_callbacks:
-                try:
-                    callback.on_epoch_end(epoch, logs)
-                except Exception as _e:
-                    logger.critical(
-                        f"Callback {callback} threw an exception in epoch {epoch} end:{_e}"
-                    )

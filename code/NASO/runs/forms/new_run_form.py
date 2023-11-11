@@ -8,10 +8,10 @@ from neural_architecture.models.templates import (
     KerasNetworkTemplate,
 )
 from neural_architecture.models.types import NetworkLayerType, OptimizerType
-from runs.forms.base import BaseRun, BaseRunWithCallback, PrunableForm
+from runs.forms.base import BaseRunWithCallback, PrunableForm
 
 
-class NewRunForm(BaseRun, PrunableForm):
+class NewRunForm(BaseRunWithCallback, PrunableForm):
     optimizer = forms.ModelChoiceField(
         label="Optimizer",
         queryset=OptimizerType.objects.all(),
@@ -66,6 +66,7 @@ class NewRunForm(BaseRun, PrunableForm):
             HTML('<div class="row mb-3"><h2>Training konfigurieren</h2></div>'),
             Field("name"),
             self.metric_html(),
+            self.callback_html(),
             Field("optimizer", css_class="select2 w-100 mt-3"),
             HTML("<div id='optimizer-arguments' class='card rounded-3'></div>"),
             self.loss_html(),
