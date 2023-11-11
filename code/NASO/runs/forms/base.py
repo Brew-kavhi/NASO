@@ -3,6 +3,11 @@ from crispy_forms.layout import HTML, Column, Field, Layout, Row
 from django import forms
 
 from neural_architecture.models.dataset import DatasetLoader
+from neural_architecture.models.model_optimization import (
+    PruningMethodTypes,
+    PruningPolicyTypes,
+    PruningScheduleTypes,
+)
 from neural_architecture.models.types import CallbackType, LossType, MetricType
 
 
@@ -141,6 +146,94 @@ class BaseRun(forms.Form):
                 ),
                 Column(Field("dataset_is_supervised"), css_class="col-3"),
                 css_class="align-items-center",
+            ),
+        )
+
+
+class PrunableForm(forms.Form):
+    enable_pruning = forms.BooleanField(required=False, initial=False)
+    pruning_method = forms.ModelChoiceField(
+        label="Pruning function",
+        queryset=PruningMethodTypes.objects.all(),
+        required=False,
+    )
+    pruning_scheduler = forms.ModelChoiceField(
+        label="Pruning scheduler",
+        queryset=PruningScheduleTypes.objects.all(),
+        required=False,
+    )
+    pruning_policy = forms.ModelChoiceField(
+        label="Pruning policy",
+        queryset=PruningPolicyTypes.objects.all(),
+        required=False,
+    )
+
+    def get_pruning_fields(self):
+        self.fields["enable_pruning"].widget.attrs["onchange"] = "togglePruning(this)"
+        self.fields["pruning_method"].widget.attrs[
+            "onchange"
+        ] = "handlePruningMethodChange(this)"
+        self.fields["pruning_scheduler"].widget.attrs[
+            "onchange"
+        ] = "handlePruningSchedulerChange(this)"
+        self.fields["pruning_policy"].widget.attrs[
+            "onchange"
+        ] = "handlePruningPolicyChange(this)"
+        return Layout(
+            HTML(
+                """
+                <h2>Pruning</h2>
+                """
+            ),
+            Row(
+                Column(
+                    Field(
+                        "enable_pruning",
+                        css_class="form-check-input",
+                        wrapper_class="form-check offset-0",
+                    ),
+                ),
+                Column(
+                    Field(
+                        "pruning_method",
+                        css_class="select2 w-100 mt-3",
+                        data_placeholder="Select Pruning Method",
+                    ),
+                    HTML(
+                        """
+                        <div id='pruning-methods-arguments' class='card rounded-3 d-flex flex-row flex-wrap'></div>
+                        """
+                    ),
+                    css_class="d-none",
+                ),
+            ),
+            Row(
+                Column(
+                    Field(
+                        "pruning_scheduler",
+                        css_class="select2 w-100 mt-3",
+                        data_placeholder="Select Pruning Scheduler",
+                    ),
+                    HTML(
+                        """
+                        <div id='pruning-scheduler-arguments' class='card rounded-3 d-flex flex-row flex-wrap'></div>
+                        """
+                    ),
+                    css_class="d-none",
+                ),
+                Column(
+                    Field(
+                        "pruning_policy",
+                        css_class="select2 w-100 mt-3",
+                        data_placeholder="Select Pruning policy",
+                    ),
+                    HTML(
+                        """
+                        <div id='pruning-policy-arguments' class='card rounded-3 d-flex flex-row flex-wrap'></div>
+                        """
+                    ),
+                    css_class="d-none",
+                ),
             ),
         )
 

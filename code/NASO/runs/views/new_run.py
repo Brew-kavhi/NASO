@@ -16,6 +16,11 @@ from neural_architecture.models.autokeras import (
     AutoKerasTuner,
 )
 from neural_architecture.models.dataset import Dataset
+from neural_architecture.models.model_optimization import (
+    PruningMethod,
+    PruningPolicy,
+    PruningSchedule,
+)
 from neural_architecture.models.templates import (
     AutoKerasNetworkTemplate,
     KerasNetworkTemplate,
@@ -131,6 +136,9 @@ class NewRun(TemplateView):
                 ]
             )
 
+            if training.network_config.save_model:
+                form.rerun_saved_model()
+
             # load dataset:
             form.initial["dataset"] = training.dataset.name
             form.initial["dataset_is_supervised"] = training.dataset.as_supervised
@@ -166,6 +174,8 @@ class NewRun(TemplateView):
 
             network_config.connections = connections
             network_config.node_to_layer_id = node_to_layers
+        if form_data["save_model"]:
+            network_config.save_model = True
         network_config.save()
         return network_config
 
@@ -227,6 +237,46 @@ class NewRun(TemplateView):
                     connections=json.loads(request.POST.get("edges")),
                 )
 
+                if "rerun" in request.GET:
+                    old_training = NetworkTraining.objects.get(
+                        pk=request.GET.get("rerun")
+                    )
+                    if form.cleaned_data["fine_tune_saved_model"]:
+                        network_config.load_model = True
+                        fit_parameters.initial_epoch = (
+                            old_training.fit_parameters.epochs
+                        )
+                        fit_parameters.save()
+                        network_config.model_file = (
+                            old_training.network_config.model_file
+                        )
+
+                if form.cleaned_data["enable_pruning"]:
+                    (
+                        method_arguments,
+                        scheduler_arguments,
+                        policy_arguments,
+                    ) = get_pruning_parameters(request.POST.items())
+                    method, _ = PruningMethod.objects.get_or_create(
+                        instance_type=form.cleaned_data["pruning_method"],
+                        additional_arguments=method_arguments,
+                    )
+                    network_config.pruning_method = method
+                    if form.cleaned_data["pruning_scheduler"]:
+                        scheduler, _ = PruningSchedule.objects.get_or_create(
+                            instance_type=form.cleaned_data["pruning_scheduler"],
+                            additional_arguments=scheduler_arguments,
+                        )
+                        network_config.pruning_schedule = scheduler
+
+                    if form.cleaned_data["pruning_policy"]:
+                        policy, _ = PruningPolicy.objects.get_or_create(
+                            instance_type=form.cleaned_data["pruning_policy"],
+                            additional_arguments=policy_arguments,
+                        )
+                        network_config.pruning_policy = policy
+                network_config.save()
+
                 if form.cleaned_data["save_network_as_template"]:
                     create_network_template(
                         form.cleaned_data["network_template_name"],
@@ -249,6 +299,26 @@ class NewRun(TemplateView):
                 )
                 return redirect("dashboard:index")
         return redirect(request.path)
+
+
+def get_pruning_parameters(request_params):
+    method_arguments = []
+    scheduler_arguments = []
+    policy_arguments = []
+    for key, value in request_params:
+        if key.startswith("pruning-method_argument_"):
+            argument_name = key[len("pruning-method_argument_") :]
+            method_argument = {"name": argument_name, "value": value}
+            method_arguments.append(method_argument)
+        elif key.startswith("pruning-scheduler_argument_"):
+            argument_name = key[len("pruning-scheduler_argument_") :]
+            scheduler_argument = {"name": argument_name, "value": value}
+            scheduler_arguments.append(scheduler_argument)
+        elif key.startswith("pruning-policy_argument_"):
+            argument_name = key[len("pruning-policy_argument_") :]
+            policy_argument = {"name": argument_name, "value": value}
+            policy_arguments.append(policy_argument)
+    return (method_arguments, scheduler_arguments, policy_arguments)
 
 
 def build_dataset(form_data):

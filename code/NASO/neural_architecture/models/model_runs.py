@@ -4,6 +4,7 @@ from typing import Any
 from django.db import models
 from keras.models import load_model
 
+from neural_architecture.models.model_optimization import PrunableNetwork
 from runs.models.training import (
     EvaluationParameters,
     FitParameters,
@@ -13,7 +14,7 @@ from runs.models.training import (
 )
 
 
-class KerasModel(models.Model):
+class KerasModel(PrunableNetwork):
     model_file = models.CharField(max_length=100)
     name = models.CharField(max_length=200)
     description = models.CharField(max_length=200)
@@ -52,6 +53,14 @@ class KerasModel(models.Model):
         self.model.save(self.model_file, overwrite=True)
         self.size = self.model.count_params()
         self.save()
+        self.model = self.build_pruning_model(self.model)
+
+    def save_model(self):
+        if not self.model:
+            self.model = self.get_export_model(self.load_model())
+        if not os.path.exists(self.saving_prefix):
+            os.makedirs(self.saving_prefix)
+        self.model.save(self.model_file, overwrite=True)
 
     def get_model(self):
         return self.model
@@ -60,13 +69,18 @@ class KerasModel(models.Model):
         # check if file exists:
         if not os.path.exists(self.model_file):
             raise ValueError(f"model {self.model_file} does not exist")
-        return load_model(self.model_file)
+        model = load_model(self.model_file)
+        return self.build_pruning_model(model)
 
     def fit(self, *args, **kwargs):
         if not self.model:
             self.model = self.load_model()
         if "epochs" not in kwargs:
             kwargs["epochs"] = self.fit_parameters.epochs
+        if "callbacks" not in kwargs:
+            kwargs["callbacks"] = self.get_pruning_callbacks()
+        else:
+            kwargs["callbacks"] += self.get_pruning_callbacks()
         return self.model.fit(*args, **kwargs)
 
     def predict(self, *args, **kwargs):

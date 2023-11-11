@@ -1,8 +1,12 @@
+import os
+
 import tensorflow as tf
 from django.db import models
+from loguru import logger
 
 from helper_scripts.importing import get_object
 from neural_architecture.models.Graphs import Graph
+from neural_architecture.models.model_optimization import PrunableNetwork
 from neural_architecture.models.types import (
     ActivationFunctionType,
     NetworkLayerType,
@@ -52,7 +56,7 @@ class NetworkLayer(TypeInstance):
         )
 
 
-class NetworkConfiguration(models.Model):
+class NetworkConfiguration(PrunableNetwork):
     layers = models.ManyToManyField(NetworkLayer)
     name = models.CharField(max_length=50)
     connections = models.JSONField(default=dict)
@@ -60,15 +64,27 @@ class NetworkConfiguration(models.Model):
     model = None
     size = models.IntegerField(default=0)
 
+    save_model = models.BooleanField(default=False)
+    model_file = models.CharField(max_length=100)
+    load_model = models.BooleanField(default=False)
+
     layer_outputs: dict = {}
     inputs: dict = {}
     outputs: dict = {}  #
 
     def build_model(self):
+        if (
+            self.load_model
+            and len(self.model_file) > 0
+            and os.path.exists(self.model_file)
+        ):
+            logger.info(f"Loading model from {self.model_file}")
+            return tf.keras.models.load_model(self.model_file)
+
         self.inputs["input_node"] = tf.keras.Input((28, 28))
         self.layer_outputs["input_node"] = self.inputs["input_node"]
         self.build_connected_layers("input_node")
-        return (self.inputs, self.outputs)
+        return tf.keras.Model(self.inputs, self.outputs)
 
     def edges_from_source(self, node_id):
         return [d for d in self.connections if d["source"] == node_id]
@@ -82,7 +98,7 @@ class NetworkConfiguration(models.Model):
 
     def is_head_node(self, node_id):
         # it is a head node, if this node is not a source:
-        return not len(self.edges_from_source(node_id))
+        return len(self.edges_from_source(node_id)) == 0
 
     def get_block_for_node(self, node_id):
         node_id = self.node_to_layer_id[node_id]
@@ -122,6 +138,19 @@ class NetworkConfiguration(models.Model):
             else:
                 # this  node is s head, so add it to outputs:
                 self.outputs[edge["target"]] = self.layer_outputs[edge["target"]]
+
+    def save_model_on_disk(self, model):
+        if self.save_model:
+            file_path = f"keras_models/tensorflow/{self.name}_{self.id}.h5"
+            if not os.path.exists("keras_models/tensorflow/"):
+                os.makedirs("keras_models/tensorflow/")
+
+            export_model = self.get_export_model(model)
+
+            export_model.save(file_path, include_optimizer=True)
+            self.model_file = file_path
+            self.save()
+            logger.success(f"Saved model to {self.name}_{self.id}.h5")
 
 
 class ActivationFunction(TypeInstance):

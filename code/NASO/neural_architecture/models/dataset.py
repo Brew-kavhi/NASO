@@ -159,5 +159,5 @@ class SkLearnDatasetLoader(DatasetLoaderInterface):
 
 def get_datasets(request, pk):
     dataset_loader = DatasetLoader.objects.get(pk=pk)
-    datasets = dataset_loader.get_datasets()
-    return JsonResponse(datasets, safe=False)
+    available_datasets = dataset_loader.get_datasets()
+    return JsonResponse(available_datasets, safe=False)

@@ -8,10 +8,10 @@ from neural_architecture.models.templates import (
     KerasNetworkTemplate,
 )
 from neural_architecture.models.types import NetworkLayerType, OptimizerType
-from runs.forms.base import BaseRun, BaseRunWithCallback
+from runs.forms.base import BaseRun, BaseRunWithCallback, PrunableForm
 
 
-class NewRunForm(BaseRun):
+class NewRunForm(BaseRun, PrunableForm):
     optimizer = forms.ModelChoiceField(
         label="Optimizer",
         queryset=OptimizerType.objects.all(),
@@ -54,9 +54,13 @@ class NewRunForm(BaseRun):
         required=False, initial=False, label="Use multiprocessing"
     )
 
+    save_model = forms.BooleanField(required=False, initial=False, label="Save model")
+    fine_tune_saved_model = forms.BooleanField(
+        required=False, initial=False, label="Load saved model from disk"
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.helper.form_action = reverse_lazy("runs:new")
 
         self.helper.layout = Layout(
             HTML('<div class="row mb-3"><h2>Training konfigurieren</h2></div>'),
@@ -146,6 +150,13 @@ class NewRunForm(BaseRun):
                 Column(Field("network_template")),
             ),
             self.dataloader_html(),
+            self.get_pruning_fields(),
+            Row(
+                Column(Field("save_model")),
+                Column(
+                    Field("fine_tune_saved_model"), css_class="d-none", id="fine_tune"
+                ),
+            ),
             Submit("customer-general-edit", "Training starten"),
         )
 
@@ -157,6 +168,15 @@ class NewRunForm(BaseRun):
 
         self.fields["optimizer"].widget.choices = self.get_optimizer_choices()
         self.fields["layers"].widget.choices = self.get_layer_choices()
+
+    def rerun_saved_model(self):
+        """
+        This function needs to be called, when the rerun parameter is set to true and
+        the model to be rerun has been saved.
+        Then we want to provide a checkbox to the user, which allows him to load the
+        model from file.
+        """
+        self.helper.layout[-2][1].css_class = "d-block"
 
     def load_optimizer_config(self, arguments):
         self.extra_context["optimizer_config"] = arguments

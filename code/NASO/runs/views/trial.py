@@ -4,10 +4,15 @@ from django.views.generic.base import TemplateView
 from naso.models.page import PageSetup
 from neural_architecture.autokeras import run_autokeras_trial
 from neural_architecture.models.autokeras import AutoKerasRun
+from neural_architecture.models.model_optimization import (
+    PruningMethod,
+    PruningPolicy,
+    PruningSchedule,
+)
 from neural_architecture.models.model_runs import KerasModel, KerasModelRun
 from runs.forms.trial import RerunTrialForm
 from runs.models.training import EvaluationParameters, FitParameters
-from runs.views.new_run import build_dataset
+from runs.views.new_run import build_dataset, get_pruning_parameters
 
 
 class TrialView(TemplateView):
@@ -75,6 +80,30 @@ class TrialView(TemplateView):
                 evaluation_parameters=eval_params,
                 fit_parameters=fit_params,
             )
+            if form.cleaned_data["enable_pruning"]:
+                (
+                    method_arguments,
+                    scheduler_arguments,
+                    policy_arguments,
+                ) = get_pruning_parameters(request.POST.items())
+                method, _ = PruningMethod.objects.get_or_create(
+                    instance_type=form.cleaned_data["pruning_method"],
+                    additional_arguments=method_arguments,
+                )
+                keras_model.pruning_method = method
+                if form.cleaned_data["pruning_scheduler"]:
+                    scheduler, _ = PruningSchedule.objects.get_or_create(
+                        instance_type=form.cleaned_data["pruning_scheduler"],
+                        additional_arguments=scheduler_arguments,
+                    )
+                    keras_model.pruning_scheduler = scheduler
+                if form.cleaned_data["pruning_policy"]:
+                    policy,_ = PruningPolicy.objecs.get_or_create(
+                        instance_type=form.cleaned_data["pruning_policy"],
+                        additional_arguments=policy_arguments,
+                    )
+                    keras_model.pruning_policy = policy
+            keras_model.save()
 
             keras_model_run = KerasModelRun.objects.create(
                 dataset=build_dataset(form.cleaned_data),

@@ -1,6 +1,7 @@
 # Register your models here.
 from django.contrib import admin
 
+from neural_architecture.models.architecture import NetworkConfiguration
 from neural_architecture.models.autokeras import (
     AutoKerasModel,
     AutoKerasNodeType,
@@ -30,3 +31,4 @@ admin.site.register(AutoKerasNetworkTemplate)
 admin.site.register(AutoKerasModel)
 admin.site.register(KerasNetworkTemplate)
 admin.site.register(AutoKerasTunerType)
+admin.site.register(NetworkConfiguration)

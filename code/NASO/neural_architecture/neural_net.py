@@ -1,4 +1,3 @@
-import tensorflow as tf
 from loguru import logger
 
 from celery import shared_task
@@ -56,12 +55,14 @@ class NeuralNetwork:
         if not self.training_config or not self.training_config.hyper_parameters:
             raise AttributeError
 
-        (inputs, outputs) = config.build_model()
-        model = tf.keras.Model(inputs=inputs, outputs=outputs)
+        model = config.build_model()
 
         # TODO: sure this is correct? Here we need objects for metrcs and optimizers i guess
+        model = config.build_pruning_model(model)
         model.compile(**self.training_config.hyper_parameters.get_as_dict())
         logger.success("Model is initiated.")
+        model.summary()
+
         self.model = model
 
     def load_data(self):
@@ -82,12 +83,15 @@ class NeuralNetwork:
 
         logger.success("Started training of the network...")
 
-        # TODO adopt to configuration
+        callbacks = [
+            self.celery_callback
+        ] + self.training_config.network_config.get_pruning_callbacks()
+
         self.model.fit(
             self.train_dataset.shuffle(60000).batch(batch_size),
             epochs=epochs,
             validation_data=self.test_dataset.batch(batch_size),
-            callbacks=[self.celery_callback],
+            callbacks=callbacks,
             shuffle=fit_parameters.shuffle,
             class_weight=fit_parameters.class_weight,
             sample_weight=fit_parameters.sample_weight,
@@ -97,6 +101,8 @@ class NeuralNetwork:
             workers=fit_parameters.workers,
             use_multiprocessing=fit_parameters.use_multiprocessing,
         )
+        self.training_config.network_config.save_model_on_disk(self.model)
+
         logger.success("Finished training of neural network.")
 
     def validate(self):

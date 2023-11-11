@@ -1,3 +1,4 @@
+import ast
 import importlib
 
 from loguru import logger
@@ -54,7 +55,7 @@ def get_callback(callback_definition, required_arguments=None):
 def get_arguments_as_dict(additional_arguments, required_arguments):
     arguments = {}
     for argument in additional_arguments:
-        if argument["value"] != "undefined":
+        if argument["value"] != "undefined" and argument["value"] != "None":
             # check for dtype:
             arguments[argument["name"]] = argument["value"]
             for required_arg in required_arguments:
@@ -66,6 +67,13 @@ def get_arguments_as_dict(additional_arguments, required_arguments):
 
 
 def build_argument(argument, required_argument, arguments):
+    if (
+        argument["value"] == "undefined"
+        or argument["value"] == ""
+        or not argument["value"]
+        or argument["value"] == "None"
+    ):
+        return
     if required_argument["dtype"] == "int":
         try:
             if is_int(argument["value"]):
@@ -95,6 +103,14 @@ def build_argument(argument, required_argument, arguments):
                 logger.error(
                     f"Fehler: Parameter {argument['name']} muss als Boolean gegeben sein: {_e}"
                 )
+    elif required_argument["dtype"].startswith("tuple"):
+        # this is a tuple
+        try:
+            arguments[argument["name"]] = ast.literal_eval(argument["value"])
+        except ValueError as _e:
+            logger.error(
+                f"Fehler: Parameter {argument['name']} muss als Tuple gegeben sein: {_e}"
+            )
 
 
 def is_int(string):

@@ -165,8 +165,10 @@ class AutoKerasModel(models.Model):
         (train_dataset, test_dataset) = run.dataset.get_data()
 
         # need this for the input shapes and so on
-        _, hp, _, _ = self.prepare_data_for_trial(train_dataset, test_dataset, trial_id)
-        trial_model = self.loaded_model.tuner._try_build(hp)
+        _, hyper_parameters, _, _ = self.prepare_data_for_trial(
+            train_dataset, test_dataset, trial_id
+        )
+        trial_model = self.loaded_model.tuner._try_build(hyper_parameters)
         weights_path = self.get_trial_checkpoint_path(trial_id)
         trial_model.load_weights(weights_path)
         trial_model.compile(
@@ -269,7 +271,7 @@ class AutoKerasModel(models.Model):
 
     def is_head_node(self, node_id):
         # it is a head node, if this node is not a source:
-        return not len(self.edges_from_source(node_id))
+        return len(self.edges_from_source(node_id)) == 0
 
     def get_input_nodes(self):
         # input nodes are nodes that are no target. but at list one source:

@@ -5,6 +5,11 @@ from django.core.management.base import BaseCommand
 
 from neural_architecture.models.autokeras import AutoKerasNodeType, AutoKerasTunerType
 from neural_architecture.models.dataset import DatasetLoader
+from neural_architecture.models.model_optimization import (
+    PruningMethodTypes,
+    PruningPolicyTypes,
+    PruningScheduleTypes,
+)
 from neural_architecture.models.types import (
     CallbackType,
     LossType,
@@ -273,6 +278,9 @@ class Command(BaseCommand):
         # load the Datasetloaders, that come preconfigured with the system:
         load_dataset_loaders()
 
+        # next load pruning utilities:
+        load_pruning_utilities()
+
         # load the energy callback:
         call, _ = CallbackType.objects.get_or_create(
             module_name="neural_architecture.NetworkCallbacks.energy_callback",
@@ -291,15 +299,111 @@ class Command(BaseCommand):
 
 
 def load_dataset_loaders():
-    dataset, _ = DatasetLoader.objects.get_or_create(
+    _, _ = DatasetLoader.objects.get_or_create(
         module_name="neural_architecture.models.dataset",
         class_name="TensorflowDatasetLoader",
         name="Tensorflow Datasets",
         description="These are all the datasets that are available in tensorflow_datasets.",
     )
-    dataset, _ = DatasetLoader.objects.get_or_create(
+    _, _ = DatasetLoader.objects.get_or_create(
         module_name="neural_architecture.models.dataset",
         class_name="SkLearnDatasetLoader",
         name="SkLearn Datasets",
         description="These are all the datasets that are available in sklearn.",
+    )
+
+
+def load_pruning_utilities():
+    PruningMethodTypes.objects.get_or_create(
+        module_name="tensorflow_model_optimization.sparsity.keras",
+        name="prune_low_magnitude",
+        native_pruning_method=True,
+        required_arguments=[
+            {
+                "name": "block_size",
+                "default": "(1,1)",
+                "dtype": "tuple(int, int)",
+            },
+            {
+                "name": "block_pooling_type",
+                "default": "AVG",
+                "dtype": "ENUM(AVG, MAX)",
+            },
+            {
+                "name": "sparsity_m_by_n",
+                "default": None,
+                "dtype": "tuple(int, int)",
+            },
+        ],
+    )
+
+    PruningScheduleTypes.objects.get_or_create(
+        module_name="tensorflow_model_optimization.sparsity.keras",
+        name="ConstantSparsity",
+        native_pruning_schedule=True,
+        required_arguments=[
+            {
+                "name": "target_sparsity",
+                "default": "undefined",
+                "dtype": "float",
+            },
+            {
+                "name": "begin_step",
+                "default": "0",
+                "dtype": "int",
+            },
+            {
+                "name": "end_step",
+                "default": "-1",
+                "dtype": "int",
+            },
+            {
+                "name": "frequency",
+                "default": "100",
+                "dtype": "int",
+            },
+        ],
+    )
+    PruningScheduleTypes.objects.get_or_create(
+        module_name="tensorflow_model_optimization.sparsity.keras",
+        name="PolynomialDecay",
+        native_pruning_schedule=True,
+        required_arguments=[
+            {
+                "name": "initial_sparsity",
+                "default": "undefined",
+                "dtype": "float",
+            },
+            {
+                "name": "final_sparsity",
+                "default": "undefined",
+                "dtype": "float",
+            },
+            {
+                "name": "begin_step",
+                "default": "0",
+                "dtype": "int",
+            },
+            {
+                "name": "end_step",
+                "default": "undefined",
+                "dtype": "int",
+            },
+            {
+                "name": "power",
+                "default": "3",
+                "dtype": "int",
+            },
+            {
+                "name": "frequency",
+                "default": "100",
+                "dtype": "int",
+            },
+        ],
+    )
+    PruningPolicyTypes.objects.get_or_create(
+        module_name="tensorflow_model_optimization.sparsity.keras",
+        name="PruneForLatencyOnXNNPack",
+        native_pruning_policy=True,
+        required_arguments=[],
     )

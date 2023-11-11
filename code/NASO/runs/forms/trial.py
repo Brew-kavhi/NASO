@@ -1,10 +1,10 @@
 from crispy_forms.layout import HTML, Field, Layout, Submit
 from django import forms
 
-from runs.forms.base import BaseRunWithCallback
+from runs.forms.base import BaseRunWithCallback, PrunableForm
 
 
-class RerunTrialForm(BaseRunWithCallback):
+class RerunTrialForm(BaseRunWithCallback, PrunableForm):
     epochs = forms.IntegerField(
         label="Epochen",
         initial=10,
@@ -20,6 +20,7 @@ class RerunTrialForm(BaseRunWithCallback):
             self.metric_html(),
             self.callback_html(),
             self.dataloader_html(),
+            # TODO self.get_pruning_fields(), not working yet
             Submit("customer-general-edit", "Training starten"),
         )
         self.fields["name"].required = False
