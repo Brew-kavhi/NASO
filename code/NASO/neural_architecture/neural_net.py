@@ -83,9 +83,13 @@ class NeuralNetwork:
 
         logger.success("Started training of the network...")
 
-        callbacks = [
-            self.celery_callback
-        ] + self.training_config.network_config.get_pruning_callbacks()
+        callbacks = (
+            [self.celery_callback]
+            + self.training_config.network_config.get_pruning_callbacks()
+            + self.training_config.evaluation_parameters.get_callbacks(
+                self.training_config
+            )
+        )
 
         self.model.fit(
             self.train_dataset.shuffle(60000).batch(batch_size),
@@ -117,7 +121,10 @@ class NeuralNetwork:
             steps=steps,
             verbose=2,
             return_dict=True,
-            callbacks=[EvaluationBaseCallback(self.training_config)],
+            callbacks=[EvaluationBaseCallback(self.training_config)]
+            + self.training_config.evaluation_parameters.get_callbacks(
+                self.training_config
+            ),
         )
         logger.info("evaluation of the network done...")
 

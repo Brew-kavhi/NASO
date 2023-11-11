@@ -67,12 +67,7 @@ def get_arguments_as_dict(additional_arguments, required_arguments):
 
 
 def build_argument(argument, required_argument, arguments):
-    if (
-        argument["value"] == "undefined"
-        or argument["value"] == ""
-        or not argument["value"]
-        or argument["value"] == "None"
-    ):
+    if argument["value"] == "" or not argument["value"]:
         return
     if required_argument["dtype"] == "int":
         try:

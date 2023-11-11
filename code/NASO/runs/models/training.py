@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 from helper_scripts.git import get_current_git_hash
-from helper_scripts.importing import get_callback, get_object
+from helper_scripts.importing import get_object
 from naso.settings_base import APP_VERSION
 from neural_architecture.models.architecture import NetworkConfiguration
 from neural_architecture.models.dataset import Dataset
@@ -104,15 +104,31 @@ class NetworkHyperparameters(models.Model):
 class EvaluationParameters(models.Model):
     batch_size = models.IntegerField(default=32)
     steps = models.IntegerField(null=True)
-    callbacks = models.JSONField(null=True)
+    callbacks = models.ManyToManyField(
+        CallbackFunction, related_name="evaluation_callbacks"
+    )
 
-    def get_callbacks(self):
+    def get_callbacks(self, run: "NetworkTraining"):
         callbacks = []
-        if not self.callbacks:
-            return []
-        for callback in self.callbacks:
-            if "module_name" in callback and "class_name" in callback:
-                callbacks.append(get_callback(callback))
+        for callback in self.callbacks.all():
+            if callback.instance_type.name == "EnergyCallback":
+                callbacks.append(
+                    get_object(
+                        callback.instance_type.module_name,
+                        callback.instance_type.name,
+                        callback.additional_arguments + [{"name": "run", "value": run}],
+                        callback.instance_type.required_arguments,
+                    )
+                )
+            else:
+                callbacks.append(
+                    get_object(
+                        callback.instance_type.module_name,
+                        callback.instance_type.name,
+                        callback.additional_arguments,
+                        callback.instance_type.required_arguments,
+                    )
+                )
         return callbacks
 
     def validate_callbacks_data(self):
@@ -151,7 +167,9 @@ class EvaluationParameters(models.Model):
 class FitParameters(models.Model):
     batch_size = models.IntegerField(null=True)
     epochs = models.IntegerField()
-    callbacks = models.JSONField(null=True)
+    callbacks = callbacks = models.ManyToManyField(
+        CallbackFunction, related_name="fitparameters_callbacks"
+    )
 
     shuffle = models.BooleanField(default=True)
     # TODO implement this
@@ -164,13 +182,27 @@ class FitParameters(models.Model):
     workers = models.IntegerField(default=1)
     use_multiprocessing = models.BooleanField(default=False)
 
-    def get_callbacks(self):
+    def get_callbacks(self, run: "NetworkTraining"):
         callbacks = []
-        if self.callbacks:
-            for callback in self.callbacks:
-                print(callback)
-                if "module_name" in callback and "class_name" in callback:
-                    callbacks.append(get_callback(callback))
+        for callback in self.callbacks.all():
+            if callback.instance_type.name == "EnergyCallback":
+                callbacks.append(
+                    get_object(
+                        callback.instance_type.module_name,
+                        callback.instance_type.name,
+                        callback.additional_arguments + [{"name": "run", "value": run}],
+                        callback.instance_type.required_arguments,
+                    )
+                )
+            else:
+                callbacks.append(
+                    get_object(
+                        callback.instance_type.module_name,
+                        callback.instance_type.name,
+                        callback.additional_arguments,
+                        callback.instance_type.required_arguments,
+                    )
+                )
         return callbacks
 
     # TODO duplicate code, unify

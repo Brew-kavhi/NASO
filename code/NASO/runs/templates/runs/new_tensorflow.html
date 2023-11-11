@@ -32,6 +32,7 @@
             handleLossChange($('#{{form.loss.auto_id}}'));
             handleMetricChange($('#{{form.metrics.auto_id}}'));
             handleLayerChange($('#{{form.layers.auto_id}}'));
+            handleCallbackChange($('#{{form.callbacks.auto_id}}'));
             
             $('#div_id_network_template_name').addClass("d-none");
             $('#id_save_network_as_template').change(function() {
@@ -90,6 +91,19 @@
                 }
                 delete existing_metrics;
             {% endif %}
+            {% if callbacks_configs %}
+                // load the callback values
+                let existing_callbacks = {{callbacks_configs | safe}};
+                for (const callback of existing_callbacks) {
+                    for(const argument of callback['arguments']) {
+                        let fields = document.getElementsByName('callback_argument_' + callback['id'] + "_" + argument.name);
+                        if (fields[0]) {
+                            fields[0].value = argument.value;
+                        }
+                    }
+                }
+                delete existing_callbacks;
+            {% endif %}
         }
         );
         const False = false;
@@ -140,6 +154,16 @@ var optimizerOptions = [
                 "id": {{ pruningMethod.id }},
                 "name": "{{ pruningMethod.name }}",
                 "jsonConfig": {{ pruningMethod.required_arguments|safe|default:"{}" }},
+            },
+        {% endfor %}
+    ];
+    var callbackOptions = [
+        {% for callback in form.callbacks.field.queryset %}
+            {
+                "id": {{ callback.id }},
+                "name": "{{ callback.name }}",
+                "jsonConfig": {{ callback.required_arguments|safe|default:"{}" }},
+                "metrics": {{ callback.registers_metrics|safe|default:"[]"}}
             },
         {% endfor %}
     ];

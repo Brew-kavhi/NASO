@@ -98,7 +98,7 @@ class TrialView(TemplateView):
                     )
                     keras_model.pruning_scheduler = scheduler
                 if form.cleaned_data["pruning_policy"]:
-                    policy,_ = PruningPolicy.objecs.get_or_create(
+                    policy, _ = PruningPolicy.objecs.get_or_create(
                         instance_type=form.cleaned_data["pruning_policy"],
                         additional_arguments=policy_arguments,
                     )
