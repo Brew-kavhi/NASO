@@ -49,3 +49,33 @@ class EnergyCallback(tf.keras.callbacks.Callback):
         logs["trial_energy_consumption"] = sum(self.trial_measurements) / len(
             self.trial_measurements
         )
+
+    def on_test_begin(self, logs=None):
+        self.measurements = []
+        measurement = self.get_power_usage(0)
+        self.measurements.append(measurement)
+
+    def on_test_end(self, logs=None):
+        measurement = self.get_power_usage(0)
+        self.measurements.append(measurement)
+        average_power_usage = sum(self.measurements) / len(self.measurements)
+        logs["energy_consumption"] = average_power_usage
+
+    def on_predict_begin(self, logs=None):
+        self.measurements = []
+        measurement = self.get_power_usage(0)
+        self.measurements.append(measurement)
+
+    def on_predict_end(self, logs=None):
+        measurement = self.get_power_usage(0)
+        self.measurements.append(measurement)
+        average_power_usage = sum(self.measurements) / len(self.measurements)
+        logs["energy_consumption"] = average_power_usage
+
+    def on_predict_batch_begin(self, batch, logs=None):
+        measurement = self.get_power_usage(0)
+        self.measurements.append(measurement)
+
+    def on_predict_batch_end(self, batch, logs=None):
+        measurement = self.get_power_usage(0)
+        self.measurements.append(measurement)

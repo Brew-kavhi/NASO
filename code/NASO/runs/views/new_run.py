@@ -105,10 +105,11 @@ class NewRun(TemplateView):
             form.initial[
                 "optimizer"
             ] = training.hyper_parameters.optimizer.instance_type
-            form.initial["callbacks"] = [
-                callback.instance_type
-                for callback in training.fit_parameters.callbacks.all()
-            ]
+            if training.fit_parameters.callbacks:
+                form.initial["callbacks"] = [
+                    callback.instance_type
+                    for callback in training.fit_parameters.callbacks.all()
+                ]
             form.initial["metrics"] = [
                 metric.instance_type
                 for metric in training.hyper_parameters.metrics.all()
@@ -249,6 +250,7 @@ class NewRun(TemplateView):
                     steps=form.cleaned_data["steps_per_execution"],
                     batch_size=form.cleaned_data["batch_size"],
                 )
+                eval_parameters.save()
                 eval_parameters.callbacks.set(
                     build_callbacks(form.cleaned_data, callbacks_arguments)
                 )
@@ -261,6 +263,7 @@ class NewRun(TemplateView):
                     workers=form.cleaned_data["workers"],
                     use_multiprocessing=form.cleaned_data["use_multiprocessing"],
                 )
+                fit_parameters.save()
                 fit_parameters.callbacks.set(
                     build_callbacks(form.cleaned_data, callbacks_arguments)
                 )
