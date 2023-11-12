@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 from decouple import config
 from dj_database_url import parse as db_url
 
-from .settings_base import *
+from .settings import *
 
 DATABASES = {"default": config("DATABASE_URL", cast=db_url)}
 DATABASES["default"]["ENGINE"] = "django.contrib.gis.db.backends.mysql"
