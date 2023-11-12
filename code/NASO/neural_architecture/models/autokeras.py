@@ -24,7 +24,7 @@ from runs.models.training import (
     TrainingMetric,
 )
 
-from .types import BaseType, TypeInstance
+from .types import BaseType, BuildModelFromGraph, TypeInstance
 
 
 # This handles all python classses.
@@ -62,7 +62,7 @@ class AutoKerasTuner(TypeInstance):
     )
 
 
-class AutoKerasModel(models.Model):
+class AutoKerasModel(BuildModelFromGraph):
     project_name = models.CharField(max_length=100, default="auto_model")
     blocks = models.ManyToManyField(AutoKerasNode, related_name="Blocks")
     max_trials = models.IntegerField(default=100)
@@ -72,7 +72,6 @@ class AutoKerasModel(models.Model):
         AutoKerasTuner, null=True, on_delete=models.deletion.SET_NULL
     )
     max_model_size = models.IntegerField(null=True)
-    connections = models.JSONField(default=dict)
     node_to_layer_id = models.JSONField(default=dict)
 
     metrics = models.ManyToManyField(Metric, related_name="autokeras_metrics")
@@ -87,9 +86,7 @@ class AutoKerasModel(models.Model):
 
     auto_model: autokeras.AutoModel = None
     loaded_model: autokeras.AutoModel = None
-    layer_outputs: dict = {}
     inputs: dict = {}
-    outputs: dict = {}
     tuner_object = None
 
     def build_tuner(self, run: "AutoKerasRun"):
@@ -232,7 +229,7 @@ class AutoKerasModel(models.Model):
 
     def get_trial(self, trial_id):
         if not self.loaded_model:
-            raise Exception("load model first")
+            raise ValueError("load model first")
         trial = self.loaded_model.tuner.oracle.trials[trial_id]
         return trial
 
@@ -262,20 +259,6 @@ class AutoKerasModel(models.Model):
             )
         return callbacks
 
-    def edges_from_source(self, node_id):
-        return [d for d in self.connections if d["source"] == node_id]
-
-    def edges_to_target(self, node_id):
-        return [d for d in self.connections if d["target"] == node_id]
-
-    def is_merge_node(self, node_id):
-        # merge node if this node is target opf multiple edges
-        return len(self.edges_to_target(node_id)) > 1
-
-    def is_head_node(self, node_id):
-        # it is a head node, if this node is not a source:
-        return len(self.edges_from_source(node_id)) == 0
-
     def get_input_nodes(self):
         # input nodes are nodes that are no target. but at list one source:
         for node in self.node_to_layer_id:
@@ -297,34 +280,6 @@ class AutoKerasModel(models.Model):
             autokeras_node.node_type.required_arguments,
         )
         return block
-
-    def build_connected_layers(self, node_id):
-        for edge in self.edges_from_source(node_id):
-            if self.is_merge_node(edge["target"]):
-                can_merge = False
-                merge_sources = []
-                for merge_edge in self.edges_to_target(edge["target"]):
-                    if merge_edge["source"] in self.layer_outputs:
-                        can_merge = True
-                        merge_sources.append(self.layer_outputs[merge_edge["source"]])
-                    else:
-                        # as soon
-                        can_merge = False
-                        break
-                if can_merge:
-                    self.layer_outputs[edge["target"]] = self.get_block_for_node(
-                        edge["target"]
-                    )(merge_sources)
-            else:
-                self.layer_outputs[edge["target"]] = self.get_block_for_node(
-                    edge["target"]
-                )(self.layer_outputs[edge["source"]])
-            if not self.is_head_node(edge["target"]):
-                # call this exact same loop again for the target node this time if its not a head
-                self.build_connected_layers(edge["target"])
-            else:
-                # this  node is s head, so add it to outputs:
-                self.outputs[edge["target"]] = self.layer_outputs[edge["target"]]
 
     # calls the fit method of the autokeras model
     def fit(self, *args, **kwargs):

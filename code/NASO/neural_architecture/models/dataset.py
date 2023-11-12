@@ -135,8 +135,8 @@ class SkLearnDatasetLoader(DatasetLoaderInterface):
 
     def get_data(self, name, *args, **kwargs):
         loader_args = {}
-        if "data_dir" in args:
-            loader_args["data_home"] = args["data_dir"]
+        if "data_dir" in kwargs:
+            loader_args["data_home"] = kwargs["data_dir"]
 
         data = getattr(datasets, self.dataset_list[name])(**loader_args)
         target_values = data.target.reshape((-1, 1))

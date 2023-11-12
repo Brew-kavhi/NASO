@@ -55,7 +55,12 @@ def get_callback(callback_definition, required_arguments=None):
 def get_arguments_as_dict(additional_arguments, required_arguments):
     arguments = {}
     for argument in additional_arguments:
-        if argument["value"] != "undefined" and argument["value"] != "None":
+        if (
+            argument["value"]
+            and argument["value"] != "undefined"
+            and argument["value"] != "None"
+            and argument["value"] != ""
+        ):
             # check for dtype:
             arguments[argument["name"]] = argument["value"]
             for required_arg in required_arguments:
@@ -67,45 +72,30 @@ def get_arguments_as_dict(additional_arguments, required_arguments):
 
 
 def build_argument(argument, required_argument, arguments):
-    if argument["value"] == "" or not argument["value"]:
-        return
-    if required_argument["dtype"] == "int":
-        try:
+    try:
+        if required_argument["dtype"] == "int":
             if is_int(argument["value"]):
                 arguments[argument["name"]] = int(argument["value"])
             else:
                 arguments[argument["name"]] = float(argument["value"])
-        except ValueError as _e:
-            logger.error(
-                f"Fehler: Parameter {argument['name']} muss als Zahl gegeben sein: {_e}"
-            )
-    elif required_argument["dtype"] == "float":
-        try:
+
+        elif required_argument["dtype"] == "float":
             arguments[argument["name"]] = float(argument["value"])
-        except ValueError as _e:
-            logger.error(
-                f"Fehler: Parameter {argument['name']} muss als Kommazahl gegeben sein: {_e}"
-            )
-    elif required_argument["dtype"] == "bool":
-        if argument["value"] == "true":
-            argument["value"] = True
-        elif argument["value"] == "false":
-            argument["value"] = False
-        else:
-            try:
+
+        elif required_argument["dtype"] == "bool":
+            if argument["value"] == "true":
+                argument["value"] = True
+            elif argument["value"] == "false":
+                argument["value"] = False
+            else:
                 arguments[argument["name"]] = bool(argument["value"])
-            except ValueError as _e:
-                logger.error(
-                    f"Fehler: Parameter {argument['name']} muss als Boolean gegeben sein: {_e}"
-                )
-    elif required_argument["dtype"].startswith("tuple"):
-        # this is a tuple
-        try:
+        elif required_argument["dtype"].startswith("tuple"):
+            # this is a tuple
             arguments[argument["name"]] = ast.literal_eval(argument["value"])
-        except ValueError as _e:
-            logger.error(
-                f"Fehler: Parameter {argument['name']} muss als Tuple gegeben sein: {_e}"
-            )
+    except ValueError as exc:
+        logger.error(
+            f"Fehler: Parameter {argument['name']} muss als Zahl gegeben sein: {exc}"
+        )
 
 
 def is_int(string):

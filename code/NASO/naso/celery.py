@@ -9,7 +9,7 @@ from celery import Celery
 # Set the default Django settings module for the 'celery' program.
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",
-    config("DJANGO_SETTINGS_MODULE", default="naso.settings_local"),
+    config("DJANGO_SETTINGS_MODULE", default="naso.settings"),
 )
 
 app = Celery("naso", backend=config("CELERY_BROKER_URL"))
