@@ -16,7 +16,7 @@ class PruningMethodTypes(BaseType):
         return model
     """
 
-    native_pruning_method = models.BooleanField(default=False)
+    native_pruning_method = models.BooleanField(default=True)
 
 
 class PruningScheduleTypes(BaseType):
@@ -24,7 +24,7 @@ class PruningScheduleTypes(BaseType):
     This model stores the different pruning schedules that are available.
     """
 
-    native_pruning_schedule = models.BooleanField(default=False)
+    native_pruning_schedule = models.BooleanField(default=True)
 
 
 class PruningPolicyTypes(BaseType):
@@ -32,7 +32,7 @@ class PruningPolicyTypes(BaseType):
     This model stores the different pruning policies that are available.
     """
 
-    native_pruning_policy = models.BooleanField(default=False)
+    native_pruning_policy = models.BooleanField(default=True)
 
 
 class PruningMethod(TypeInstance):
@@ -44,7 +44,8 @@ class PruningMethod(TypeInstance):
         # add to_prune to the additional_arguments
         if not isinstance(self.additional_arguments, list):
             raise ValidationError("JSON data should be a list of objects.")
-        self.additional_arguments.append({"name": "to_prune", "value": to_prune})
+        additional_arguments = list(self.additional_arguments)
+        additional_arguments.append({"name": "to_prune", "value": to_prune})
 
         # handle the pruning schedule:
         if "pruning_schedule" in kwargs:
@@ -52,7 +53,7 @@ class PruningMethod(TypeInstance):
             # check if there is already a argument  with name pruning_schedule in the additional_arguments:
             pruning_schedule_arg = [
                 arg
-                for arg in self.additional_arguments
+                for arg in additional_arguments
                 if arg["name"] == "pruning_schedule"
             ]
             if pruning_schedule_arg:
@@ -60,7 +61,7 @@ class PruningMethod(TypeInstance):
                 pruning_schedule_arg[0]["value"] = pruning_schedule
             else:
                 # add the pruning schedule to the additional arguments
-                self.additional_arguments.append(
+                additional_arguments.append(
                     {"name": "pruning_schedule", "value": pruning_schedule}
                 )
 
@@ -70,7 +71,7 @@ class PruningMethod(TypeInstance):
             # check if there is already a argument  with name pruning_schedule in the additional_arguments:
             pruning_policy_arg = [
                 arg
-                for arg in self.additional_arguments
+                for arg in additional_arguments
                 if arg["name"] == "pruning_policy"
             ]
             if pruning_policy_arg:
@@ -78,9 +79,10 @@ class PruningMethod(TypeInstance):
                 pruning_policy_arg[0]["value"] = pruning_policy
             else:
                 # add the pruning schedule to the additional arguments
-                self.additional_arguments.append(
+                additional_arguments.append(
                     {"name": "pruning_policy", "value": pruning_policy}
                 )
+        self.additional_arguments = additional_arguments
 
         return get_object(
             self.instance_type.module_name,

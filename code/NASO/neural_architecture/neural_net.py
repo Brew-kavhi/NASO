@@ -57,7 +57,6 @@ class NeuralNetwork:
 
         model = config.build_model()
 
-        # TODO: sure this is correct? Here we need objects for metrcs and optimizers i guess
         model = config.build_pruning_model(model)
         model.compile(**self.training_config.hyper_parameters.get_as_dict())
         logger.success("Model is initiated.")
@@ -66,7 +65,6 @@ class NeuralNetwork:
         self.model = model
 
     def load_data(self):
-        # TODO this needs to customer adjustable
         (
             self.train_dataset,
             self.test_dataset,
@@ -112,8 +110,7 @@ class NeuralNetwork:
     def validate(self):
         batch_size = self.training_config.evaluation_parameters.batch_size
         steps = self.training_config.evaluation_parameters.steps
-        # TODO this is not fully implemented yet, implement the callbacks
-        # callbacks = self.training_config.evaluation_parameters.callbacks
+
         logger.info("Started evaluation of the network...")
         metrics = self.model.evaluate(
             self.test_dataset.batch(64),

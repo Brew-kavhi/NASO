@@ -1,8 +1,8 @@
 [MASTER]
 load-plugins=pylint_django
-django-settings-module=naso.settings_local
+django-settings-module=naso.settings
 ignore=migrations,celery, sample_plugins, pyproject.toml, INIT.sh, INSTALL.sh, README.md, CONTRIBUTE.md, net.log, poetry.lock, requirements.txt, db.sqlite3
-
+min-similarity-lines=5
 
 [FORMAT]
 max-line-length=130

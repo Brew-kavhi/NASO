@@ -5,10 +5,11 @@ from django.db import models
 from loguru import logger
 
 from helper_scripts.importing import get_object
-from neural_architecture.models.Graphs import Graph
+from neural_architecture.models.graphs import Graph
 from neural_architecture.models.model_optimization import PrunableNetwork
 from neural_architecture.models.types import (
     ActivationFunctionType,
+    BuildModelFromGraph,
     NetworkLayerType,
     TypeInstance,
 )
@@ -56,7 +57,7 @@ class NetworkLayer(TypeInstance):
         )
 
 
-class NetworkConfiguration(PrunableNetwork):
+class NetworkConfiguration(PrunableNetwork, BuildModelFromGraph):
     layers = models.ManyToManyField(NetworkLayer)
     name = models.CharField(max_length=50)
     connections = models.JSONField(default=dict)
@@ -68,9 +69,7 @@ class NetworkConfiguration(PrunableNetwork):
     model_file = models.CharField(max_length=100)
     load_model = models.BooleanField(default=False)
 
-    layer_outputs: dict = {}
     inputs: dict = {}
-    outputs: dict = {}  #
 
     def build_model(self):
         if (
@@ -86,20 +85,6 @@ class NetworkConfiguration(PrunableNetwork):
         self.build_connected_layers("input_node")
         return tf.keras.Model(self.inputs, self.outputs)
 
-    def edges_from_source(self, node_id):
-        return [d for d in self.connections if d["source"] == node_id]
-
-    def edges_to_target(self, node_id):
-        return [d for d in self.connections if d["target"] == node_id]
-
-    def is_merge_node(self, node_id):
-        # merge node if this node is target opf multiple edges
-        return len(self.edges_to_target(node_id)) > 1
-
-    def is_head_node(self, node_id):
-        # it is a head node, if this node is not a source:
-        return len(self.edges_from_source(node_id)) == 0
-
     def get_block_for_node(self, node_id):
         node_id = self.node_to_layer_id[node_id]
         node = self.layers.get(pk=node_id)
@@ -110,34 +95,6 @@ class NetworkConfiguration(PrunableNetwork):
             node.layer_type.required_arguments,
         )
         return block
-
-    def build_connected_layers(self, node_id):
-        for edge in self.edges_from_source(node_id):
-            if self.is_merge_node(edge["target"]):
-                can_merge = False
-                merge_sources = []
-                for merge_edge in self.edges_to_target(edge["target"]):
-                    if merge_edge["source"] in self.layer_outputs:
-                        can_merge = True
-                        merge_sources.append(self.layer_outputs[merge_edge["source"]])
-                    else:
-                        # as soon
-                        can_merge = False
-                        break
-                if can_merge:
-                    self.layer_outputs[edge["target"]] = self.get_block_for_node(
-                        edge["target"]
-                    )(merge_sources)
-            else:
-                self.layer_outputs[edge["target"]] = self.get_block_for_node(
-                    edge["target"]
-                )(self.layer_outputs[edge["source"]])
-            if not self.is_head_node(edge["target"]):
-                # call this exact same loop again for the target node this time if its not a head
-                self.build_connected_layers(edge["target"])
-            else:
-                # this  node is s head, so add it to outputs:
-                self.outputs[edge["target"]] = self.layer_outputs[edge["target"]]
 
     def save_model_on_disk(self, model):
         if self.save_model:
