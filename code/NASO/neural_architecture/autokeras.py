@@ -36,6 +36,7 @@ def run_autokeras(self, run_id):
 
         # Evaluate the best model with testing data.
         print(autokeras_model.evaluate(test_dataset))
+        autokeras_model.predict(test_dataset.take(200).batch(1), run)
     except Exception:
         logger.error(
             "Failure while executing the autokeras model: " + traceback.format_exc()
@@ -67,6 +68,7 @@ def run_autokeras_trial(self, run_id, trial_id, keras_model_run_id):
 
             # Evaluate the best model with testing data.
             print(model.evaluate(validation_dataset))
+            model.predict(validation_dataset.take(200).batch(1), keras_model_run)
     except Exception:
         logger.error(
             "Failure while executing the autokeras model: " + traceback.format_exc()

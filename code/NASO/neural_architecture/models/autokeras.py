@@ -13,6 +13,9 @@ from helper_scripts.extensions import (
 )
 from helper_scripts.importing import get_class, get_object
 from neural_architecture.models.model_runs import KerasModelRun
+from neural_architecture.NetworkCallbacks.evaluation_base_callback import (
+    EvaluationBaseCallback,
+)
 from runs.models.training import (
     CallbackFunction,
     LossFunction,
@@ -329,10 +332,17 @@ class AutoKerasModel(models.Model):
             raise ValueError("Model has not been built yet.")
         self.auto_model.fit(*args, **kwargs)
 
-    def predict(self, *args, **kwargs):
+    def predict(self, dataset, run: "AutoKerasRun"):
         if not self.auto_model:
             raise ValueError("Model has not been built yet.")
-        self.auto_model.predict(*args, **kwargs)
+        batch_size = 1
+        return self.auto_model.predict(
+            dataset,
+            batch_size,
+            verbose=2,
+            steps=None,
+            callbacks=self.get_callbacks(run) + [EvaluationBaseCallback(run)],
+        )
 
     def evaluate(self, *args, **kwargs):
         if not self.auto_model:
@@ -343,3 +353,7 @@ class AutoKerasModel(models.Model):
 class AutoKerasRun(Run):
     model = models.ForeignKey(AutoKerasModel, on_delete=models.deletion.CASCADE)
     metrics = models.ManyToManyField(TrainingMetric, related_name="autokeras_metrics")
+    prediction_metrics = models.ManyToManyField(
+        TrainingMetric,
+        related_name="autokeras_prediction_metrics",
+    )

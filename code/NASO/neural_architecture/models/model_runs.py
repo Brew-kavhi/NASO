@@ -5,6 +5,9 @@ from django.db import models
 from keras.models import load_model
 
 from neural_architecture.models.model_optimization import PrunableNetwork
+from neural_architecture.NetworkCallbacks.evaluation_base_callback import (
+    EvaluationBaseCallback,
+)
 from runs.models.training import (
     EvaluationParameters,
     FitParameters,
@@ -83,19 +86,29 @@ class KerasModel(PrunableNetwork):
             kwargs["callbacks"] += self.get_pruning_callbacks()
         return self.model.fit(*args, **kwargs)
 
-    def predict(self, *args, **kwargs):
-        if not self.model:
-            self.model = self.load_model()
-        if "epochs" not in kwargs:
-            kwargs["epochs"] = self.fit_parameters.epochs
-        return self.model.predict(*args, **kwargs)
-
     def evaluate(self, *args, **kwargs):
         if not self.model:
             self.model = self.load_model()
         return self.model.evaluate(*args, **kwargs)
 
+    def predict(self, dataset, run: "KerasModelRun"):
+        if not self.model:
+            self.model = self.load_model()
+        batch_size = 1
+        return self.model.predict(
+            dataset,
+            batch_size,
+            verbose=2,
+            steps=None,
+            callbacks=self.fit_parameters.get_callbacks(run)
+            + [EvaluationBaseCallback(run)],
+        )
+
 
 class KerasModelRun(Run):
     model = models.ForeignKey(KerasModel, on_delete=models.CASCADE)
     metrics = models.ManyToManyField(TrainingMetric, related_name="kerasmodel_metrics")
+    prediction_metrics = models.ManyToManyField(
+        TrainingMetric,
+        related_name="keras_model_prediction_metrics",
+    )

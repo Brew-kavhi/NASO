@@ -131,38 +131,6 @@ class EvaluationParameters(models.Model):
                 )
         return callbacks
 
-    def validate_callbacks_data(self):
-        if not isinstance(self.callbacks, list):
-            raise ValidationError(
-                "JSON data for EvaluationParameters.callbacks should be a list of objects."
-            )
-
-        for item in self.callbacks:
-            if (
-                not isinstance(item, dict)
-                or "module_name" not in item
-                or "class_name" not in item
-            ):
-                raise ValidationError(
-                    """Each item in the JSON list for EvaluationParameters.callbacks should be 
-                    an object with a "module_name" attribute and a "class_name" attribute."""
-                )
-            if "additional_arguments" in item:
-                for argument in item["additional_arguments"]:
-                    if (
-                        not isinstance(argument, dict)
-                        or "name" not in argument
-                        or "value" not in argument
-                    ):
-                        print(argument)
-                        raise ValidationError(
-                            "Each argument in the JSON list should be a dict with a name and a value."
-                        )
-
-    def save(self, *args, **kwargs):
-        self.validate_callbacks_data()
-        super().save(*args, **kwargs)
-
 
 class FitParameters(models.Model):
     batch_size = models.IntegerField(null=True)
@@ -205,39 +173,6 @@ class FitParameters(models.Model):
                 )
         return callbacks
 
-    # TODO duplicate code, unify
-    def validate_callbacks_data(self):
-        if not isinstance(self.callbacks, list):
-            raise ValidationError(
-                "JSON data for FitParameters.callbacks should be a list of objects."
-            )
-
-        for item in self.callbacks:
-            if (
-                not isinstance(item, dict)
-                or "module_name" not in item
-                or "class_name" not in item
-            ):
-                raise ValidationError(
-                    """Each item in the JSON list for FitParameters.callbacks should 
-                    be an object with a "module_name" attribute and a "class_name" attribute."""
-                )
-            if "additional_arguments" in item:
-                for argument in item["additional_arguments"]:
-                    if (
-                        not isinstance(argument, dict)
-                        or "name" not in argument
-                        or "value" not in argument
-                    ):
-                        print(argument)
-                        raise ValidationError(
-                            "Each argument in the JSON list should be a dict with a name and a value."
-                        )
-
-    def save(self, *args, **kwargs):
-        self.validate_callbacks_data()
-        super().save(*args, **kwargs)
-
 
 class Run(models.Model):
     """
@@ -255,6 +190,11 @@ class Run(models.Model):
 
     dataset = models.ForeignKey(
         Dataset, on_delete=models.deletion.SET_NULL, null=True, blank=True
+    )
+
+    prediction_metrics = models.ManyToManyField(
+        "TrainingMetric",
+        related_name="tensorflow_prediction_metrics",
     )
 
     class Meta:
@@ -296,6 +236,10 @@ class NetworkTraining(Run):
     fit_parameters = models.ForeignKey(FitParameters, on_delete=models.deletion.CASCADE)
     final_metrics = models.ForeignKey(
         "TrainingMetric", on_delete=models.deletion.CASCADE, null=True
+    )
+    prediction_metrics = models.ManyToManyField(
+        "TrainingMetric",
+        related_name="tensorflow_prediction_metrics",
     )
 
     def __str__(self):

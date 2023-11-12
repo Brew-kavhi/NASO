@@ -49,6 +49,7 @@ class CeleryUpdateCallback(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         # stop the timer here:
         self.timer.stop()
+        logs["execution_time"] = self.timer.get_total_time()
         # so stop timesrs and then resume afterwards
         metrics = {}
         for key in logs:

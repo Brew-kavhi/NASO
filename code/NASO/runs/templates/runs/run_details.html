@@ -245,6 +245,38 @@
             </div>
         </div>
     </div>
+    <div class="accordion" id="accordion_best_model">
+        <div class="card">
+            <div data-toggle="collapse" data-target="#collapse_best_model" class="card-header d-flex justify-content-between is-align-items-center" id="heading_best_model">
+                <h5 class="my-2">
+                    Best trial: <span id="best_trial_id_container"></span>
+                </h5>
+                <div>
+                    <i class="fas fa-angle-down"></i>
+                </div>
+            </div>
+
+            <div id="collapse_best_model" class="collapse" aria-labelledby="heading_best_model" data-parent="#accordion_best_model">
+                <div class="card-body">
+                    <div class="row">                       
+                        {% if run.prediction_metrics %}
+                            {% for metrics in  run.prediction_metrics.first.metrics %}
+                                {% for metric in metrics.metrics %}
+                                    <div class="col-6">
+                                        <p>
+                                            <span class='has-text-weight-bold'>{{metric}}</span>
+                                            {% get_attribute_tag metrics.metrics metric %}
+                                        </p>
+                                    </div>  
+                                {% endfor %}
+                            {% endfor %}
+                        
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="accordion" id="trial_overview">
         <div class="card" style="overflow:visible">
             <div data-toggle="collapse" data-target="#collapse_trials" class="card-header d-flex justify-content-between is-align-items-center" id="heading_trials">
@@ -396,10 +428,22 @@
                 generateSortSelect('canvas_container', metrics);
 
                 fetchTrialDetails();
+
+                let maxObjective = undefined;
+                let objective = '{{run.model.objective}}'
+                let bestTrial= undefined
+                for(const trial in run_metrics) {
+                    metrics = getMaxValuesPerTrial(run_metrics[trial]);
+                    if (!maxObjective || metrics[objective] > maxObjective) {
+                        maxObjective = metrics[objective];
+                        bestTrial = trial;
+                    }
+                }
+                $('#best_trial_id_container').html(' ' + bestTrial);
             });
         });
         
-    });
+            });
 
     function fetchTrialDetails() {
         fetch("{% url 'api:autokeras:trial_details' run.id %}").then(function(response) {

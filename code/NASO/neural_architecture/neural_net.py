@@ -121,10 +121,10 @@ class NeuralNetwork:
             steps=steps,
             verbose=2,
             return_dict=True,
-            callbacks=[EvaluationBaseCallback(self.training_config)]
-            + self.training_config.evaluation_parameters.get_callbacks(
+            callbacks=self.training_config.evaluation_parameters.get_callbacks(
                 self.training_config
-            ),
+            )
+            + [EvaluationBaseCallback(self.training_config)],
         )
         logger.info("evaluation of the network done...")
 
@@ -140,3 +140,18 @@ class NeuralNetwork:
         eval_metric.save()
         self.training_config.final_metrics = eval_metric
         self.training_config.save()
+
+        self.predict(self.test_dataset.take(200).batch(1))
+
+    def predict(self, dataset):
+        batch_size = 1
+        return self.model.predict(
+            dataset,
+            batch_size,
+            verbose=2,
+            steps=None,
+            callbacks=self.training_config.evaluation_parameters.get_callbacks(
+                self.training_config
+            )
+            + [EvaluationBaseCallback(self.training_config)],
+        )
