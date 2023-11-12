@@ -53,6 +53,10 @@
             }).focus(function() {
                 $(this).autocomplete('search', $(this).val())
             });
+
+            if ($('#id_objective').val() == 'metrics') {
+                $('#metric_weights_arguments').removeClass("d-none");
+            }
             
             $('#id_save_network_as_template').change(function() {
                 if ($(this).prop('checked')) {
