@@ -41,4 +41,4 @@ def colorize_log(log_content):
         colored_lines.append(line)
 
     # Join the lines back together
-    return "\n".join(colored_lines)
+    return "<br>".join(colored_lines)
