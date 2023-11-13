@@ -15,5 +15,5 @@ urlpatterns = [
         name="download_metrics",
     ),
     path("<int:pk>/metrics/", autokeras.get_all_metrics, name="all_metrics"),
-    path("<int:pk>/trials/", autokeras.get_trial_details, name="trial_details"),
+    path("<int:pk>/trials/", autokeras.get_all_trial_details, name="trial_details"),
 ]

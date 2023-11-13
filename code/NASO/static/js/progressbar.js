@@ -1,15 +1,15 @@
-function updateProgress (progressUrl) {
+function updateProgress (progressUrl, idAppendix) {
     fetch(progressUrl).then(function(response) {
         if (response.ok) {
             response.json().then(function(data) {
                 // update the appropriate UI components
                 
-                setProgress(data.state, data.details);
+                setProgress(data.state, data.details, idAppendix);
                 if (data.state === "PROGRESS") {
-                    setTimeout(updateProgress, 1000, progressUrl);
+                    setTimeout(updateProgress, 1000, progressUrl, idAppendix);
                 }
                 else if (!"state" in data) {
-                    setTimeout(updateProgress, 1000, progressUrl);
+                    setTimeout(updateProgress, 1000, progressUrl, idAppendix);
                 }
                 if(data.state === 'SUCCESS') {
                     // display a toast message training is finished
@@ -22,26 +22,19 @@ function updateProgress (progressUrl) {
     })
     .catch((error) => {
         console.log(error);
-        setTimeout(updateProgress, 2000, progressUrl);
+        setTimeout(updateProgress, 2000, progressUrl, idAppendix);
     });
 }
 
 
-function setProgress(state, details) {
+function setProgress(state, details, idAppendix) {
     try {
-        const progressBars = [...document.getElementsByClassName("training-progress-bar")];
-        let width = (details.current / details.total) * 100;
-        progressBars.forEach(element => {
-            element.children[1].children[0].setAttribute("value",width);
-            // element.children[1].children[0].style.width = width + "%";
-    
-            element.children[0].innerText = "Epoche " + details.current + " von " + details.total;
-        });
-        
+        $('#task_progress_'+idAppendix).attr("value", (details.current / details.total) * 100);
+        $('#import_job_state_text_'+idAppendix).text("Epoche " + details.current + " von " + details.total);
         if (details.metrics.loss) {
-            $('#training-tags').empty();
+            $('#training-tags-'+idAppendix).empty();
             console.log(details);
-            $('#training-tags').append(
+            $('#training-tags-'+idAppendix).append(
                 '<div class="tag is-light is-info ">Curent loss: ' + details.metrics.loss + '</div>'
             );
         }
@@ -50,7 +43,7 @@ function setProgress(state, details) {
         if (details.autokeras) {
             progressLink = '/runs/autokeras/' + details.run_id + '/details/';
         }
-        const link = document.getElementById('training_detail_link')
+        const link = document.getElementById('training_detail_link_'+idAppendix)
         if (link) {
             link.href = progressLink;
         }
@@ -58,5 +51,6 @@ function setProgress(state, details) {
     } catch {}
     
 }
-
-updateProgress(progressUrl);
+for (const progress in progressUrls) {
+    updateProgress(progressUrls[progress], progress);
+}

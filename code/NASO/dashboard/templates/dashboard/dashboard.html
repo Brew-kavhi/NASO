@@ -1,38 +1,41 @@
 {% extends 'base.html' %}
+
+{% load get_values %}
 {% load static %}
 
 {% block content %}
 <div class="container">
-    {% if celery.training_task_id %}
+    {% for celery_run in run %}
     <div class="card">
         <div class="card-header justify-content-between">
             <strong>
-                Trainiere <a href="{{run.link}}">{{ run.name }}</a>
+                Trainiere <a href="{{celery_run.link}}">{{ celery_run.name }}</a>
             </strong>
-            <div id="training-tags" class="d-flex is-align-items-center">
+            <div id="training-tags-{{celery_run.task_id}}" class="d-flex is-align-items-center">
 
             </div>
             <div>
-                <a data-tooltip='cancel this task' class="button is-danger" href="{% url 'dashboard:kill_celery_task' celery.training_task_id %}">
+                <a data-tooltip='cancel this task' class="button is-danger" href="{% url 'dashboard:kill_celery_task' celery_run.task_id %}">
                     <i class="fa fa-times"></i>
                 </a>
             </div>
         </div>
         <div class="card-body">
             <div class="training-progress-bar">
-                <p id="import_job_state_text">
+                <p id="import_job_state_text_{{celery_run.task_id}}">
                     
                 </p>
                 <div class="progress">
-                    <progress id="customer_import_progress" class="is-link progress progress-bar-animated progress-bar progress-bar-striped" role="progressbar" value="0" min="0" max="100"></progress>
+                    <progress id="task_progress_{{celery_run.task_id}}" class="is-link progress progress-bar-animated progress-bar progress-bar-striped" role="progressbar" value="0" min="0" max="100"></progress>
                 </div>
             </div>
             <div class='mt-3'>
-                <a class='is-light button is-info' id='training_detail_link' href="{{run.link}}">Details...</a>
+                <a class='is-light button is-info' id='training_detail_link_{{celery_run.task_id}}' href="{{celery_run.link}}">Details...</a>
             </div>
         </div>
     </div>
-    {% else %}
+    {% endfor %}
+    {% if run|length == 0 %}
     <div class="card">
         <div class="card-body">
             Derzeit werden keine Netze trainiert.
@@ -67,11 +70,13 @@
     {% endif %}
     {% block javascript %}
     
-        {% if celery.training_task_id %}
         <script>
-            var progressUrl = '{% url "runs:training_progress" celery.training_task_id %}';  // django template usage
+            var progressUrls = {
+                {% for  celery_run in run %}
+                '{{celery_run.task_id}}':'{% url "runs:training_progress" celery_run.task_id %}',
+                {% endfor %}
+            };
         </script>
-        {% endif %}
         {{ block.super }}
     {% endblock javascript %}
 </div>

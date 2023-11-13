@@ -327,6 +327,7 @@ class NewRun(TemplateView):
                 training.network_config = network_config
                 training.fit_parameters = fit_parameters
                 training.evaluation_parameters = eval_parameters
+                training.gpu = form.cleaned_data["gpu"]
 
                 training.save()
 
@@ -619,6 +620,7 @@ class NewAutoKerasRun(TemplateView):
             run = AutoKerasRun.objects.create(
                 dataset=build_dataset(form.cleaned_data),
                 model=model,
+                gpu=form.cleaned_data["gpu"],
             )
 
             run_autokeras.delay(run.id)

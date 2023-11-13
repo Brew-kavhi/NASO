@@ -1,3 +1,4 @@
+import tensorflow as tf
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import HTML, Column, Field, Layout, Row
 from django import forms
@@ -38,6 +39,11 @@ class BaseRun(forms.Form):
 
     dataset = forms.CharField(label="Dataset", required=False)
     dataset_is_supervised = forms.BooleanField(initial=True, required=False)
+    gpu = forms.CharField(
+        label="Device",
+        widget=forms.Select(attrs={"class": "select2 w-100"}),
+        required=False,
+    )
 
     extra_context = {}
 
@@ -59,6 +65,7 @@ class BaseRun(forms.Form):
 
         self.fields["loss"].widget.attrs["onchange"] = "handleLossChange(this)"
         self.fields["loss"].widget.choices = self.get_loss_choices()
+        self.fields["gpu"].widget.choices = self.get_gpu_choices()
 
     def load_metric_configs(self, arguments):
         self.extra_context["metric_configs"] = arguments
@@ -75,6 +82,16 @@ class BaseRun(forms.Form):
             loss_choices.append((module, [(loss.id, loss.name) for loss in losses]))
 
         return loss_choices
+
+    def get_gpu_choices(self):
+        gpus = tf.config.experimental.list_physical_devices()
+        return [
+            (
+                gpu.name.split("physical_device:")[1],
+                gpu.name.split("physical_device:")[1],
+            )
+            for gpu in gpus
+        ]
 
     def load_graph(self, nodes, edges):
         self.extra_context["nodes"] = nodes
@@ -107,6 +124,23 @@ class BaseRun(forms.Form):
                 """
                 <div id='metrics-arguments' class='card rounded-3 d-flex flex-row flex-wrap'></div>
                 """
+            ),
+        )
+
+    def gpu_field(self):
+        return Layout(
+            Row(
+                HTML(
+                    """
+                    <h2>Hardware</h2>
+                    """
+                ),
+                css_class="border-top pt-3",
+            ),
+            Field(
+                "gpu",
+                css_class="chosen-select select2 w-100",
+                data_placeholder="Select GPU",
             ),
         )
 
@@ -180,10 +214,13 @@ class PrunableForm(forms.Form):
             "onchange"
         ] = "handlePruningPolicyChange(this)"
         return Layout(
-            HTML(
-                """
-                <h2>Pruning</h2>
-                """
+            Row(
+                HTML(
+                    """
+                    <h2>Pruning</h2>
+                    """
+                ),
+                css_class="border-top pt-3",
             ),
             Row(
                 Column(
