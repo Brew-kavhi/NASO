@@ -48,8 +48,8 @@ def download_metrics(request, pk, trial_id):
 
 
 def get_all_metrics(request, pk):
-    autoekras_run = AutoKerasRun.objects.get(pk=pk)
-    metrics = autoekras_run.metrics.all()
+    autokeras_run = AutoKerasRun.objects.get(pk=pk)
+    metrics = autokeras_run.metrics.all()
 
     trial_metrics = {}
     for metric in metrics:
@@ -90,3 +90,12 @@ def get_trial_details(autokeras_run: AutoKerasRun, trial_id):
     with open(path, "r", encoding="UTF-8") as file:
         trial_dict = json.load(file)
         return trial_dict["hyperparameters"]["values"]
+
+
+def get_metrics_for_run(request, pk):
+    run = AutoKerasRun.objects.get(pk=pk)
+    metrics = run.metrics.all()
+    data = []
+    for metric in metrics:
+        data.append(metric.metrics[0])
+    return JsonResponse(data, safe=False)

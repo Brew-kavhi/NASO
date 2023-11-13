@@ -47,7 +47,6 @@ class PruningMethod(TypeInstance):
         additional_arguments = list(self.additional_arguments)
         additional_arguments.append({"name": "to_prune", "value": to_prune})
 
-        # handle the pruning schedule:
         if "pruning_schedule" in kwargs:
             pruning_schedule = kwargs["pruning_schedule"]
             # check if there is already a argument  with name pruning_schedule in the additional_arguments:
@@ -63,18 +62,17 @@ class PruningMethod(TypeInstance):
                     {"name": "pruning_schedule", "value": pruning_schedule}
                 )
 
-        # now handle the pruning_policy:
         if "pruning_policy" in kwargs:
             pruning_policy = kwargs["pruning_policy"]
-            # check if there is already a argument  with name pruning_schedule in the additional_arguments:
+            # check if there is already a argument  with name pruning_policy in the additional_arguments:
             pruning_policy_arg = [
                 arg for arg in additional_arguments if arg["name"] == "pruning_policy"
             ]
             if pruning_policy_arg:
-                # replace the value with the new pruning schedule
+                # replace the value with the new pruning policy
                 pruning_policy_arg[0]["value"] = pruning_policy
             else:
-                # add the pruning schedule to the additional arguments
+                # add the pruning policy to the additional arguments
                 additional_arguments.append(
                     {"name": "pruning_policy", "value": pruning_policy}
                 )

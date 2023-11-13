@@ -2,4 +2,8 @@ from django.urls import path
 
 from .views import tensorflow
 
-urlpatterns = [path("metrics/<int:pk>/", tensorflow.get_metrics, name="get_metrics")]
+urlpatterns = [
+    path(
+        "<int:pk>/metrics/", tensorflow.get_metrics_for_run, name="get_metrics_for_run"
+    ),
+]
