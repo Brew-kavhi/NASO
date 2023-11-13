@@ -208,7 +208,7 @@ class NewRunForm(BaseRunWithCallback, PrunableForm):
         return optimizer_choices
 
 
-class NewAutoKerasRunForm(BaseRunWithCallback):
+class NewAutoKerasRunForm(BaseRunWithCallback, PrunableForm):
     tuner = forms.ModelChoiceField(
         label="Tuner",
         required=False,
@@ -339,6 +339,7 @@ class NewAutoKerasRunForm(BaseRunWithCallback):
                 Column(Field("network_template")),
             ),
             self.dataloader_html(),
+            self.get_pruning_fields(),
             self.gpu_field(),
             Submit("customer-general-edit", "Training starten"),
         )

@@ -6,12 +6,14 @@ from django.db import models
 from keras import backend as K
 
 from helper_scripts.extensions import (
+    custom_hypermodel_build,
     custom_on_epoch_begin_decorator,
     custom_on_epoch_end_decorator,
     custom_on_trial_begin_decorator,
     custom_on_trial_end_decorator,
 )
 from helper_scripts.importing import get_class, get_object
+from neural_architecture.models.model_optimization import PrunableNetwork
 from neural_architecture.models.model_runs import KerasModelRun
 from neural_architecture.NetworkCallbacks.evaluation_base_callback import (
     EvaluationBaseCallback,
@@ -62,7 +64,7 @@ class AutoKerasTuner(TypeInstance):
     )
 
 
-class AutoKerasModel(BuildModelFromGraph):
+class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
     project_name = models.CharField(max_length=100, default="auto_model")
     blocks = models.ManyToManyField(AutoKerasNode, related_name="Blocks")
     max_trials = models.IntegerField(default=100)
@@ -130,6 +132,9 @@ class AutoKerasModel(BuildModelFromGraph):
             tuner=self.tuner_object,
             metrics=self.get_metrics(),
             objective=keras_tuner.Objective(self.objective, direction="min"),
+        )
+        self.auto_model.tuner.hypermodel.build = custom_hypermodel_build(
+            self.auto_model.tuner.hypermodel.build, run
         )
 
     def load_model(self, run: "AutoKerasRun"):
@@ -260,6 +265,7 @@ class AutoKerasModel(BuildModelFromGraph):
                     callback.instance_type.required_arguments,
                 )
             )
+        callbacks += self.get_pruning_callbacks()
         return callbacks
 
     def get_input_nodes(self):

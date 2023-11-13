@@ -29,7 +29,7 @@ class BaseRun(forms.Form):
         label="Dataset Loaders",
         queryset=DatasetLoader.objects.all(),
         widget=forms.Select(attrs={"class": "select2 w-100"}),
-        required=False,
+        required=True,
     )
 
     save_network_as_template = forms.BooleanField(
@@ -37,7 +37,7 @@ class BaseRun(forms.Form):
     )
     network_template_name = forms.CharField(label="Vorlagename", required=False)
 
-    dataset = forms.CharField(label="Dataset", required=False)
+    dataset = forms.CharField(label="Dataset", required=True)
     dataset_is_supervised = forms.BooleanField(initial=True, required=False)
     gpu = forms.CharField(
         label="Device",

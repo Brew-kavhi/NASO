@@ -68,3 +68,20 @@ def custom_on_trial_begin_decorator(original_on_trial_begin):
             original_on_trial_begin(self, trial)
 
     return on_trial_begin
+
+
+def custom_hypermodel_build(original_build_fn, run):
+    def build_fn(hp):
+        if original_build_fn:
+            model = original_build_fn(hp)
+            loss = model.loss
+            optimizer = model.optimizer
+
+            model = run.model.build_pruning_model(model)
+            model.loss = loss
+            model.optimizer = optimizer
+
+            return model
+        raise Exception("No build function provided")
+
+    return build_fn

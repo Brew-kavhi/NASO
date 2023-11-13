@@ -56,7 +56,13 @@ class KerasModel(PrunableNetwork):
         self.model.save(self.model_file, overwrite=True)
         self.size = self.model.count_params()
         self.save()
+        compile_args = {
+            "loss": self.model.loss,
+            "optimizer": self.model.optimizer,
+            "metrics": self.model.metrics,
+        }
         self.model = self.build_pruning_model(self.model)
+        self.model.compile(**compile_args)
 
     def save_model(self):
         if not self.model:

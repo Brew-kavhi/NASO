@@ -23,6 +23,7 @@
     <script src="{% static 'js/sigma.min.js' %}"></script>
     <script src="{% static 'js/sigma.plugins.dragnodes.js' %}"></script>
     <script src="{% static 'js/graphs.js' %}"></script>
+    <script src="{% static 'js/pruning.js' %}"></script>
 {% block javascript %}
     {{block.super}}
     <script>
@@ -166,6 +167,36 @@
                 "name": "{{ callback.name }}",
                 "jsonConfig": {{ callback.required_arguments|safe|default:"{}" }},
                 "metrics": {{ callback.registers_metrics|safe|default:"[]"}}
+            },
+        {% endfor %}
+    ];
+
+    var pruningMethodOptions = [
+        {% for pruningMethod in form.pruning_method.field.queryset %}
+            {
+                "id": {{ pruningMethod.id }},
+                "name": "{{ pruningMethod.name }}",
+                "jsonConfig": {{ pruningMethod.required_arguments|safe|default:"{}" }},
+            },
+        {% endfor %}
+    ];
+
+    var pruningSchedulerOptions = [
+        {% for pruningScheduler in form.pruning_scheduler.field.queryset %}
+            {
+                "id": {{ pruningScheduler.id }},
+                "name": "{{ pruningScheduler.name }}",
+                "jsonConfig": {{ pruningScheduler.required_arguments|safe|default:"{}" }},
+            },
+        {% endfor %}
+    ];
+    
+    var pruningPolicyOptions = [
+        {% for pruningPolicy in form.pruning_policy.field.queryset %}
+            {
+                "id": {{ pruningPolicy.id }},
+                "name": "{{ pruningPolicy.name }}",
+                "jsonConfig": {{ pruningPolicy.required_arguments|safe|default:"{}" }},
             },
         {% endfor %}
     ];

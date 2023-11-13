@@ -14,7 +14,8 @@ class EnergyCallback(tf.keras.callbacks.Callback):
         self.run = run
         self.trial_measurements = []
 
-    def get_power_usage(self, gpu_index):
+    def get_power_usage(self):
+        gpu_index = int(self.run.gpu.split(":")[-1])
         result = subprocess.run(
             [
                 "nvidia-smi",
@@ -33,13 +34,13 @@ class EnergyCallback(tf.keras.callbacks.Callback):
         if logs is None:
             logs = []
         self.measurements = []
-        measurement = self.get_power_usage(0)
+        measurement = self.get_power_usage()
         self.measurements.append(measurement)
 
     def on_epoch_end(self, epoch, logs=None, *args):
         if logs is None:
             logs = []
-        measurement = self.get_power_usage(0)
+        measurement = self.get_power_usage()
         self.measurements.append(measurement)
 
         # calculate average power usage:
@@ -52,30 +53,30 @@ class EnergyCallback(tf.keras.callbacks.Callback):
 
     def on_test_begin(self, logs=None):
         self.measurements = []
-        measurement = self.get_power_usage(0)
+        measurement = self.get_power_usage()
         self.measurements.append(measurement)
 
     def on_test_end(self, logs=None):
-        measurement = self.get_power_usage(0)
+        measurement = self.get_power_usage()
         self.measurements.append(measurement)
         average_power_usage = sum(self.measurements) / len(self.measurements)
         logs["energy_consumption"] = average_power_usage
 
     def on_predict_begin(self, logs=None):
         self.measurements = []
-        measurement = self.get_power_usage(0)
+        measurement = self.get_power_usage()
         self.measurements.append(measurement)
 
     def on_predict_end(self, logs=None):
-        measurement = self.get_power_usage(0)
+        measurement = self.get_power_usage()
         self.measurements.append(measurement)
         average_power_usage = sum(self.measurements) / len(self.measurements)
         logs["energy_consumption"] = average_power_usage
 
     def on_predict_batch_begin(self, batch, logs=None):
-        measurement = self.get_power_usage(0)
+        measurement = self.get_power_usage()
         self.measurements.append(measurement)
 
     def on_predict_batch_end(self, batch, logs=None):
-        measurement = self.get_power_usage(0)
+        measurement = self.get_power_usage()
         self.measurements.append(measurement)
