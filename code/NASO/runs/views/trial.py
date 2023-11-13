@@ -66,9 +66,9 @@ class TrialView(TemplateView):
         if form.is_valid():
             autokeras_run = AutoKerasRun.objects.get(pk=run_id)
 
-            eval_params = EvaluationParameters.objects.create(callbacks=[])
+            eval_params = EvaluationParameters.objects.create()
             fit_params = FitParameters.objects.create(
-                epochs=form.cleaned_data["epochs"], callbacks=[]
+                epochs=form.cleaned_data["epochs"],
             )
 
             keras_model = KerasModel.objects.create(

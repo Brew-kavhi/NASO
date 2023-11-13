@@ -130,6 +130,8 @@ class PrunableNetwork(models.Model):
                     self.pruning_policy.additional_arguments,
                     self.pruning_policy.instance_type.required_arguments,
                 )
+            else:
+                args["pruning_policy"] = EnsurePrunableModelPolicy()
 
             logger.info("Built pruning model")
             return self.pruning_method.get_pruned_model(**args)
@@ -139,7 +141,6 @@ class PrunableNetwork(models.Model):
         if self.pruning_method:
             return [
                 tfmot.sparsity.keras.UpdatePruningStep(),
-                tfmot.sparsity.keras.PruningSummaries(log_dir="logs/"),
             ]
         return []
 
@@ -150,3 +151,21 @@ class PrunableNetwork(models.Model):
             export_model.summary()
             return export_model
         return model
+
+
+class EnsurePrunableModelPolicy(tfmot.sparsity.keras.PruningPolicy):
+    def allow_pruning(self, layer):
+        return isinstance(layer, tfmot.sparsity.keras.PrunableLayer) or hasattr(
+            layer, "get_prunable_weights"
+        )
+
+    def ensure_model_supports_pruning(self, model):
+        """Checks that the model contains only supported layers.
+
+        Args:
+        model: A `tf.keras.Model` instance which is going to be pruned.
+
+        Raises:
+        ValueError: if the keras model doesn't support pruning policy, i.e. keras
+            model contains an unsupported layer.
+        """

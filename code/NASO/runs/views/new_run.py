@@ -96,7 +96,6 @@ class NewRun(TemplateView):
         )
 
         if "rerun" in request.GET:
-            print(request.GET)
             # this run should be a rerun from an older config, so load the config
             training_id = request.GET.get("rerun")
             training = NetworkTraining.objects.get(pk=training_id)
@@ -604,6 +603,32 @@ class NewAutoKerasRun(TemplateView):
                 loss=build_loss_function(form.cleaned_data, loss_arguments),
                 weights=weights,
             )
+
+            if form.cleaned_data["enable_pruning"]:
+                (
+                    method_arguments,
+                    scheduler_arguments,
+                    policy_arguments,
+                ) = get_pruning_parameters(request.POST.items())
+                method, _ = PruningMethod.objects.get_or_create(
+                    instance_type=form.cleaned_data["pruning_method"],
+                    additional_arguments=method_arguments,
+                )
+                model.pruning_method = method
+                if form.cleaned_data["pruning_scheduler"]:
+                    scheduler, _ = PruningSchedule.objects.get_or_create(
+                        instance_type=form.cleaned_data["pruning_scheduler"],
+                        additional_arguments=scheduler_arguments,
+                    )
+                    model.pruning_schedule = scheduler
+
+                if form.cleaned_data["pruning_policy"]:
+                    policy, _ = PruningPolicy.objects.get_or_create(
+                        instance_type=form.cleaned_data["pruning_policy"],
+                        additional_arguments=policy_arguments,
+                    )
+                    model.pruning_policy = policy
+            model.save()
 
             if form.cleaned_data["save_network_as_template"]:
                 create_network_template(

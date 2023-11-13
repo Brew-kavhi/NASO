@@ -148,15 +148,7 @@ var optimizerOptions = [
             },
         {% endfor %}
     ];
-    var pruningMethodOptions = [
-        {% for pruningMethod in form.pruning_method.field.queryset %}
-            {
-                "id": {{ pruningMethod.id }},
-                "name": "{{ pruningMethod.name }}",
-                "jsonConfig": {{ pruningMethod.required_arguments|safe|default:"{}" }},
-            },
-        {% endfor %}
-    ];
+    
     var callbackOptions = [
         {% for callback in form.callbacks.field.queryset %}
             {
@@ -164,6 +156,16 @@ var optimizerOptions = [
                 "name": "{{ callback.name }}",
                 "jsonConfig": {{ callback.required_arguments|safe|default:"{}" }},
                 "metrics": {{ callback.registers_metrics|safe|default:"[]"}}
+            },
+        {% endfor %}
+    ];
+
+    var pruningMethodOptions = [
+        {% for pruningMethod in form.pruning_method.field.queryset %}
+            {
+                "id": {{ pruningMethod.id }},
+                "name": "{{ pruningMethod.name }}",
+                "jsonConfig": {{ pruningMethod.required_arguments|safe|default:"{}" }},
             },
         {% endfor %}
     ];

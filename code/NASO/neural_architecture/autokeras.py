@@ -74,7 +74,9 @@ def run_autokeras_trial(self, run_id, trial_id, keras_model_run_id):
             model.fit(
                 train_dataset,
                 verbose=2,
-                callbacks=[log_callback],
+                callbacks=model.get_pruning_callbacks()
+                + model.evaluation_parameters.get_callbacks(run)
+                + [log_callback],
             )
 
             # Evaluate the best model with testing data.

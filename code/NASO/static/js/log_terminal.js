@@ -3,8 +3,11 @@ let lastPosition = 0;
 
 document.addEventListener('DOMContentLoaded', function () {
     const showLogButton = document.getElementById('showLogButton');
-    
-    let timerId = setInterval(updateLog, 15000);
+
+    let timerId = undefined;
+    if (showLogButton) {
+        timerId = setInterval(updateLog, 15000);
+    }
     showLogButton.addEventListener('click', function () {
         
         $('#logContainer').toggleClass('d-none');

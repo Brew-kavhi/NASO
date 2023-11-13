@@ -1,7 +1,6 @@
 import math
 
 import tensorflow as tf
-from loguru import logger
 
 from helper_scripts.timer import Timer
 from neural_architecture.models.model_runs import KerasModelRun
@@ -15,25 +14,13 @@ class KerasModelCallback(tf.keras.callbacks.Callback):
         super().__init__()
         self.celery_task = celery_task
         self.run = run
-        # i need the epochs here from the run.
+
         self.timer = Timer()
-        if run:
-            self.additional_callbacks = run.model.fit_parameters.get_callbacks()
 
     def get_total_time(self):
         return round(self.timer.get_total_time(), 2)
 
     def on_epoch_begin(self, epoch, logs=None):
-        logger.info(f"currently in epoch {epoch}")
-        if self.additional_callbacks:
-            for callback in self.additional_callbacks:
-                try:
-                    callback.on_epoch_begin(epoch, logs)
-                except Exception as _e:
-                    logger.critical(
-                        f"Callback {callback} threw an exception in epoch {epoch} begin:{_e}"
-                    )
-
         # resume the timer here
         self.timer.start()
 
@@ -76,11 +63,3 @@ class KerasModelCallback(tf.keras.callbacks.Callback):
                     "autokeras_trial": True,
                 },
             )
-        if self.additional_callbacks:
-            for callback in self.additional_callbacks:
-                try:
-                    callback.on_epoch_end(epoch, logs)
-                except Exception as _e:
-                    logger.critical(
-                        f"Callback {callback} threw an exception in epoch {epoch} end:{_e}"
-                    )

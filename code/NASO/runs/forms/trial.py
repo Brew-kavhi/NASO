@@ -20,8 +20,8 @@ class RerunTrialForm(BaseRunWithCallback, PrunableForm):
             self.metric_html(),
             self.callback_html(),
             self.dataloader_html(),
+            self.get_pruning_fields(),
             self.gpu_field(),
-            # TODO self.get_pruning_fields(), not working yet
             Submit("customer-general-edit", "Training starten"),
         )
         self.fields["name"].required = False

@@ -1,4 +1,5 @@
 from django.http import JsonResponse
+
 from system.templatetags.log_filters import colorize_log
 
 
