@@ -16,10 +16,38 @@ class ListRuns(TemplateView):
     context = {"page": page.get_context()}
 
     def get(self, request, *args, **kwargs):
-        training_runs = reversed(NetworkTraining.objects.all())
-        autokeras_runs = reversed(AutoKerasRun.objects.all())
+        training_runs = reversed(
+            NetworkTraining.objects.all().only(
+                "id",
+                "naso_app_version",
+                "hyper_parameters__optimizer__instance_type",
+                "hyper_parameters__loss__instance_type",
+                "final_metrics__metrics",
+                "network_config__name",
+                "fit_parameters__epochs",
+                "fit_parameters__batch_size",
+            )
+        )
+        autokeras_runs = reversed(
+            AutoKerasRun.objects.all().only(
+                "id",
+                "naso_app_version",
+                "model__tuner__tuner_type",
+                "model__project_name",
+                "metrics",
+                "model__max_trials",
+                "model__max_model_size",
+                "model__objective",
+            )
+        )
         self.context["network_training_data"] = training_runs
         self.context["autokeras_runs"] = autokeras_runs
+        self.context["network_training_ids"] = [
+            run.id for run in NetworkTraining.objects.all().only("id")
+        ]
+        self.context["autokeras_run_ids"] = [
+            keras_run.id for keras_run in AutoKerasRun.objects.all().only("id")
+        ]
         return self.render_to_response(self.context)
 
 

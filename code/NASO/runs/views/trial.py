@@ -106,7 +106,7 @@ class TrialView(TemplateView):
             keras_model_run = KerasModelRun.objects.create(
                 dataset=build_dataset(form.cleaned_data),
                 model=keras_model,
-                gpu = form.cleaned_data["gpu"],
+                gpu=form.cleaned_data["gpu"],
             )
 
             # load the model in the worker function to be sure, enough memory is available
