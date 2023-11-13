@@ -1,3 +1,4 @@
+import tensorflow as tf
 from loguru import logger
 
 from celery import shared_task
@@ -17,11 +18,15 @@ logger.add("net.log", backtrace=True, diagnose=True)
 def run_neural_net(self, training_id):
     self.update_state(state="PROGRESS", meta={"run_id": training_id})
     training = NetworkTraining.objects.get(pk=training_id)
+    gpus = tf.config.experimental.list_physical_devices("GPU")
+    for gpu in gpus:
+        tf.config.experimental.set_memory_growth(gpu, True)
 
     update_call = CeleryUpdateCallback(self, run=training)
     try:
-        _nn = NeuralNetwork(training)
-        _nn.run_from_config(training, update_call)
+        with tf.device(training.gpu):
+            _nn = NeuralNetwork(training)
+            _nn.run_from_config(training, update_call)
     except Exception as _e:
         logger.error("Failure while training the network: " + str(_e))
         self.update_state(state="FAILED")

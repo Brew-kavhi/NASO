@@ -52,9 +52,7 @@ class PruningMethod(TypeInstance):
             pruning_schedule = kwargs["pruning_schedule"]
             # check if there is already a argument  with name pruning_schedule in the additional_arguments:
             pruning_schedule_arg = [
-                arg
-                for arg in additional_arguments
-                if arg["name"] == "pruning_schedule"
+                arg for arg in additional_arguments if arg["name"] == "pruning_schedule"
             ]
             if pruning_schedule_arg:
                 # replace the value with the new pruning schedule
@@ -70,9 +68,7 @@ class PruningMethod(TypeInstance):
             pruning_policy = kwargs["pruning_policy"]
             # check if there is already a argument  with name pruning_schedule in the additional_arguments:
             pruning_policy_arg = [
-                arg
-                for arg in additional_arguments
-                if arg["name"] == "pruning_policy"
+                arg for arg in additional_arguments if arg["name"] == "pruning_policy"
             ]
             if pruning_policy_arg:
                 # replace the value with the new pruning schedule

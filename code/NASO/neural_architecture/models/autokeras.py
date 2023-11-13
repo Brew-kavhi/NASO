@@ -201,6 +201,9 @@ class AutoKerasModel(BuildModelFromGraph):
     def get_trial_checkpoint_path(self, trial_id) -> str:
         return f"auto_model/{self.directory}/{self.project_name}/trial_{trial_id}/checkpoint"
 
+    def get_trial_hyperparameters_path(self, trial_id) -> str:
+        return f"auto_model/{self.directory}/{self.project_name}/trial_{trial_id}/trial.json"
+
     def prepare_data_for_trial(
         self, train_dataset, test_dataset, trial_id: str
     ) -> tuple:

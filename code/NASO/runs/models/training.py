@@ -197,6 +197,8 @@ class Run(models.Model):
         related_name="tensorflow_prediction_metrics",
     )
 
+    gpu = models.CharField(max_length=20, default="/gpu:0")
+
     class Meta:
         abstract = True
 

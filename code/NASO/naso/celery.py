@@ -1,12 +1,12 @@
 import os
 import time
 
-from celery.result import AsyncResult
 from decouple import config
 
 from celery import Celery
+from celery.result import AsyncResult
 
-# Set the default Django settings module for the 'celery' program.
+
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",
     config("DJANGO_SETTINGS_MODULE", default="naso.settings"),
@@ -80,15 +80,16 @@ def kill_celery_task(task_id):
 def get_tasks():
     inspector = app.control.inspect()
     active_tasks = inspector.active()
+    running_tasks = []
     if active_tasks:
         for task_collection in active_tasks.values():
             training_tasks = sorted(
                 list(task_collection), key=lambda d: d["time_start"]
             )
-
-            if training_tasks and training_tasks[-1]["id"]:
-                return {"training_task_id": training_tasks[-1]["id"]}
-    return {}
+            for training_task in training_tasks:
+                if training_task and training_task["id"]:
+                    running_tasks.append({"training_task_id": training_task["id"]})
+    return running_tasks
 
 
 def get_registered_tasks():
@@ -104,9 +105,7 @@ def get_registered_tasks():
                 tasks.append(
                     {"id": task["id"], "run_id": run_id, "is_autokeras": is_autokeras}
                 )
-        print(tasks)
-        return tasks
-    return []
+    return tasks
 
 
 if __name__ == "__main__":

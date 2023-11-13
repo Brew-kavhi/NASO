@@ -1,7 +1,7 @@
 import csv
+import json
 
 from django.http import HttpResponse, JsonResponse
-from keras_tuner.engine.trial import TrialStatus
 
 from neural_architecture.models.autokeras import AutoKerasRun
 
@@ -11,10 +11,10 @@ def get_metrics(request, pk, trial_id):
     metrics = autokeras_run.metrics.all()
 
     epochal_metrics = {}
-    # filter by trial_id in the metric:
     for metric in metrics:
         epoch = metric.epoch
         for measure in metric.metrics:
+            # filter by trial_id in the metric:
             if "trial_id" in measure and trial_id == measure["trial_id"]:
                 # add it to the array
                 if epoch in epochal_metrics:
@@ -52,7 +52,6 @@ def get_all_metrics(request, pk):
     metrics = autoekras_run.metrics.all()
 
     trial_metrics = {}
-    # filter by trial_id in the metric:
     for metric in metrics:
         epoch = metric.epoch
         for measure in metric.metrics:
@@ -70,16 +69,24 @@ def get_all_metrics(request, pk):
     return JsonResponse(trial_metrics, safe=True)
 
 
-def get_trial_details(request, pk):
+def get_all_trial_details(request, pk):
     autokeras_run = AutoKerasRun.objects.get(pk=pk)
-    loaded_model = autokeras_run.model.load_model(autokeras_run)
-    trials = [
-        t
-        for t in loaded_model.tuner.oracle.trials.values()
-        if t.status == TrialStatus.COMPLETED
-    ]
+    metrics = autokeras_run.metrics.all()
+
     trial_json = {}
-    for trial in trials:
-        trial_json[trial.trial_id] = trial.hyperparameters.values
+    for metric in metrics:
+        for measure in metric.metrics:
+            if "final_metric" not in measure and measure["trial_id"] not in trial_json:
+                trial_json[measure["trial_id"]] = get_trial_details(
+                    autokeras_run, measure["trial_id"]
+                )
 
     return JsonResponse(trial_json, safe=True)
+
+
+def get_trial_details(autokeras_run: AutoKerasRun, trial_id):
+    path = autokeras_run.model.get_trial_hyperparameters_path(trial_id)
+    # read json file from path and convert to dict
+    with open(path, "r", encoding="UTF-8") as file:
+        trial_dict = json.load(file)
+        return trial_dict["hyperparameters"]["values"]

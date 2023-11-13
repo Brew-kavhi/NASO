@@ -218,7 +218,7 @@ def load_pruning_utilities():
         },
     ]
     scheduler.save()
-    policy, _ = PruningPolicyTypes.objects.get_or_create(
+    PruningPolicyTypes.objects.get_or_create(
         module_name="tensorflow_model_optimization.sparsity.keras",
         name="PruneForLatencyOnXNNPack",
         required_arguments=[],

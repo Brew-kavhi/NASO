@@ -1,6 +1,7 @@
 from django.shortcuts import redirect
 from django.views.generic.base import TemplateView
 
+from api.views.autokeras import get_trial_details
 from naso.models.page import PageSetup
 from neural_architecture.autokeras import run_autokeras_trial
 from neural_architecture.models.autokeras import AutoKerasRun
@@ -22,12 +23,9 @@ class TrialView(TemplateView):
 
     def get(self, request, run_id, trial_id, *args, **kwargs):
         run = AutoKerasRun.objects.get(pk=run_id)
-        # TODO sometimes this leads to memory overflow and then the whole app gets stucked
-        # better load the hp from a file, instead of loading the models
+
         try:
-            # loaded_model = run.model.load_model(run)
-            # trial = loaded_model.tuner.oracle.trials[str(trial_id)]
-            hp = {}  # trial.hyperparameters.values
+            hp = get_trial_details(run, trial_id)
         except Exception:
             hp = {}
 
@@ -108,6 +106,7 @@ class TrialView(TemplateView):
             keras_model_run = KerasModelRun.objects.create(
                 dataset=build_dataset(form.cleaned_data),
                 model=keras_model,
+                gpu = form.cleaned_data["gpu"],
             )
 
             # load the model in the worker function to be sure, enough memory is available

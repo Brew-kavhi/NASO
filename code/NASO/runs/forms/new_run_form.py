@@ -151,6 +151,7 @@ class NewRunForm(BaseRunWithCallback, PrunableForm):
                 Column(Field("network_template")),
             ),
             self.dataloader_html(),
+            self.gpu_field(),
             self.get_pruning_fields(),
             Row(
                 Column(Field("save_model")),
@@ -338,6 +339,7 @@ class NewAutoKerasRunForm(BaseRunWithCallback):
                 Column(Field("network_template")),
             ),
             self.dataloader_html(),
+            self.gpu_field(),
             Submit("customer-general-edit", "Training starten"),
         )
 

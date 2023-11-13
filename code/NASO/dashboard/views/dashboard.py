@@ -60,42 +60,55 @@ class Dashboard(TemplateView):
                 task["name"] = run.network_config.name
                 task["link"] = reverse_lazy("runs:details", kwargs={"pk": run.id})
 
-        if "training_task_id" in self.context["celery"]:
-            run_details = get_celery_task_state(
-                self.context["celery"]["training_task_id"]
-            )["details"]
-            if run_details:
-                is_autokeras = "autokeras" in run_details
-                if "run_id" in run_details:
-                    if is_autokeras:
-                        run = AutoKerasRun.objects.get(id=run_details["run_id"]).model
-                        self.context["run"] = {
-                            "name": run.project_name,
-                            "id": run.id,
-                            "link": reverse_lazy(
-                                "runs:autokeras:details",
-                                kwargs={"pk": run_details["run_id"]},
-                            ),
-                        }
-                    elif "autokeras_trial" in run_details:
-                        run = KerasModelRun.objects.get(id=run_details["run_id"])
-                        self.context["run"] = {
-                            "name": run.model.name,
-                            "id": run.id,
-                            "link": reverse_lazy("runs:list"),
-                        }
-                    else:
-                        run = NetworkTraining.objects.get(
-                            id=run_details["run_id"]
-                        ).network_config
-                        self.context["run"] = {
-                            "name": run.name,
-                            "id": run.id,
-                            "link": reverse_lazy(
-                                "runs:details", kwargs={"pk": run_details["run_id"]}
-                            ),
-                        }
-
+        self.context["run"] = []
+        for running_tasks in self.context["celery"]:
+            if "training_task_id" in running_tasks:
+                run_details = get_celery_task_state(running_tasks["training_task_id"])[
+                    "details"
+                ]
+                if run_details:
+                    is_autokeras = "autokeras" in run_details
+                    if "run_id" in run_details:
+                        if is_autokeras:
+                            run = AutoKerasRun.objects.get(
+                                id=run_details["run_id"]
+                            ).model
+                            self.context["run"].append(
+                                {
+                                    "name": run.project_name,
+                                    "id": run.id,
+                                    "link": reverse_lazy(
+                                        "runs:autokeras:details",
+                                        kwargs={"pk": run_details["run_id"]},
+                                    ),
+                                    "task_id": running_tasks["training_task_id"],
+                                }
+                            )
+                        elif "autokeras_trial" in run_details:
+                            run = KerasModelRun.objects.get(id=run_details["run_id"])
+                            self.context["run"].append(
+                                {
+                                    "name": run.model.name,
+                                    "id": run.id,
+                                    "link": reverse_lazy("runs:list"),
+                                    "task_id": running_tasks["training_task_id"],
+                                }
+                            )
+                        else:
+                            run = NetworkTraining.objects.get(
+                                id=run_details["run_id"]
+                            ).network_config
+                            self.context["run"].append(
+                                {
+                                    "name": run.name,
+                                    "id": run.id,
+                                    "link": reverse_lazy(
+                                        "runs:details",
+                                        kwargs={"pk": run_details["run_id"]},
+                                    ),
+                                    "task_id": running_tasks["training_task_id"],
+                                }
+                            )
         return self.render_to_response(self.context)
 
 
