@@ -66,6 +66,8 @@ class NeuralNetwork:
         model.compile(**self.training_config.hyper_parameters.get_as_dict())
         logger.success("Model is initiated.")
         model.summary()
+        config.size = model.count_params()
+        config.save()
 
         self.model = model
 
@@ -86,12 +88,11 @@ class NeuralNetwork:
 
         logger.success("Started training of the network...")
 
-        callbacks = (
+        callbacks = self.training_config.fit_parameters.get_callbacks(
+                self.training_config
+            ) + (
             [self.celery_callback]
             + self.training_config.network_config.get_pruning_callbacks()
-            + self.training_config.evaluation_parameters.get_callbacks(
-                self.training_config
-            )
         )
 
         self.model.fit(

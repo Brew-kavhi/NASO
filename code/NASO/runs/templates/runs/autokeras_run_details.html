@@ -16,21 +16,30 @@
             <div class="row">
                 <div class="col-6">
                     <p>
-                        <span class='has-text-weight-bold'>Batch size:</span>
-                        {{ run.fit_parameters.batch_size }}
+                        <span class='has-text-weight-bold'>Max trials:</span>
+                        {{ run.model.max_trials }}
                     </p>
                     <p>
-                        <span class='has-text-weight-bold'>Epochs:</span>
-                        {{ run.fit_parameters.epochs }}
+                        <span class='has-text-weight-bold'>Max Size:</span>
+                        {{ run.model.max_model_size }}
                     </p>
                     <p>
-                        <span class='has-text-weight-bold'>Size:</span>
-                        {{ run.network_config.size }}
+                        <span class='has-text-weight-bold'>Objective:</span>
+                        {{ run.model.objective }}
                     </p>
-                    
+                    {% if run.model.objective == 'metrics' %}
+                        <p>
+                            <span class='has-text-weight-bold'>Weights:</span>
+                            {{ run.model.metric_weights }}
+                        </p>
+                    {% endif %}
                     
                 </div>
-                <div class="col-6">  
+                <div class="col-6">                   
+                    <p>
+                        <span class='has-text-weight-bold'>Max Epochs:</span>
+                        {{ run.model.epochs }}
+                    </p>
                     <p>
                         <span class='has-text-weight-bold'>NASO Version:</span>
                         {{ run.naso_app_version }}
@@ -57,7 +66,7 @@
                     Loss
                 </h5>
                 <div>
-                    <span class="mx-5 tag is-info is-light text-md">{{ run.hyper_parameters.loss.instance_type }}</span>
+                    <span class="mx-5 tag is-info is-light text-md">{{ run.model.loss.instance_type }}</span>
                     <i class="fas fa-angle-down"></i>
                 </div>
             </div>
@@ -65,8 +74,8 @@
             <div id="collapse_loss" class="collapse" aria-labelledby="heading_loss" data-parent="#accordion_loss">
                 <div class="card-body">
                     <div class="row">
-                        {% if run.hyper_parameters.loss.additional_arguments %}
-                            {% for argument in run.hyper_parameters.loss.additional_arguments %}
+                        {% if run.model.loss.additional_arguments %}
+                            {% for argument in run.model.loss.additional_arguments %}
                                 <div class="col-6">
                                     <p>
                                         <span class='has-text-weight-bold'>{{argument.name}}</span>
@@ -75,7 +84,7 @@
                                 </div>
                             {% endfor %}
                         {% else %}
-                            {% for argument in run.hyper_parameters.loss.instance_type.required_arguments %}
+                            {% for argument in run.model.loss.instance_type.required_arguments %}
                             <div class="col-6">
                                 <p>
                                     <span class='has-text-weight-bold col-2'>{{argument.name}}</span>
@@ -92,7 +101,7 @@
     <h4>
         Metrics
     </h4>
-    {% for metric in run.hyper_parameters.metrics.all %}
+    {% for metric in run.model.metrics.all %}
     <div class="accordion" id="accordion_{{metric.id}}">
         <div class="card">
             <div data-toggle="collapse" data-target="#collapse_{{metric.id}}" class="card-header d-flex justify-content-between is-align-items-center" id="heading_{{metric.id}}">
@@ -133,7 +142,7 @@
     <h4>
         Callbacks
     </h4>
-    {% for callback in run.fit_parameters.callbacks.all %}
+    {% for callback in run.model.callbacks.all %}
     <div class="accordion" id="accordion_{{callback.id}}">
         <div class="card">
             <div data-toggle="collapse" data-target="#collapse_{{callback.id}}" class="card-header d-flex justify-content-between is-align-items-center" id="heading_{{callback.id}}">
@@ -170,23 +179,23 @@
         </div>
     </div>
     {% endfor %}
-    <div class="accordion" id="accordion_optimizer">
+    <div class="accordion" id="accordion_tuner">
         <div class="card">
-            <div data-toggle="collapse" data-target="#collapse_optimizer" class="card-header d-flex justify-content-between is-align-items-center" id="heading_optimizer">
+            <div data-toggle="collapse" data-target="#collapse_tuner" class="card-header d-flex justify-content-between is-align-items-center" id="heading_tuner">
                 <h5 class="my-2">
-                    optimizer
+                    Tuner
                 </h5>
                 <div>
-                    <span class="mx-5 tag is-info is-light text-md">{{ run.hyper_parameters.optimizer.instance_type }}</span>
+                    <span class="mx-5 tag is-info is-light text-md">{{ run.model.tuner.tuner_type }}</span>
                     <i class="fas fa-angle-down"></i>
                 </div>
             </div>
 
-            <div id="collapse_optimizer" class="collapse" aria-labelledby="heading_optimizer" data-parent="#accordion_optimizer">
+            <div id="collapse_tuner" class="collapse" aria-labelledby="heading_tuner" data-parent="#accordion_tuner">
                 <div class="card-body">
                     <div class="row">                       
-                        {% if run.hyper_parameters.optimizer.additional_arguments %}
-                            {% for argument in run.hyper_parameters.optimizer.additional_arguments %}
+                        {% if run.model.tuner.additional_arguments %}
+                            {% for argument in run.model.tuner.additional_arguments %}
                                 <div class="col-6">
                                     <p>
                                         <span class='has-text-weight-bold'>{{argument.name}}</span>
@@ -195,7 +204,7 @@
                                 </div>
                             {% endfor %}
                         {% else %}
-                            {% for argument in run.hyper_parameters.optimizer.optimizer_type.required_arguments %}
+                            {% for argument in run.model.tuner.tuner_type.required_arguments %}
                             <div class="col-6">
                                 <p>
                                     <span class='has-text-weight-bold col-2'>{{argument.name}}</span>
@@ -244,7 +253,7 @@
         <div class="card">
             <div data-toggle="collapse" data-target="#collapse_best_model" class="card-header d-flex justify-content-between is-align-items-center" id="heading_best_model">
                 <h5 class="my-2">
-                    Prediction metrics
+                    Best trial: <span id="best_trial_id_container"></span>
                 </h5>
                 <div>
                     <i class="fas fa-angle-down"></i>
@@ -272,6 +281,42 @@
             </div>
         </div>
     </div>
+    <div class="accordion" id="trial_overview">
+        <div class="card" style="overflow:visible">
+            <div data-toggle="collapse" data-target="#collapse_trials" class="card-header d-flex justify-content-between is-align-items-center" id="heading_trials">
+                <h5 class="my-2">
+                    Trial overview
+                </h5>
+                <i class="fas fa-angle-down"></i>
+            </div>
+
+            <div id="collapse_trials" class="collapse" aria-labelledby="heading_trials" data-parent="#trial_overview">
+                <div class="card-body d-flex">
+                    <div class="col-9" id='trial_overview_container'>
+                        <canvas class='h-100 w-100' id='canvas_trial_overview' width="400" height="400"></canvas>
+                    </div>
+                    <div class="col-3">
+                        <div class="axis-selection">
+                            <div>
+                                <label>X-Axis</label>
+                                <select class="form-control" id="trial_overview_xaxis" onchange="trialOverviewX(this)">
+                                    <option value="epochs">epochs</option>
+                                </select>
+                            </div>
+                            <div class="my-5">
+                                <label>Y-Axis</label>
+                                <select class="form-control" id="trial_overview_yaxis" onchange="trialOverviewY(this)">
+                                </select>
+                            </div>
+                        </div>
+                        <div id="trial_selection">
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="accordion" id="accordion_graphs">
         <div class="card">
             <div data-toggle="collapse" data-target="#collapse_graphs" class="card-header d-flex justify-content-between is-align-items-center" id="heading_graphs">
@@ -282,25 +327,10 @@
             </div>
 
             <div id="collapse_graphs" class="collapse" aria-labelledby="heading_graphs" data-parent="#accordion_graphs">
-                <div class="card-body d-flex">
-                    <div class="col-9" id='graph_container'>
-                        <canvas class='h-100 w-100 m' style="min-height: 40vh;" id='canvas' width="400" height="400"></canvas>
-                    </div>
-                    <div class="col-3">
-                        <div class="axis-selection">
-                            <div>
-                                <label>X-Axis</label>
-                                <select class="form-control" id="graph_xaxis" onchange="graphX(this)">
-                                    <option value="epochs">epochs</option>
-                                </select>
-                            </div>
-                            <div class="my-5">
-                                <label>Y-Axis</label>
-                                <select class="form-control" id="graph_yaxis" onchange="graphY(this)">
-                                </select>
-                            </div>
-                        </div>
-                        <a href='download_metrics/{{run.id}}' class='btn btn-primary'>Download metrics</a>
+                <div class="card-body">
+
+                    <div class="" id='canvas_container'>                       
+                          <div id="sorting_container" class="d-flex"></div>
                     </div>
                 </div>
             </div>
@@ -309,11 +339,11 @@
 </div>
 <script>
     let run_metrics = {};
-    let graph = null;
+    let trialOverviewChart = null;
     let allEpochs = [];
     document.addEventListener("DOMContentLoaded", () => {
-        let canvas = document.getElementById("canvas").getContext('2d');
-        graphChart = new Chart(canvas, {
+        let canvas = document.getElementById("canvas_trial_overview").getContext('2d');
+        trialOverviewChart = new Chart(canvas, {
             type: 'line',
             data: {
                 labels: allEpochs,
@@ -356,25 +386,85 @@
             }
         });
 
-        fetch("{% url 'api:tensorflow:get_metrics_for_run' run.id %}").then(function(response) {
+        fetch("{% url 'api:autokeras:all_metrics' run.id %}").then(function(response) {
             response.json().then(function(data) {
                 run_metrics = data;
-                let metrics = [];
-                for(metric in run_metrics[0].metrics) {
-                    metrics.push(metric);
-                    generateOption(metric, metric, $('#graph_xaxis'));
-                    generateOption(metric, metric, $('#graph_yaxis'));
-                }
-                build_graph();
+                let firstTrialID = undefined;
 
+                for (trial_id in run_metrics) {
+                    if (!firstTrialID) {
+                        firstTrialID = trial_id;
+                    }
+                    let trial_data = run_metrics[trial_id];
+                    let canvas_html = "<div class='has-background-white-bis my-5 p-3 rounded-lg'><h6 class='text-center mt-5'>Trial " + 
+                        (trial_id) + "</h6><div class='d-flex'><div class='col-9'><canvas class='h-100 w-100' id='canvas_trial_" + 
+                        trial_id + "' width='400' height='400'></canvas></div><div id='canvas_configure_" + trial_id + "' class='col-3'></div></div>" + 
+                        "<div class='row p-3 border-top mt-5' id='trial_details_container_" + trial_id + "'></div></div>";
+                    $("#canvas_container").append(canvas_html);                    
+                    build_graph(trial_id, trial_data);
+
+                    // now add teh checkbox to trial_selection for the trial overview
+                    let checkBoxHTML = '<div><input type="checkbox" data-trial=' + trial_id + ' class="form-check-inline" id="trial_checkbox_'+trial_id+'"><label for="trial_checkbox_'+trial_id+'">Trial '+(trial_id)+'</label></div>';
+                    $('#trial_selection').append(checkBoxHTML);
+                    $('#trial_checkbox_'+trial_id).change(function() {
+                        let trial_id = this.getAttribute('data-trial');
+                        if(this.checked) {
+                            trialOverviewChart.data.datasets.push({
+                                label: 'Trial '+(trial_id),
+                                data: dictToArray(run_metrics[trial_id],$("#trial_overview_yaxis").val(), $('#trial_overview_xaxis').val()),
+                                id: trial_id
+                            });
+                            trialOverviewChart.update();
+                        } else {
+                            index = trialOverviewChart.data.datasets.findIndex(x => x.id == trial_id);
+                            trialOverviewChart.data.datasets.splice(index, 1);
+                            trialOverviewChart.update();
+                        }
+                    });
+                    
+                }
+                let metrics = [];
+                for(metric in run_metrics[firstTrialID][0]) {
+                    metrics.push(metric);
+                    generateOption(metric, metric, $('#trial_overview_xaxis'));
+                    generateOption(metric, metric, $('#trial_overview_yaxis'));
+                }
+                generateSortSelect('canvas_container', metrics);
+
+                fetchTrialDetails();
+
+                let maxObjective = undefined;
+                let objective = '{{run.model.objective}}'
+                let bestTrial= undefined
+                for(const trial in run_metrics) {
+                    metrics = getMaxValuesPerTrial(run_metrics[trial]);
+                    if (!maxObjective || metrics[objective] > maxObjective) {
+                        maxObjective = metrics[objective];
+                        bestTrial = trial;
+                    }
+                }
+                $('#best_trial_id_container').html(' ' + bestTrial);
             });
         });
         
             });
 
-    // This function converts a dictionary to an array of objects with 'y' and 'x' properties.
-    // The 'y' property is the value of the given key in the dictionary and the 'x' property is
-    // either the key of the dictionary or the value of the given xAxisMetric key in the dictionary.
+    function fetchTrialDetails() {
+        fetch("{% url 'api:autokeras:trial_details' run.id %}").then(function(response) {
+            response.json().then(function(data) {
+                // for every trial in data, append a div to trial_container_<trial_id> and fill in the values from data[trial_id]:
+                for (trial_id in data) {
+                    let trial_data = data[trial_id];
+                    let trial_html = "";
+                    for (hp in trial_data) {
+                        trial_html += "<div class='col-3'><span class='has-text-weight-bold'>" + hp + ":</span> " + trial_data[hp] + "</div>";
+                    }
+                    $("#trial_details_container_" + trial_id).append(trial_html);
+                }
+            });
+        });
+    }
+
     function dictToArray(dict, key, xAxisMetric='epochs') {
         let array = [];
         for (let i in dict) {
@@ -382,9 +472,9 @@
             if (xAxisMetric == 'epochs') {
                 label = i.toString();
             } else {
-                label = dict[i].metrics[xAxisMetric].toString();
+                label = dict[i][xAxisMetric].toString();
             }
-            array.push({y:dict[i].metrics[key], x: label});
+            array.push({y:dict[i][key], x: label});
         }
         return array;
     }
@@ -440,7 +530,7 @@
                 const th = document.createElement('th');
                 th.style.borderWidth = 0;
                 th.style.color = 'white';
-                const text = document.createTextNode($('#graph_xaxis').val() + " " + title);
+                const text = document.createTextNode($('#trial_overview_xaxis').val() + " " + title);
 
                 th.appendChild(text);
                 tr.appendChild(th);
@@ -449,7 +539,7 @@
 
             const tableBody = document.createElement('tbody');
             bodyLines.forEach((body, i) => {
-                let metrics = run_metrics[dataIndex];
+                let metrics = run_metrics[tooltip.dataPoints[i].dataset.id][dataIndex];
                 const colors = tooltip.labelColors[i];
                 const span = document.createElement('span');
                 span.style.background = colors.backgroundColor;
@@ -466,7 +556,7 @@
                 const td = document.createElement('td');
                 td.style.borderWidth = 0;
 
-                let bodyText = $('#graph_yaxis').val() + ": " + body
+                let bodyText = body + ', Modelsize: ' + metrics['model_size'].toLocaleString()
                 if ('trial_energy_consumption' in metrics) {
                     bodyText += ', Energy: ' + metrics['trial_energy_consumption'].toLocaleString() + ' W';
                 }
@@ -498,57 +588,257 @@
         tooltipEl.style.top = positionY + tooltip.caretY + 'px';
     };
 
+    function trialOverviewX(event) {
+        let xaxis = $('#trial_overview_xaxis').val();
+        let yaxis = $('#trial_overview_yaxis').val();
+        trialOverviewChart.data.datasets.forEach(function(dataset) {
+            dataset.data = dictToArray(run_metrics[dataset.id], yaxis, xaxis);
+        });
+        trialOverviewChart.options.scales.x.title.text = xaxis;
+        trialOverviewChart.update();
+    }
+
+    function trialOverviewY(event) {
+        let yaxis = $('#trial_overview_yaxis').val();
+        trialOverviewChart.data.datasets.forEach(function(dataset) {
+            dataset.data = dictToArray(run_metrics[dataset.id], yaxis, $('#trial_overview_xaxis').val());
+        });
+        trialOverviewChart.options.scales.y.title.text = yaxis;
+        trialOverviewChart.update();
+    }
+
     function generateOption(value, text, parent) {
         let optionY = document.createElement('option');
         optionY.value = value;
         optionY.text = text;
         parent.append(optionY);
     }
+    
+    function build_graph(trial_id, trial_data) {
+        $("#trial_details_container_"+trial_id).toggleClass("d-none");        
 
-    function graphX(event) {
-        let xaxis = $('#graph_xaxis').val();
-        let yaxis = $('#graph_yaxis').val();
-        graphChart.data.datasets.forEach(function(dataset) {
-            dataset.data = dictToArray(run_metrics, yaxis, xaxis);
-        });
-        graphChart.options.scales.x.title.text = xaxis;
-        graphChart.update();
-    }
-
-    function graphY(event) {
-        let yaxis = $('#graph_yaxis').val();
-        graphChart.data.datasets.forEach(function(dataset) {
-            dataset.data = dictToArray(run_metrics, yaxis, $('#graph_xaxis').val());
-        });
-        graphChart.options.scales.y.title.text = yaxis;
-        graphChart.update();
-    }
-
-    function build_graph(data) {
-     
+        let canvas = document.getElementById("canvas_trial_" + trial_id).getContext('2d');
         var data = [];
         var labels = [];
 
-       let yaxis = $('#graph_yaxis').val();
-       let xaxis = $('#graph_xaxis').val();
+        var dropdownX = document.createElement('select');
+        var dropdownY = document.createElement('select');
+        var configButton = document.createElement('button');
+        var hideDetailsButton = document.createElement("button");
 
-        function updateChart() {
-            graphChart.data.labels = [];
-            graphChart.data.datasets = [{data:dictToArray(run_metrics, yaxis, xaxis)}];
-            graphChart.update();
+        dropdownX.className='form-control mb-5';
+        dropdownY.className='form-control mb-3';
+        configButton.className='btn btn-primary my-2 col-8';
+        configButton.innerHTML = 'Set for all';
+        hideDetailsButton.className='btn btn-primary my-2 col-8';
+        hideDetailsButton.innerHTML = 'Show Details';
+        dropdownX.name = 'xaxis';
+        dropdownY.name = 'yaxis';
+
+        let optionX = document.createElement('option');
+        optionX.value = 'epochs';
+        optionX.text = 'epochs';
+        dropdownX.appendChild(optionX);
+        
+        for (let key in trial_data[0]) {
+            if (trial_data[0].hasOwnProperty(key)) {
+                generateOption(key, key, dropdownX);
+                generateOption(key, key, dropdownY);
+            }
+        }
+        if(trial_data[0].hasOwnProperty('model_size')) {
+            $("#canvas_configure_"+trial_id).append('<span class="text-bold">Model size:</span> '+trial_data[0]['model_size'].toLocaleString()+'<br>');
+        }
+        $("#canvas_configure_"+trial_id).append('<label>X-Axis</label>');
+        $("#canvas_configure_"+trial_id).append(dropdownX);
+        $("#canvas_configure_"+trial_id).append('<label>Y-Axis</label>');
+        $("#canvas_configure_"+trial_id).append(dropdownY);
+        $("#canvas_configure_"+trial_id).append(configButton);
+        $("#canvas_configure_"+trial_id).append(hideDetailsButton);
+        $('#canvas_configure_'+trial_id).append('<a href="{% url 'api:autokeras:all_metrics' run.id %}'+ trial_id + '/download" class="my-2 col-8 btn btn-primary">Download CSV</a>');
+        let trialLink = "{% url 'runs:autokeras:trial' run.id 'naso.trial_id' %}".replace('naso.trial_id', trial_id);
+        $('#canvas_configure_'+trial_id).append('<br><a href="' + trialLink + '" class="btn btn-primary col-8 my-2">Rerun</a> ');
+
+        let maxMetrics = getMaxValuesPerTrial(trial_data);
+        for (let metric in maxMetrics) {
+            if (maxMetrics.hasOwnProperty(metric)) {
+                $('#canvas_configure_'+trial_id).parent().parent().attr('data-max-'+metric, maxMetrics[metric]);
+            }
         }
 
-        for (let epoch in run_metrics) {
-            data.push(run_metrics[epoch].metrics[yaxis]);
+        hideDetailsButton.addEventListener("click", function() {
+            $("#trial_details_container_"+trial_id).toggleClass("d-none");
+        });
+
+        configButton.addEventListener('click', function () {
+            var xaxis = document.getElementsByName('xaxis');
+            xaxis.forEach(element => {
+                element.value = dropdownX.value;
+                element.dispatchEvent(new Event('change'));
+            });
+            var yaxis = document.getElementsByName('yaxis');
+            yaxis.forEach(element => {
+                element.value = dropdownY.value;
+                element.dispatchEvent(new Event('change'));
+            });
+        });
+
+        dropdownX.addEventListener('change', function () {
+            labels=[];
+            if (dropdownX.value == 'epochs') {
+                for (let epoch in trial_data) {
+                    labels.push(epoch);
+                }
+            } else {
+                for (let epoch in trial_data) {
+                    labels.push(trial_data[epoch][dropdownX.value]);
+                }
+            }
+            updateChart();
+        });
+
+        dropdownY.addEventListener('change', function () {
+            if (dropdownY.value =='metrics') {
+                // show stacked bar chart:
+                let weights = {{run.model.metric_weights | safe  }};
+                let trialEpochs = [];
+                let index = 0;
+                for (const metricName in weights) {
+                    let barData  = [];
+                    for (epoch in trial_data) {
+                        trialEpochs.push(epoch);
+                        barData.push(weights[metricName] * Number(trial_data[epoch][metricName]));
+                    }
+                    trialChart.data.datasets[index] = {
+                        label: metricName,
+                        data:  barData, 
+                    };
+                    index +=1;
+                }
+                trialChart.data.labels = trialEpochs;
+                trialChart.options.scales.x.stacked = true;
+                trialChart.options.scales.y.stacked = true;
+                trialChart.config.type = 'bar';
+                trialChart.update();
+            } else {
+                data =[];
+                for (let epoch in trial_data) {
+                    data.push(trial_data[epoch][dropdownY.value]);
+                }
+                trialChart.data.datasets = [{label:dropdownY.value}]
+                trialChart.options.scales = {
+                    x: {
+                        type:'linear'
+                    }
+                };
+                trialChart.config.type = 'line';
+                updateChart();
+            }
+        });
+
+        function updateChart() {
+            trialChart.data.labels = [];
+            trialChart.data.datasets[0].data = dictToArray(trial_data, dropdownY.value, dropdownX.value);
+            trialChart.update();
+            console.log('update');
+        }
+
+        for (let epoch in trial_data) {
+            data.push(trial_data[epoch][dropdownY.value]);
             labels.push(epoch);
         }
 
-        if (labels.length > graphChart.data.labels.length) {
+        if (labels.length > trialOverviewChart.data.labels.length) {
             allEpochs = labels;
-            graphChart.data.labels = labels;
+            trialOverviewChart.data.labels = labels;
         }
-        updateChart();
+
+        var trialChart = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: dropdownY.value,
+                    data: data,
+                    id: trial_id,
+                }]
+            },
+            options: {
+                scales: {
+                    x: {
+                        type:'linear'
+                    }
+                },
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+            }
+        });
     
     }
+
+    function getMaxValuesPerTrial(trial_data) {
+        let maxValues = {};
+
+        for(const epoch in trial_data) {
+            for (let metric in trial_data[epoch]) {
+                if (trial_data[epoch].hasOwnProperty(metric)) {
+                    if (!maxValues[metric] || trial_data[epoch][metric] > maxValues[metric]) {
+                        maxValues[metric] = trial_data[epoch][metric];
+                    }
+                }
+            }
+        }
+        
+        return maxValues;
+    }
+
+    function sortDivsByMetric(parentDivId, metric, sortOrder) {
+        const parentDiv = document.getElementById(parentDivId);
+        const divs = Array.from(parentDiv.querySelectorAll('div.rounded-lg'));
+
+        divs.sort((a, b) => {
+            const aValue = parseFloat(a.dataset[`max${metric}`]);
+            const bValue = parseFloat(b.dataset[`max${metric}`]);
+            if (sortOrder === 'asc') {
+                return aValue - bValue;
+            } else {
+                return bValue - aValue;
+            }
+        });
+
+        divs.forEach(div => {
+            parentDiv.appendChild(div);
+        });
+    }
+
+
+    function generateSortSelect(parentDivId, availableMetrics) {
+        const parentDiv = $('#sorting_container');
+
+        const select = document.createElement('select');
+        select.classList.add('form-control');
+        select.setAttribute('id', 'sortSelect');
+        select.addEventListener('change', function () {
+            const selectedOption = this.value;
+            const selectedMetric = selectedOption.split(':')[0];
+            const sortOrder = selectedOption.split(':')[1];
+            sortDivsByMetric(parentDivId, selectedMetric, sortOrder);
+        });
+
+        availableMetrics.forEach(metric => {
+            const metricCapitalized = metric.charAt(0).toUpperCase() + metric.slice(1);
+
+            generateOption(metricCapitalized + ':asc', metricCapitalized + ' (Ascending)', select);
+            generateOption(metricCapitalized + ':desc', metricCapitalized + ' (Descending)', select);
+        });
+
+        parentDiv.append('<label>Sort by</label>');
+        parentDiv.append(select);
+    }
+
 </script>
 {% endblock %}
