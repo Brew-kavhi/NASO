@@ -7,22 +7,22 @@ document.addEventListener('DOMContentLoaded', function () {
     let timerId = undefined;
     if (showLogButton) {
         timerId = setInterval(updateLog, 15000);
+        showLogButton.addEventListener('click', function () {
+            
+            $('#logContainer').toggleClass('d-none');
+            if (showLogButton.innerText ==='Show Log') {
+                showLogButton.innerText = 'Hide Log';
+                
+                clearInterval(timerId);
+                timerId = setInterval(updateLog, 1000);
+            } else {
+                showLogButton.innerText = 'Show Log';
+                
+                clearInterval(timerId);
+                timerId = setInterval(updateLog, 5000);
+            }
+        });
     }
-    showLogButton.addEventListener('click', function () {
-        
-        $('#logContainer').toggleClass('d-none');
-        if (showLogButton.innerText ==='Show Log') {
-            showLogButton.innerText = 'Hide Log';
-            
-            clearInterval(timerId);
-            timerId = setInterval(updateLog, 1000);
-        } else {
-            showLogButton.innerText = 'Show Log';
-            
-            clearInterval(timerId);
-            timerId = setInterval(updateLog, 5000);
-        }
-    });
 });
 
 function updateLog() {
