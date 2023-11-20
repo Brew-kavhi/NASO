@@ -51,7 +51,7 @@ class CeleryUpdateCallback(tf.keras.callbacks.Callback):
         self.timer.stop()
         logs["execution_time"] = self.timer.get_total_time()
         logs["total_time"] = self.timer.get_total_time()
-        
+
         # so stop timesrs and then resume afterwards
         metrics = {}
         for key in logs:

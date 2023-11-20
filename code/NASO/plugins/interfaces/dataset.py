@@ -15,5 +15,17 @@ class DatasetLoaderInterface(ABC):
         pass
 
     @abstractmethod
+    def get_element_size(self, *args, **kwargs):
+        """
+        retruns the size of an element in this dataset.
+        """
+
+    @abstractmethod
+    def get_size(self, *args, **kwargs):
+        """
+        retruns the size of this dataset.
+        """
+
+    @abstractmethod
     def get_datasets(self, *args, **kwargs):
         pass

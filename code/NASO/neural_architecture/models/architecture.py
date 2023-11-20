@@ -71,7 +71,7 @@ class NetworkConfiguration(PrunableNetwork, BuildModelFromGraph):
 
     inputs: dict = {}
 
-    def build_model(self):
+    def build_model(self, input_shape=(28, 28)):
         if (
             self.load_model
             and len(self.model_file) > 0
@@ -80,7 +80,7 @@ class NetworkConfiguration(PrunableNetwork, BuildModelFromGraph):
             logger.info(f"Loading model from {self.model_file}")
             return tf.keras.models.load_model(self.model_file)
 
-        self.inputs["input_node"] = tf.keras.Input((28, 28))
+        self.inputs["input_node"] = tf.keras.Input(input_shape)
         self.layer_outputs["input_node"] = self.inputs["input_node"]
         self.build_connected_layers("input_node")
         return tf.keras.Model(self.inputs, self.outputs)

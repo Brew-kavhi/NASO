@@ -36,6 +36,11 @@ class DatasetLoader(models.Model):
     def load_dataset_loader(self):
         return get_class(self.module_name, self.class_name)()
 
+    def get_element_size(self, *args, **kwargs):
+        if not self.dataset_loader:
+            raise Exception("no dataset loaded yet")
+        return self.dataset_loader.get_element_size()
+
     def get_data(self, *args, **kwargs) -> (tf.data.Dataset, tf.data.Dataset):
         """
         Returns a tuple of two tf.data.Dataset objects, the first one is the training dataset,
@@ -77,6 +82,11 @@ class Dataset(models.Model):
     def __str__(self):
         return self.name
 
+    def get_element_size(self, *args, **kwargs):
+        if not self.dataset_loader:
+            raise Exception("no dataset loaded yet")
+        return self.dataset_loader.get_element_size()
+
     def get_data(self, *args, **kwargs):
         return self.dataset_loader.get_data(
             name=self.name,
@@ -97,16 +107,26 @@ class LocalDataset(models.Model):
 class TensorflowDatasetLoader(DatasetLoaderInterface):
     module_name = "tensorflow_datasets"
     dataset_list = tfds.list_builders()
+    info: dict = {}
 
     def get_data(self, name, as_supervised, *args, **kwargs):
-        (train_dataset, test_dataset) = tfds.load(
-            name,
-            split=["train", "test"],
-            as_supervised=as_supervised,
+        (dataset, self.info) = tfds.load(
+            name, split=["train", "test"], as_supervised=as_supervised, with_info=True
         )
+        (train_dataset, test_dataset) = dataset
         train_dataset = train_dataset.cache()
         train_dataset = train_dataset.prefetch(tf.data.AUTOTUNE)
         return (train_dataset, test_dataset)
+
+    def get_size(self, *args, **kwargs):
+        if "splits" in self.info.features:
+            return self.info.features["splits"].shape
+        raise Exception("This dataset does not support size information")
+
+    def get_element_size(self, *args, **kwargs):
+        if "image" in self.info.features:
+            return self.info.features["image"].shape
+        raise Exception("This dataset does not support size information")
 
     def get_datasets(self, *args, **kwargs):
         return self.dataset_list
@@ -129,6 +149,14 @@ class SkLearnDatasetLoader(DatasetLoaderInterface):
         "Breast cancer": "load_breast_cancer",
     }
     training_split = 0.9
+    element_size = 0
+    dataset_size = 0
+
+    def get_size(self, *args, **kwargs):
+        return self.dataset_size
+
+    def get_element_size(self, *args, **kwargs):
+        return self.element_size
 
     def get_datasets(self, *args, **kwargs):
         return list(self.dataset_list.keys())
@@ -141,6 +169,8 @@ class SkLearnDatasetLoader(DatasetLoaderInterface):
         data = getattr(datasets, self.dataset_list[name])(**loader_args)
         target_values = data.target.reshape((-1, 1))
         size = target_values.shape[0]
+        self.element_size = data.data.shape[1:]
+        self.dataset_size = size
 
         train_set = tf.data.Dataset.from_tensor_slices(
             (
