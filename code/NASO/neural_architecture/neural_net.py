@@ -42,6 +42,7 @@ class NeuralNetwork:
     def __init__(self, training_config: NetworkTraining = None):
         if training_config:
             self.training_config = training_config
+            self.load_data()
             self.build_model_from_config(training_config.network_config)
 
     def run_from_config(self, config: NetworkTraining, celery_callback):
@@ -51,7 +52,6 @@ class NeuralNetwork:
             self.training_config = config
 
         # then load the dataset:
-        self.load_data()
 
         self.train()
         self.validate()
@@ -59,8 +59,14 @@ class NeuralNetwork:
     def build_model_from_config(self, config: NetworkConfiguration = None) -> None:
         if not self.training_config or not self.training_config.hyper_parameters:
             raise AttributeError
+        try:
+            input_shape = self.training_config.dataset.get_element_size()
+            logger.info(f"Using input shape {input_shape}")
+        except Exception:
+            input_shape = (28, 28)
+            logger.warning("Using default input shape")
 
-        model = config.build_model()
+        model = config.build_model(input_shape)
 
         model = config.build_pruning_model(model)
         model.compile(**self.training_config.hyper_parameters.get_as_dict())
@@ -89,8 +95,8 @@ class NeuralNetwork:
         logger.success("Started training of the network...")
 
         callbacks = self.training_config.fit_parameters.get_callbacks(
-                self.training_config
-            ) + (
+            self.training_config
+        ) + (
             [self.celery_callback]
             + self.training_config.network_config.get_pruning_callbacks()
         )
