@@ -20,12 +20,14 @@
         </div>
     {% endif %}
     </div>
+{% endblock content %}
+
+{% block javascript %}
+    {{block.super}}
     <script src="{% static 'js/sigma.min.js' %}"></script>
     <script src="{% static 'js/sigma.plugins.dragnodes.js' %}"></script>
     <script src="{% static 'js/graphs.js' %}"></script>
     <script src="{% static 'js/pruning.js' %}"></script>
-{% block javascript %}
-    {{block.super}}
     <script>
         const fixedObjectiveOptions = [
             'loss',
@@ -203,4 +205,3 @@
 
     </script>
     {% endblock javascript%}
-{% endblock content %}

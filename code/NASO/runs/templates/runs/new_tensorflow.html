@@ -20,12 +20,14 @@
         </div>        
     {% endif %}
     </div>
+{% endblock content %}
+
+{% block javascript %}
+    {{block.super}}
     <script src="{% static 'js/sigma.min.js' %}"></script>
     <script src="{% static 'js/sigma.plugins.dragnodes.js' %}"></script>
     <script src="{% static 'js/graphs.js' %}"></script>
     <script src="{% static 'js/pruning.js' %}"></script>
-{% block javascript %}
-    {{block.super}}
     <script>
         $(document).ready(function() {
             handleOptimizerChange($('#{{form.optimizer.auto_id}}'));
@@ -192,4 +194,3 @@ var optimizerOptions = [
 
     </script>
     {% endblock javascript%}
-{% endblock content %}
