@@ -122,7 +122,7 @@ class BuildModelFromGraph(models.Model):
 
     def is_head_node(self, node_id):
         # it is a head node, if this node is not a source:
-        return len(self.edges_from_source(node_id))
+        return not len(self.edges_from_source(node_id))
 
     @abc.abstractmethod
     def get_block_for_node(self, node_id):

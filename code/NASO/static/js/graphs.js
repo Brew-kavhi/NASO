@@ -58,7 +58,7 @@ const s = new sigma({
 
 // Data structure to store nodes and edges
 const nodes = new Map();
-nodes.set('start', { id: "input_node", label: "Input", x: 0, y: 0, size: 3, color: '#008cc2', type: 'image' });
+nodes.set('input_node', { id: "input_node", label: "Input", x: 0, y: 0, size: 3, color: '#008cc2', type: 'image' });
 // const display_nodes = nodes;
 let edges = [];
 
@@ -257,7 +257,7 @@ function refreshGraph(nodeId = undefined) {
         header.innerHTML = clickedNode.label;
 
         // set value of the layer type
-        $('#id_layers').val(clickedNode.type);
+        $('#id_layers').val(clickedNode.naso_type);
         $('#id_layers').trigger('change');
 
         // set value of selected nodes:

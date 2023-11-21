@@ -11,9 +11,10 @@ function updateProgress (progressUrl, idAppendix) {
                 else if (!"state" in data) {
                     setTimeout(updateProgress, 1000, progressUrl, idAppendix);
                 }
-                if(data.state === 'SUCCESS') {
+                else if(data.state === 'SUCCESS') {
                     // display a toast message training is finished
                     toastr.success("Training beendet", 'INFO');
+                    $('#training-tags-'+idAppendix).parent().parent().remove();
                 }
             });
         } else {

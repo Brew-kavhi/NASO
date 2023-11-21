@@ -51,7 +51,7 @@
                 edges = {{edges | safe}};
                 nodes.clear();
                 load_nodes = {{nodes | safe}};
-                nodes.set('start', { id: "input_node", label: "Input", x: 0, y: load_nodes[0]['y'] - 1, size: 3, color: '#008cc2', type:'image' });
+                nodes.set('input_node', { id: "input_node", label: "Input", x: 0, y: load_nodes[0]['y'] - 1, size: 3, color: '#008cc2', type:'image' });
                 for(const node of load_nodes) {
                     node['type'] = 'image'
                     nodes.set(node.id, node);

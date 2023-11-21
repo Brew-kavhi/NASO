@@ -44,6 +44,7 @@
     {% endif %}
     {% if registered_tasks %}
         <h2>Queued Tasks</h2>
+        <div id='queued_tasks'>
         {% for task in registered_tasks %}
             <div class="card">
                 <div class="card-header justify-content-between">
@@ -67,8 +68,14 @@
                 </div>
             </div>
         {% endfor %}
+        </div>
     {% endif %}
-    {% block javascript %}
+    <div id='previous_tasks'>
+    </div>
+    </div>
+{{ block.super }}
+{% endblock %}
+{% block javascript %}
     
         <script>
             var progressUrls = {
@@ -79,6 +86,4 @@
         </script>
         {{ block.super }}
     {% endblock javascript %}
-</div>
-{{ block.super }}
-{% endblock %}
+
