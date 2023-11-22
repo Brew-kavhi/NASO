@@ -3,9 +3,7 @@ from loguru import logger
 
 from celery import shared_task
 from neural_architecture.models.architecture import NetworkConfiguration
-from neural_architecture.NetworkCallbacks.celery_update_callback import (
-    CeleryUpdateCallback,
-)
+from neural_architecture.NetworkCallbacks.base_callback import BaseCallback
 from neural_architecture.NetworkCallbacks.evaluation_base_callback import (
     EvaluationBaseCallback,
 )
@@ -22,7 +20,9 @@ def run_neural_net(self, training_id):
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu, True)
 
-    update_call = CeleryUpdateCallback(self, run=training)
+    update_call = BaseCallback(
+        self, run=training, epochs=training.fit_parameters.epochs
+    )
     try:
         with tf.device(training.gpu):
             _nn = NeuralNetwork(training)

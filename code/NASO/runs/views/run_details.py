@@ -1,11 +1,11 @@
 from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic.base import TemplateView, View
-from runs.models.training import NetworkTraining
 
 from naso.celery import get_celery_task_state
 from naso.models.page import PageSetup
 from neural_architecture.models.autokeras import AutoKerasRun
+from runs.models.training import NetworkTraining
 
 
 class TrainingProgress(View):

@@ -8,7 +8,7 @@ from celery import shared_task
 from neural_architecture.models.autokeras import AutoKerasRun
 from neural_architecture.models.model_runs import KerasModelRun
 from neural_architecture.NetworkCallbacks.autokeras_callback import AutoKerasCallback
-from neural_architecture.NetworkCallbacks.keras_model_callback import KerasModelCallback
+from neural_architecture.NetworkCallbacks.base_callback import BaseCallback
 
 logger.add("net.log", backtrace=True, diagnose=True)
 
@@ -29,13 +29,15 @@ def run_autokeras(self, run_id):
         (train_dataset, test_dataset) = run.dataset.get_data()
 
         callback = AutoKerasCallback(self, run)
-
+        base_callback = BaseCallback(self, run, epochs=run.model.max_trials)
         try:
             with open("net.log", "w", encoding="UTF-8") as _f, redirect_stdout(_f):
                 autokeras_model.build_model(run)
                 autokeras_model.fit(
                     train_dataset,
-                    callbacks=autokeras_model.get_callbacks(run) + [callback],
+                    callbacks=autokeras_model.get_callbacks(run)
+                    + [callback]
+                    + [base_callback],
                     verbose=2,
                     epochs=autokeras_model.epochs,
                 )
@@ -65,7 +67,7 @@ def run_autokeras_trial(self, run_id, trial_id, keras_model_run_id):
     )
     model = keras_model_run.model
 
-    log_callback = KerasModelCallback(self, keras_model_run)
+    log_callback = BaseCallback(self, keras_model_run, epochs=run.fit_parameters.epochs)
 
     try:
         with tf.device(run.gpu), open(

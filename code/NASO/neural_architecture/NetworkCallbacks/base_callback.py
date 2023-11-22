@@ -3,18 +3,19 @@ import math
 import tensorflow as tf
 
 from helper_scripts.timer import Timer
+from neural_architecture.models.autokeras import AutoKerasRun
+from neural_architecture.models.model_runs import KerasModelRun
 from runs.models.training import NetworkTraining, TrainingMetric
 
 
-class CeleryUpdateCallback(tf.keras.callbacks.Callback):
-    additional_callbacks = None
-
-    def __init__(self, celery_task, run: NetworkTraining):
+class BaseCallback(tf.keras.callbacks.Callback):
+    def __init__(self, celery_task, run, epochs):
         super().__init__()
         self.celery_task = celery_task
-        self.run = run
         # i need the epochs here from the run.
         self.timer = Timer()
+        self.epochs = epochs
+        self.run = run
 
     def get_total_time(self):
         return round(self.timer.get_total_time(), 2)
@@ -26,20 +27,15 @@ class CeleryUpdateCallback(tf.keras.callbacks.Callback):
             if not math.isnan(logs[key]):
                 metrics[key] = logs[key]
 
-        epochs = epoch
-        if self.run:
-            epochs = self.run.fit_parameters.epochs
-        run_id = 0
-        if self.run:
-            run_id = self.run.id
-
         self.celery_task.update_state(
             state="PROGRESS",
             meta={
                 "current": (epoch + 1),
-                "total": epochs,
-                "run_id": run_id,
+                "total": self.epochs,
+                "run_id": self.run.id,
                 "metrics": metrics,
+                "autokeras_trial": isinstance(self.run, KerasModelRun),
+                "autokeras": isinstance(self.run, AutoKerasRun),
             },
         )
 
@@ -58,14 +54,14 @@ class CeleryUpdateCallback(tf.keras.callbacks.Callback):
             if not math.isnan(logs[key]):
                 metrics[key] = logs[key]
 
-        if self.run:
+        if isinstance(self.run, NetworkTraining):
             metric = TrainingMetric(
                 neural_network=self.run,
                 epoch=epoch,
                 metrics=[
                     {
                         "current": epoch,
-                        "total": self.run.fit_parameters.epochs,
+                        "total": self.epochs,
                         "run_id": self.run.id,
                         "metrics": metrics,
                         "time": self.timer.get_total_time(),
@@ -73,3 +69,31 @@ class CeleryUpdateCallback(tf.keras.callbacks.Callback):
                 ],
             )
             metric.save()
+        elif isinstance(self.run, KerasModelRun):
+            metric = TrainingMetric(
+                epoch=epoch,
+                metrics=[
+                    {
+                        "current": epoch,
+                        "total": self.epochs,
+                        "run_id": self.run.id,
+                        "metrics": metrics,
+                        "time": self.timer.get_total_time(),
+                        "autokeras_trial": True,
+                    },
+                ],
+            )
+            metric.save()
+            self.run.metrics.add(metric)
+
+        self.celery_task.update_state(
+            state="PROGRESS",
+            meta={
+                "current": (epoch + 1),
+                "total": self.epochs,
+                "run_id": self.run.id,
+                "metrics": metrics,
+                "autokeras_trial": isinstance(self.run, KerasModelRun),
+                "autokeras": isinstance(self.run, AutoKerasRun),
+            },
+        )
