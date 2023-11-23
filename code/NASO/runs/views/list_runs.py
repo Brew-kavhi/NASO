@@ -4,6 +4,7 @@ import shutil
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.generic.base import TemplateView
+from django.urls import reverse_lazy
 
 from naso.models.page import PageSetup
 from neural_architecture.models.autokeras import AutoKerasRun
@@ -40,6 +41,10 @@ class ListRuns(TemplateView):
                 "model__objective",
             )
         )
+        self.page.actions = []
+        self.page.add_pageaction(reverse_lazy("runs:autokeras:new"), "Neuer Autokeras")
+        self.page.add_pageaction(reverse_lazy("runs:new"), "Neuer Tensorflow")
+        self.context["page"] = self.page.get_context()
         self.context["network_training_data"] = training_runs
         self.context["autokeras_runs"] = autokeras_runs
         self.context["network_training_ids"] = [

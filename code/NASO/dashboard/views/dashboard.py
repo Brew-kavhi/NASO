@@ -69,7 +69,7 @@ class Dashboard(TemplateView):
                 if run_details:
                     is_autokeras = "autokeras" in run_details
                     if "run_id" in run_details:
-                        if is_autokeras:
+                        if is_autokeras and run_details["autokeras"]:
                             run = AutoKerasRun.objects.get(
                                 id=run_details["run_id"]
                             ).model
@@ -84,7 +84,10 @@ class Dashboard(TemplateView):
                                     "task_id": running_tasks["training_task_id"],
                                 }
                             )
-                        elif "autokeras_trial" in run_details:
+                        elif (
+                            "autokeras_trial" in run_details
+                            and run_details["autokeras_trial"]
+                        ):
                             run = KerasModelRun.objects.get(id=run_details["run_id"])
                             self.context["run"].append(
                                 {

@@ -109,11 +109,21 @@ class TensorflowDatasetLoader(DatasetLoaderInterface):
     dataset_list = tfds.list_builders()
     info: dict = {}
 
+    def normalize_img(self, image, label):
+        """Normalizes images: `uint8` -> `float32`."""
+        return tf.cast(image, tf.float32) / 255.0, label
+
     def get_data(self, name, as_supervised, *args, **kwargs):
         (dataset, self.info) = tfds.load(
             name, split=["train", "test"], as_supervised=as_supervised, with_info=True
         )
         (train_dataset, test_dataset) = dataset
+        train_dataset = train_dataset.map(
+            self.normalize_img, num_parallel_calls=tf.data.AUTOTUNE
+        )
+        test_dataset = test_dataset.map(
+            self.normalize_img, num_parallel_calls=tf.data.AUTOTUNE
+        )
         train_dataset = train_dataset.cache()
         train_dataset = train_dataset.prefetch(tf.data.AUTOTUNE)
         return (train_dataset, test_dataset)
