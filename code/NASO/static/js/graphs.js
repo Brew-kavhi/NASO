@@ -5,7 +5,7 @@ sigma.canvas.nodes.image = (function () {
     var renderer = function (node, context, settings) {
         const nodeX = node['renderer1:x'];
         const nodeY = node['renderer1:y'];
-        const label = node.label;
+        const label = node.id;
         const labelPadding = 10; // Adjust the padding as needed
 
         // Calculate the width based on the label length and padding
@@ -27,13 +27,13 @@ sigma.canvas.nodes.image = (function () {
 
         context.fillStyle = '#000';
         context.font = '15px Arial';
-        context.fillText(node.label, nodeX + 5, nodeY  + 5);
+        node.label ='';
+        context.fillText(node.id, nodeX + 5, nodeY  + 5);
     };
     return renderer;
 })();
 
 
-// your-script.js
 const s = new sigma({
     renderer: {
         container: document.getElementById('graph-container'),
@@ -94,18 +94,27 @@ function addNode() {
         nodes.set(node.id, node);
     }
     const selectedNodes = Array.from(document.getElementById('existing_nodes').selectedOptions).map(option => option.value);
-    const layerType = document.getElementsByName('layers')[0].selectedOptions[0];
+    const layerType ={value: $('#id_layers').val(), text: layerOptions.find((layer)=>layer.id===Number($('#id_layers').val())).name};
     const nodeName = `${layerType.text} (${nodes.size})`;
     const nodeId = `${layerType.text}_${nodes.size}`;
-
+    var yValue = nodes.size;
+    var xValue = 0;
+    
+    if (selectedNodes) {
+        var parentNode = nodes.get(selectedNodes[0]);
+        if (parentNode) {
+            yValue = parentNode.y + 1;
+            xValue = parentNode.x;
+        }
+    }
 
     if (nodeName && !nodes.has(nodeName)) {
         // Create a new node
         const newNode = {
             id: nodeId,
             label: nodeName,
-            x: Math.random(),
-            y: Math.random(),
+            x: xValue,
+            y: yValue,
             size: 3,
             color: '#008cc2',
             naso_type: layerType.value,
@@ -142,20 +151,22 @@ function updateNode() {
     let updatingNode = nodes.get(nodeId);
 
     // set new properties
-    const layerType = document.getElementsByName('layers')[0].selectedOptions[0];
-    const nodeName = `${layerType.text} (${nodes.size})`;
+    const layerType ={value: $('#id_layers').val(), text: layerOptions.find((layer)=>layer.id===Number($('#id_layers').val())).name};
+    const nodeName = `${layerType.text}_` + nodeId.split('_')[1];
     const selectedNodes = Array.from(document.getElementById('existing_nodes').selectedOptions).map(option => option.value);
 
-    updatingNode.label = nodeName;
     updatingNode.naso_type = layerType.value;
     updatingNode.additional_arguments = getLayerArguments();
 
     //delete all edges:
-    deleteEdgesForNode(nodeId);
+    deleteEdgesForNode(nodeId, nodeName);
 
     // rebiuld the edges:
-    buildEdgesForNode(nodeId, selectedNodes);
-
+    buildEdgesForNode(nodeName, selectedNodes);
+    if (nodeId !== nodeName) {
+        nodes.delete(nodeId);
+        nodes.set(nodeName, {...updatingNode, id: nodeName});
+    }
     refreshGraph();
 }
 
@@ -170,11 +181,13 @@ function buildEdgesForNode(nodeId, parentNodes) {
     });
 }
 
-function deleteEdgesForNode(nodeId) {
+function deleteEdgesForNode(nodeId, newNodeName) {
     const edgesToSplice = [];
     for (let i = 0; i < edges.length; i++) {
-        if (edges[i].source === nodeId || edges[i].target === nodeId) {
+        if (edges[i].target === nodeId) {
             edgesToSplice.push(i);
+        } else if(edges[i].source === nodeId) {
+            edges[i].source = newNodeName;
         }
     }
 
@@ -216,65 +229,65 @@ function refreshGraph(nodeId = undefined) {
 
     const selectBox = document.getElementById('existing_nodes');
 
-    // Clear the current options in the select box
-    selectBox.innerHTML = '';
-
-    // Iterate through all nodes and add them as options
-    nodes.forEach((node, nodeName) => {
-        const option = document.createElement('option');
-        option.value = node.id;
-        option.text = node.label;
-        selectBox.appendChild(option);
-    });
-    if (nodeId) {
-        selectBox.value = nodeId;
+    if(selectBox) {
+        // Clear the current options in the select box
+        selectBox.innerHTML = '';
+        // Iterate through all nodes and add them as options
+        nodes.forEach((node, nodeName) => {
+            const option = document.createElement('option');
+            option.value = node.id;
+            option.text = node.id;
+            selectBox.appendChild(option);
+        });
+        if (nodeId) {
+            selectBox.value = nodeId;
+        }
+        document.getElementById("architecture_nodes").value = JSON.stringify([...nodes.values()]);
+        document.getElementById("architecture_edges").value = JSON.stringify(edges);
     }
-
-    document.getElementById("architecture_nodes").value = JSON.stringify([...nodes.values()]);
-    document.getElementById("architecture_edges").value = JSON.stringify(edges);
-
-
-    sigma.plugins.dragNodes(s, s.renderers[0]);
-    // Event handler for node click
     s.bind('clickNode', function (event) {
         const clickedNodeId = event.data.node.id;
         const clickedNode = nodes.get(clickedNodeId);
 
-        // get the buttons and hide the addNodebutton
+            // get the buttons and hide the addNodebutton
         container = document.getElementById('networkgraph');
-        addButton = container.querySelector('[name="addnode"]');
-        updateButton = container.querySelector('[name="updatenode"]');
-        deleteButton = container.querySelector('[name="deletenode"]');
+        if (container) {
+            addButton = container.querySelector('[name="addnode"]');
+            updateButton = container.querySelector('[name="updatenode"]');
+            deleteButton = container.querySelector('[name="deletenode"]');
+        
+            addButton.classList.add('d-none');
+            updateButton.classList.remove('d-none');
+            deleteButton.classList.remove('d-none');
 
-        addButton.classList.add('d-none');
-        updateButton.classList.remove('d-none');
-        deleteButton.classList.remove('d-none');
+            updateButton.setAttribute('data-node-id', clickedNodeId);
+            deleteButton.setAttribute('data-node-id', clickedNodeId);
 
-        updateButton.setAttribute('data-node-id', clickedNodeId);
-        deleteButton.setAttribute('data-node-id', clickedNodeId);
+            header = container.querySelector('#node_header');
+            header.innerHTML = clickedNode.id;
+        }
+            // set value of the layer type
+            $('#id_layers').val(clickedNode.naso_type);
+            $('#id_layers').trigger('change');
 
-        header = container.querySelector('#node_header');
-        header.innerHTML = clickedNode.label;
-
-        // set value of the layer type
-        $('#id_layers').val(clickedNode.naso_type);
-        $('#id_layers').trigger('change');
-
-        // set value of selected nodes:
-        parentNodes = []
-        for (const edge of edges) {
-            if (edge.target === clickedNode.id) {
-                parentNodes.push(edge.source);
+            // set value of selected nodes:
+            parentNodes = []
+            for (const edge of edges) {
+                if (edge.target === clickedNode.id) {
+                    parentNodes.push(edge.source);
+                }
             }
-        }
-        $('#existing_nodes').val(parentNodes);
-        $('#existing_nodes').trigger('change');
+            $('#existing_nodes').val(parentNodes);
+            $('#existing_nodes').trigger('change');
 
-        // set additional arguments of the layer
-        for (argument of clickedNode.additional_arguments) {
-            $('[name="layer_argument_' + argument.name)[0].value = argument.value;
-        }
-    });
+            // set additional arguments of the layer
+            for (argument of clickedNode.additional_arguments) {
+                $('[name="layer_argument_' + argument.name)[0].value = argument.value;
+            }
+        });
+
+    sigma.plugins.dragNodes(s, s.renderers[0]);
+    // Event handler for node click
 }
 
 // Initial graph rendering

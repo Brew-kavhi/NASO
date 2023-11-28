@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block content %}
+    <div class="tabs is-centered is-toggle is-toggle-round">
+        <ul>
+            <li class="tab is-active" onclick="openTab(event,'tensorflow')">
+                <a>Tensorflow</a>
+            </li>
+            <li class="tab" onclick="openTab(event,'autokeras')">
+                <a>Autokeras</a>
+            </li>
+        </ul>
+    </div>
+    <div class="container content-tab" id='tensorflow'>
+        <div class="d-flex justify-content-center p-3 w-100">
+            <a href='{% url 'runs:templates:new' %}' class='button is-link'>Neues Template</a>
+        </div>
+        {% for template in templates %}
+            <div class="accordion" id="accordion{{ template.id }}">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between is-align-items-center"
+                         id="heading{{ template.id }}">
+                        <h2 class="mb-0">
+                            <button class="btn"
+                                    type="button"
+                                    data-toggle="collapse"
+                                    data-target="#collapse{{ template.id }}"
+                                    aria-expanded="true"
+                                    aria-controls="collapse{{ template.id }}">{{ template.name }}</button>
+                        </h2>
+                        <div class='d-flex is-align-items-center'>
+                            <strong class="mx-1 tag is-info is-light">{{ template.layers.all | length }} Layers</strong>
+                            <button class="button is-danger ml-2 delete-btn"
+                                    data-target="#confirmDeleteModal"
+                                    data-action="{% url 'runs:templates:delete' template.id %}"
+                                    data-item-id="{{ template.id }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="collapse{{ template.id }}"
+                         class="collapse"
+                         aria-labelledby="heading{{ template.id }}"
+                         data-parent="#accordion{{ template.id }}">
+                        <div class="card-body has-background-light">
+                            <div>
+                                {% for edge in template.connections %}<div>{{ edge.source }} => {{ edge.target }}</div>{% endfor %}
+                            </div>
+                            <a href='{% url 'runs:templates:details' template.id %}' class='button'>Details</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    <div class="container content-tab" id='autokeras' style="display:none">
+        <div class="d-flex justify-content-center p-3 w-100">
+            <a href='{% url 'runs:templates:new_autokeras' %}'
+               class='button is-link'>Neues Template</a>
+        </div>
+        {% for template in autokeras_templates %}
+            <div class="accordion" id="accordion{{ template.id }}">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between is-align-items-center"
+                         id="heading{{ template.id }}">
+                        <h2 class="mb-0">
+                            <button class="btn"
+                                    type="button"
+                                    data-toggle="collapse"
+                                    data-target="#collapse{{ template.id }}"
+                                    aria-expanded="true"
+                                    aria-controls="collapse{{ template.id }}">{{ template.name }}</button>
+                        </h2>
+                        <div class='d-flex is-align-items-center'>
+                            <strong class="mx-1 tag is-info is-light">{{ template.blocks.all | length }} Blocks</strong>
+                            <button class="button is-danger ml-2 delete-btn"
+                                    data-target="#confirmDeleteModal"
+                                    data-action="{% url 'runs:templates:delete' template.id %}"
+                                    data-item-id="{{ template.id }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="collapse{{ template.id }}"
+                         class="collapse"
+                         aria-labelledby="heading{{ template.id }}"
+                         data-parent="#accordion{{ template.id }}">
+                        <div class="card-body has-background-light">
+                            <div>
+                                {% for edge in template.connections %}<div>{{ edge.source }} => {{ edge.target }}</div>{% endfor %}
+                            </div>
+                            <a href='{% url 'runs:templates:autokeras_details' template.id %}'
+                               class='button'>Details</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    {% include 'components/delete_modal.html' %}
+    {{ block.super }}
+{% endblock %}

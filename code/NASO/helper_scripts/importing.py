@@ -92,6 +92,8 @@ def build_argument(argument, required_argument, arguments):
         elif required_argument["dtype"].startswith("tuple"):
             # this is a tuple
             arguments[argument["name"]] = ast.literal_eval(argument["value"])
+        else:
+            arguments[argument["name"]] = ast.literal_eval(argument["value"])
     except ValueError as exc:
         logger.error(
             f"Fehler: Parameter {argument['name']} muss als Zahl gegeben sein: {exc}"

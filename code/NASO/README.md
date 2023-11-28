@@ -53,6 +53,7 @@ Add this. We use networkX as the tool to create graphs that describe the network
 Run 
 ```poetry run isort .``` for sorting the imports
 ```poetry run black .``` for formatting and 
+```poetry run djlint . --extension=html --reformat```
 ```poety run flake8 .``` will do a basic code check
 For enhanced testing and pep8 style enforcement, you can execute ```poetry run pylint *```. Note that this still, throws a lot of errors and warnings, which will be fixed in future commits.
 

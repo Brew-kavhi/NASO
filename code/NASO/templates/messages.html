@@ -1,6 +1,6 @@
 <div>
     {% if messages %}
-    <script>
+        <script>
         window.onload= () => {
                 {% for message in messages %}
                     toastr.{% if message.tags %}{{message.tags | safe}}{% endif %}("{{message}}", '{{message.tags}}')
@@ -8,6 +8,4 @@
             };
         </script>
     {% endif %}
-        
-
 </div>

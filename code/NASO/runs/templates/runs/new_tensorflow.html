@@ -2,28 +2,24 @@
 {% load crispy_forms_tags %}
 {% load static %}
 {% block content %}
-<div class="container pb-5">
-    
-    <div class="tabs is-centered is-toggle is-toggle-round">
-        <ul>
-            <li class="tab is-active">
-                <a>Tensorflow</a>
-            </li>
-            <li class="tab">
-                <a href="{% url 'runs:autokeras:new' %}">Autokeras</a>
-            </li>
-        </ul>
-    </div>
-    {% if form %}
-        <div id="tensorflow-tab" class="content-tab">
-            {% crispy form  %}
-        </div>        
-    {% endif %}
+    <div class="container pb-5">
+        <div class="tabs is-centered is-toggle is-toggle-round">
+            <ul>
+                <li class="tab is-active">
+                    <a>Tensorflow</a>
+                </li>
+                <li class="tab">
+                    <a href="{% url 'runs:autokeras:new' %}">Autokeras</a>
+                </li>
+            </ul>
+        </div>
+        {% if form %}
+            <div id="tensorflow-tab" class="content-tab">{% crispy form %}</div>
+        {% endif %}
     </div>
 {% endblock content %}
-
 {% block javascript %}
-    {{block.super}}
+    {{ block.super }}
     <script src="{% static 'js/sigma.min.js' %}"></script>
     <script src="{% static 'js/sigma.plugins.dragnodes.js' %}"></script>
     <script src="{% static 'js/graphs.js' %}"></script>
@@ -120,7 +116,6 @@ var optimizerOptions = [
             },
         {% endfor %}
     ];
-
     var lossOptions = [
         {% for loss in form.loss.field.queryset %}
             {
@@ -193,4 +188,4 @@ var optimizerOptions = [
     ];
 
     </script>
-    {% endblock javascript%}
+{% endblock javascript %}

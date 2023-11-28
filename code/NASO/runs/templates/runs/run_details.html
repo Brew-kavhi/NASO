@@ -1,229 +1,250 @@
 {% extends 'base.html' %}
 {% load get_values %}
+{% load static %}
 {% block content %}
-
-<div class="container pb-1">
-    <div class="accordion" id="accordion_general">
-    <div data-toggle="collapse" data-target="#collapse_general" class="card">
-        <div class="card-header d-flex justify-content-between is-align-items-center">
-            <h5 class="my-2">
-                General
-            </h5>
-            <i class="fas fa-angle-down"></i>
-        </div>
-        <div id="collapse_general" class="collapse" aria-labelledby="heading_general" data-parent="#accordion_general">
-        <div class="card-body">
-            <div class="row">
-                <div class="col-6">
-                    <p>
-                        <span class='has-text-weight-bold'>Batch size:</span>
-                        {{ run.fit_parameters.batch_size }}
-                    </p>
-                    <p>
-                        <span class='has-text-weight-bold'>Epochs:</span>
-                        {{ run.fit_parameters.epochs }}
-                    </p>
-                    <p>
-                        <span class='has-text-weight-bold'>Size:</span>
-                        {{ run.network_config.size }}
-                    </p>
-                    
-                    
-                </div>
-                <div class="col-6">  
-                    <p>
-                        <span class='has-text-weight-bold'>NASO Version:</span>
-                        {{ run.naso_app_version }}
-                    </p>
-                    <p>
-                        <span class='has-text-weight-bold'>Git Hash:</span>
-                        {{ run.git_hash }}
-                    </p>
-                    <p>
-                        <span class='has-text-weight-bold'>Device:</span>
-                        {{ run.gpu }}
-                    </p>
-                </div>
-            </div>
-        </div>
-        </div>
-    </div>
-    </div>
-    <!-- create accordion with bulma for optimizer-->
-    <div class="accordion" id="accordion_loss">
-        <div class="card">
-            <div data-toggle="collapse" data-target="#collapse_loss" class="card-header d-flex justify-content-between is-align-items-center" id="heading_loss">
-                <h5 class="my-2">
-                    Loss
-                </h5>
-                <div>
-                    <span class="mx-5 tag is-info is-light text-md">{{ run.hyper_parameters.loss.instance_type }}</span>
+    <div class="container pb-1">
+        <div class="accordion" id="accordion_general">
+            <div data-toggle="collapse" data-target="#collapse_general" class="card">
+                <div class="card-header d-flex justify-content-between is-align-items-center">
+                    <h5 class="my-2">General</h5>
                     <i class="fas fa-angle-down"></i>
                 </div>
-            </div>
-
-            <div id="collapse_loss" class="collapse" aria-labelledby="heading_loss" data-parent="#accordion_loss">
-                <div class="card-body">
-                    <div class="row">
-                        {% if run.hyper_parameters.loss.additional_arguments %}
-                            {% for argument in run.hyper_parameters.loss.additional_arguments %}
-                                <div class="col-6">
-                                    <p>
-                                        <span class='has-text-weight-bold'>{{argument.name}}</span>
-                                        {{argument.value}}
-                                    </p>
-                                </div>
-                            {% endfor %}
-                        {% else %}
-                            {% for argument in run.hyper_parameters.loss.instance_type.required_arguments %}
+                <div id="collapse_general"
+                     class="collapse"
+                     aria-labelledby="heading_general"
+                     data-parent="#accordion_general">
+                    <div class="card-body">
+                        <div class="row">
                             <div class="col-6">
                                 <p>
-                                    <span class='has-text-weight-bold col-2'>{{argument.name}}</span>
-                                    {{argument.default}}
+                                    <span class='has-text-weight-bold'>Batch size:</span>
+                                    {{ run.fit_parameters.batch_size }}
+                                </p>
+                                <p>
+                                    <span class='has-text-weight-bold'>Epochs:</span>
+                                    {{ run.fit_parameters.epochs }}
+                                </p>
+                                <p>
+                                    <span class='has-text-weight-bold'>Size:</span>
+                                    {{ run.network_config.size }}
                                 </p>
                             </div>
-                            {% endfor %}
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <h4>
-        Metrics
-    </h4>
-    {% for metric in run.hyper_parameters.metrics.all %}
-    <div class="accordion" id="accordion_{{metric.id}}">
-        <div class="card">
-            <div data-toggle="collapse" data-target="#collapse_{{metric.id}}" class="card-header d-flex justify-content-between is-align-items-center" id="heading_{{metric.id}}">
-                <h5 class="my-2">
-                    {{metric.instance_type}}                    
-                </h5>
-                <i class="fas fa-angle-down"></i>
-            </div>
-
-            <div id="collapse_{{metric.id}}" class="collapse" aria-labelledby="heading_{{metric.id}}" data-parent="#accordion_{{metric.id}}">
-                <div class="card-body">
-                    <div class="">                       
-                            <div>
-                                {% if metric.additional_arguments %}
-                                    {% for argument in metric.additional_arguments %}
-                                    <p>
-                                        <span class='has-text-weight-bold'>{{argument.name}}</span>
-                                        {{argument.value}}
-                                    </p>
-                                    {% endfor %}
-                                {% else %}
-                                    {% for argument in metric.instance_type.required_arguments %}
-                                    <p>
-                                        <span class='has-text-weight-bold'>{{argument.name}}</span>
-                                        {{argument.default}}    
-                                    </p>
-                                    {% endfor %}
-                                {% endif %}
-                            </div>
-                        
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-
-    <h4>
-        Callbacks
-    </h4>
-    {% for callback in run.fit_parameters.callbacks.all %}
-    <div class="accordion" id="accordion_{{callback.id}}">
-        <div class="card">
-            <div data-toggle="collapse" data-target="#collapse_{{callback.id}}" class="card-header d-flex justify-content-between is-align-items-center" id="heading_{{callback.id}}">
-                <h5 class="my-2">
-                    {{callback.instance_type}}
-                </h5>
-                <i class="fas fa-angle-down"></i>
-            </div>
-
-            <div id="collapse_{{callback.id}}" class="collapse" aria-labelledby="heading_{{callback.id}}" data-parent="#accordion_{{callback.id}}">
-                <div class="card-body">
-                    <div class="">                       
-                            <div>
-                                {% if callback.additional_arguments %}
-                                    {% for argument in callback.additional_arguments %}
-                                    <p>
-                                        <span class='has-text-weight-bold'>{{argument.name}}</span>
-                                        <span class="border-bottom">{{argument.value}}</span>
-                                    </p>
-                                    {% endfor %}
-                                {% else %}
-                                    {% for argument in callback.instance_type.required_arguments %}
-                                    <p>
-                                        <span class='has-text-weight-bold'>{{argument.name}}</span>
-                                        <span class="border-bottom">{{argument.default}}</span>
-                                    </p>
-                                    {% endfor %}
-                                {% endif %}
-                            </div>
-                        
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-    <div class="accordion" id="accordion_optimizer">
-        <div class="card">
-            <div data-toggle="collapse" data-target="#collapse_optimizer" class="card-header d-flex justify-content-between is-align-items-center" id="heading_optimizer">
-                <h5 class="my-2">
-                    optimizer
-                </h5>
-                <div>
-                    <span class="mx-5 tag is-info is-light text-md">{{ run.hyper_parameters.optimizer.instance_type }}</span>
-                    <i class="fas fa-angle-down"></i>
-                </div>
-            </div>
-
-            <div id="collapse_optimizer" class="collapse" aria-labelledby="heading_optimizer" data-parent="#accordion_optimizer">
-                <div class="card-body">
-                    <div class="row">                       
-                        {% if run.hyper_parameters.optimizer.additional_arguments %}
-                            {% for argument in run.hyper_parameters.optimizer.additional_arguments %}
-                                <div class="col-6">
-                                    <p>
-                                        <span class='has-text-weight-bold'>{{argument.name}}</span>
-                                        {{argument.value}}
-                                    </p>
-                                </div>
-                            {% endfor %}
-                        {% else %}
-                            {% for argument in run.hyper_parameters.optimizer.optimizer_type.required_arguments %}
                             <div class="col-6">
                                 <p>
-                                    <span class='has-text-weight-bold col-2'>{{argument.name}}</span>
-                                    {{argument.default}}
+                                    <span class='has-text-weight-bold'>NASO Version:</span>
+                                    {{ run.naso_app_version }}
+                                </p>
+                                <p>
+                                    <span class='has-text-weight-bold'>Git Hash:</span>
+                                    {{ run.git_hash }}
+                                </p>
+                                <p>
+                                    <span class='has-text-weight-bold'>Device:</span>
+                                    {{ run.gpu }}
                                 </p>
                             </div>
-                            {% endfor %}
-                        {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="accordion" id="accordion_dataset">
-        <div class="card">
-            <div data-toggle="collapse" data-target="#collapse_dataset" class="card-header d-flex justify-content-between is-align-items-center" id="heading_dataset">
-                <h5 class="my-2">
-                    Dataset
-                </h5>
-                <div>
-                    <span class="mx-5 tag is-info is-light text-md">{{ run.dataset.name }}</span>
+        <div class="" id="accordion_network_graph">
+            <div data-toggle="" data-target="#_network_graph" class="card">
+                <div class="card-header d-flex justify-content-between is-align-items-center">
+                    <h5 class="my-2">Network Graph</h5>
                     <i class="fas fa-angle-down"></i>
                 </div>
+                <div id="_network_graph"
+                     class=" show"
+                     aria-labelledby="heading_network_graph"
+                     data-parent="#accordion_network_graph">
+                    <div class="card-body has-background-light d-flex">{% include 'templates/graph.html' %}</div>
+                </div>
             </div>
-
-            <div id="collapse_dataset" class="collapse" aria-labelledby="heading_dataset" data-parent="#accordion_dataset">
-                <div class="card-body">
-                    <div class="">                       
+        </div>
+        <!-- create accordion with bulma for optimizer-->
+        <div class="accordion" id="accordion_loss">
+            <div class="card">
+                <div data-toggle="collapse"
+                     data-target="#collapse_loss"
+                     class="card-header d-flex justify-content-between is-align-items-center"
+                     id="heading_loss">
+                    <h5 class="my-2">Loss</h5>
+                    <div>
+                        <span class="mx-5 tag is-info is-light text-md">{{ run.hyper_parameters.loss.instance_type }}</span>
+                        <i class="fas fa-angle-down"></i>
+                    </div>
+                </div>
+                <div id="collapse_loss"
+                     class="collapse"
+                     aria-labelledby="heading_loss"
+                     data-parent="#accordion_loss">
+                    <div class="card-body">
+                        <div class="row">
+                            {% if run.hyper_parameters.loss.additional_arguments %}
+                                {% for argument in run.hyper_parameters.loss.additional_arguments %}
+                                    <div class="col-6">
+                                        <p>
+                                            <span class='has-text-weight-bold'>{{ argument.name }}</span>
+                                            {{ argument.value }}
+                                        </p>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                {% for argument in run.hyper_parameters.loss.instance_type.required_arguments %}
+                                    <div class="col-6">
+                                        <p>
+                                            <span class='has-text-weight-bold col-2'>{{ argument.name }}</span>
+                                            {{ argument.default }}
+                                        </p>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <h4>Metrics</h4>
+        {% for metric in run.hyper_parameters.metrics.all %}
+            <div class="accordion" id="accordion_{{ metric.id }}">
+                <div class="card">
+                    <div data-toggle="collapse"
+                         data-target="#collapse_{{ metric.id }}"
+                         class="card-header d-flex justify-content-between is-align-items-center"
+                         id="heading_{{ metric.id }}">
+                        <h5 class="my-2">{{ metric.instance_type }}</h5>
+                        <i class="fas fa-angle-down"></i>
+                    </div>
+                    <div id="collapse_{{ metric.id }}"
+                         class="collapse"
+                         aria-labelledby="heading_{{ metric.id }}"
+                         data-parent="#accordion_{{ metric.id }}">
+                        <div class="card-body">
+                            <div class="">
+                                <div>
+                                    {% if metric.additional_arguments %}
+                                        {% for argument in metric.additional_arguments %}
+                                            <p>
+                                                <span class='has-text-weight-bold'>{{ argument.name }}</span>
+                                                {{ argument.value }}
+                                            </p>
+                                        {% endfor %}
+                                    {% else %}
+                                        {% for argument in metric.instance_type.required_arguments %}
+                                            <p>
+                                                <span class='has-text-weight-bold'>{{ argument.name }}</span>
+                                                {{ argument.default }}
+                                            </p>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+        <h4>Callbacks</h4>
+        {% for callback in run.fit_parameters.callbacks.all %}
+            <div class="accordion" id="accordion_{{ callback.id }}">
+                <div class="card">
+                    <div data-toggle="collapse"
+                         data-target="#collapse_{{ callback.id }}"
+                         class="card-header d-flex justify-content-between is-align-items-center"
+                         id="heading_{{ callback.id }}">
+                        <h5 class="my-2">{{ callback.instance_type }}</h5>
+                        <i class="fas fa-angle-down"></i>
+                    </div>
+                    <div id="collapse_{{ callback.id }}"
+                         class="collapse"
+                         aria-labelledby="heading_{{ callback.id }}"
+                         data-parent="#accordion_{{ callback.id }}">
+                        <div class="card-body">
+                            <div class="">
+                                <div>
+                                    {% if callback.additional_arguments %}
+                                        {% for argument in callback.additional_arguments %}
+                                            <p>
+                                                <span class='has-text-weight-bold'>{{ argument.name }}</span>
+                                                <span class="border-bottom">{{ argument.value }}</span>
+                                            </p>
+                                        {% endfor %}
+                                    {% else %}
+                                        {% for argument in callback.instance_type.required_arguments %}
+                                            <p>
+                                                <span class='has-text-weight-bold'>{{ argument.name }}</span>
+                                                <span class="border-bottom">{{ argument.default }}</span>
+                                            </p>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+        <div class="accordion" id="accordion_optimizer">
+            <div class="card">
+                <div data-toggle="collapse"
+                     data-target="#collapse_optimizer"
+                     class="card-header d-flex justify-content-between is-align-items-center"
+                     id="heading_optimizer">
+                    <h5 class="my-2">optimizer</h5>
+                    <div>
+                        <span class="mx-5 tag is-info is-light text-md">{{ run.hyper_parameters.optimizer.instance_type }}</span>
+                        <i class="fas fa-angle-down"></i>
+                    </div>
+                </div>
+                <div id="collapse_optimizer"
+                     class="collapse"
+                     aria-labelledby="heading_optimizer"
+                     data-parent="#accordion_optimizer">
+                    <div class="card-body">
+                        <div class="row">
+                            {% if run.hyper_parameters.optimizer.additional_arguments %}
+                                {% for argument in run.hyper_parameters.optimizer.additional_arguments %}
+                                    <div class="col-6">
+                                        <p>
+                                            <span class='has-text-weight-bold'>{{ argument.name }}</span>
+                                            {{ argument.value }}
+                                        </p>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                {% for argument in run.hyper_parameters.optimizer.optimizer_type.required_arguments %}
+                                    <div class="col-6">
+                                        <p>
+                                            <span class='has-text-weight-bold col-2'>{{ argument.name }}</span>
+                                            {{ argument.default }}
+                                        </p>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="accordion" id="accordion_dataset">
+            <div class="card">
+                <div data-toggle="collapse"
+                     data-target="#collapse_dataset"
+                     class="card-header d-flex justify-content-between is-align-items-center"
+                     id="heading_dataset">
+                    <h5 class="my-2">Dataset</h5>
+                    <div>
+                        <span class="mx-5 tag is-info is-light text-md">{{ run.dataset.name }}</span>
+                        <i class="fas fa-angle-down"></i>
+                    </div>
+                </div>
+                <div id="collapse_dataset"
+                     class="collapse"
+                     aria-labelledby="heading_dataset"
+                     data-parent="#accordion_dataset">
+                    <div class="card-body">
+                        <div class="">
                             <div>
                                 <p>
                                     <span class='has-text-weight-bold'>Datasetloader:</span>
@@ -234,83 +255,97 @@
                                     {{ run.dataset.description }}
                                 </p>
                             </div>
-                        
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="accordion" id="accordion_best_model">
-        <div class="card">
-            <div data-toggle="collapse" data-target="#collapse_best_model" class="card-header d-flex justify-content-between is-align-items-center" id="heading_best_model">
-                <h5 class="my-2">
-                    Prediction metrics
-                </h5>
-                <div>
+        <div class="accordion" id="accordion_best_model">
+            <div class="card">
+                <div data-toggle="collapse"
+                     data-target="#collapse_best_model"
+                     class="card-header d-flex justify-content-between is-align-items-center"
+                     id="heading_best_model">
+                    <h5 class="my-2">Prediction metrics</h5>
+                    <div>
+                        <i class="fas fa-angle-down"></i>
+                    </div>
+                </div>
+                <div id="collapse_best_model"
+                     class="collapse"
+                     aria-labelledby="heading_best_model"
+                     data-parent="#accordion_best_model">
+                    <div class="card-body">
+                        <div class="row">
+                            {% if run.prediction_metrics %}
+                                {% for metrics in  run.prediction_metrics.first.metrics %}
+                                    {% for metric in metrics.metrics %}
+                                        <div class="col-6">
+                                            <p>
+                                                <span class='has-text-weight-bold'>{{ metric }}</span>
+                                                {% get_attribute_tag metrics.metrics metric %}
+                                            </p>
+                                        </div>
+                                    {% endfor %}
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="accordion" id="accordion_graphs">
+            <div class="card">
+                <div data-toggle="collapse"
+                     data-target="#collapse_graphs"
+                     class="card-header d-flex justify-content-between is-align-items-center"
+                     id="heading_graphs">
+                    <h5 class="my-2">Graphs</h5>
                     <i class="fas fa-angle-down"></i>
                 </div>
-            </div>
-
-            <div id="collapse_best_model" class="collapse" aria-labelledby="heading_best_model" data-parent="#accordion_best_model">
-                <div class="card-body">
-                    <div class="row">                       
-                        {% if run.prediction_metrics %}
-                            {% for metrics in  run.prediction_metrics.first.metrics %}
-                                {% for metric in metrics.metrics %}
-                                    <div class="col-6">
-                                        <p>
-                                            <span class='has-text-weight-bold'>{{metric}}</span>
-                                            {% get_attribute_tag metrics.metrics metric %}
-                                        </p>
-                                    </div>  
-                                {% endfor %}
-                            {% endfor %}
-                        
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="accordion" id="accordion_graphs">
-        <div class="card">
-            <div data-toggle="collapse" data-target="#collapse_graphs" class="card-header d-flex justify-content-between is-align-items-center" id="heading_graphs">
-                <h5 class="my-2">
-                    Graphs
-                </h5>
-                <i class="fas fa-angle-down"></i>
-            </div>
-
-            <div id="collapse_graphs" class="collapse" aria-labelledby="heading_graphs" data-parent="#accordion_graphs">
-                <div class="card-body d-flex">
-                    <div class="col-9" id='graph_container'>
-                        <canvas class='h-100 w-100 m' style="min-height: 40vh;" id='canvas' width="400" height="400"></canvas>
-                    </div>
-                    <div class="col-3">
-                        <div class="axis-selection">
-                            <div>
-                                <label>X-Axis</label>
-                                <select class="form-control" id="graph_xaxis" onchange="graphX(this)">
-                                    <option value="epochs">epochs</option>
-                                </select>
-                            </div>
-                            <div class="my-5">
-                                <label>Y-Axis</label>
-                                <select class="form-control" id="graph_yaxis" onchange="graphY(this)">
-                                </select>
-                            </div>
+                <div id="collapse_graphs"
+                     class="collapse"
+                     aria-labelledby="heading_graphs"
+                     data-parent="#accordion_graphs">
+                    <div class="card-body d-flex">
+                        <div class="col-9" id='graph_container'>
+                            <canvas class='h-100 w-100 m'
+                                    style="min-height: 40vh"
+                                    id='canvas'
+                                    width="400"
+                                    height="400"></canvas>
                         </div>
-                        <a href='download_metrics/{{run.id}}' class='btn btn-primary'>Download metrics</a>
+                        <div class="col-3">
+                            <div class="axis-selection">
+                                <div>
+                                    <label>X-Axis</label>
+                                    <select class="form-control" id="graph_xaxis" onchange="graphX(this)">
+                                        <option value="epochs">epochs</option>
+                                    </select>
+                                </div>
+                                <div class="my-5">
+                                    <label>Y-Axis</label>
+                                    <select class="form-control" id="graph_yaxis" onchange="graphY(this)"></select>
+                                </div>
+                            </div>
+                            <a href='download_metrics/{{ run.id }}' class='btn btn-primary'>Download metrics</a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-<script>
+    {% with run.network_config.connections as edges %}
+        {% include 'components/graph_js.html' %}
+    {% endwith %}
+{% endblock %}
+{% block javascript %}
+    {{ block.super }}
+    <script>
     let run_metrics = {};
     let graph = null;
     let allEpochs = [];
+
     document.addEventListener("DOMContentLoaded", () => {
         let canvas = document.getElementById("canvas").getContext('2d');
         graphChart = new Chart(canvas, {
@@ -369,7 +404,6 @@
 
             });
         });
-        
             });
 
     // This function converts a dictionary to an array of objects with 'y' and 'x' properties.
@@ -550,5 +584,5 @@
         updateChart();
     
     }
-</script>
+    </script>
 {% endblock %}

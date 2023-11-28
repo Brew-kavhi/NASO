@@ -192,7 +192,7 @@ class NewRun(TemplateView):
             for layer in layers:
                 if layer["id"] == "input_node":
                     continue
-                naso_layer, _ = NetworkLayer.objects.get_or_create(
+                naso_layer = NetworkLayer(
                     layer_type_id=layer["naso_type"],
                     name=layer["id"],
                     additional_arguments=layer["additional_arguments"],
