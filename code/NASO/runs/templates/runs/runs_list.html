@@ -165,6 +165,7 @@
                                 </button>
                             </h2>
                             <div class='d-flex is-align-items-center'>
+                                <span class="mx-1 tag is-warning is-light">{{ network_training.dataset.name }}</span>
                                 {% for metric in network_training.final_metrics.metrics %}
                                     {% for attr_name in metric.metrics %}
                                         <span class="mx-1 tag is-info is-light">{{ attr_name }}: {% get_attribute_tag metric.metrics attr_name %}</span>
@@ -252,6 +253,7 @@
                                 </button>
                             </h2>
                             <div class='d-flex is-align-items-center'>
+                                <span class="mx-1 tag is-warning is-light">{{ keras_run.dataset.name }}</span>
                                 {% for metric in keras_run.metrics.last.metrics %}
                                     {% if 'final_metric' in metric %}
                                         {% for attr_name in metric.metrics %}

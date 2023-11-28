@@ -1,4 +1,5 @@
 import json
+import abc
 from django.views.generic.base import TemplateView
 from django.contrib import messages
 from django.http import JsonResponse
@@ -13,15 +14,65 @@ from neural_architecture.models.templates import (
 )
 
 
-class AutoKerasTemplateDetails(TemplateView):
+class TemplateDetails(TemplateView):
     template_name = "templates/details.html"
 
     page = PageSetup(title="NetworkTemplate", description="Details")
-    context = {"page": page.get_context()}
+    context = {"page": page.get_context(), "editable": True}
+
+    @abc.abstractmethod
+    def get_template(self, **kwargs):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def build_nodes_and_layers(self, template):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def node_to_layers(self, template, layers):
+        raise NotImplementedError
 
     def get(self, request, *args, **kwargs):
         # get all templates
-        template = AutoKerasNetworkTemplate.objects.get(pk=kwargs["pk"])
+        template = self.get_template(**kwargs)
+        (nodes, layers) = self.build_nodes_and_layers(template)
+        self.context["layers"] = layers
+        self.context["nodes"] = nodes
+        self.context["template"] = template
+        return self.render_to_response(self.context)
+
+    def post(self, request, *args, **kwargs):
+        template = self.get_template(**kwargs)
+        template.name = request.POST.get("name")
+        layers = json.loads(request.POST.get("nodes"))
+        edges = json.loads(request.POST.get("edges"))
+        template.connections = edges
+
+        self.node_to_layers(template, layers)
+        messages.add_message(
+            request, messages.SUCCESS, "Template wurde erfolgreich gespeichert"
+        )
+        template.save()
+        (nodes, layer_options) = self.build_nodes_and_layers(template)
+        self.context["nodes"] = nodes
+        self.context["layers"] = layer_options
+        self.context["template"] = template
+        return self.render_to_response(self.context)
+
+
+class AutoKerasTemplateDetails(TemplateDetails):
+    def get_template(eslf, **kwargs):
+        return AutoKerasNetworkTemplate.objects.get(pk=kwargs["pk"])
+
+    def build_nodes_and_layers(self, template):
+        layers = [
+            {
+                "id": layer.id,
+                "name": layer.name,
+                "required_arguments": layer.required_arguments,
+            }
+            for layer in AutoKerasNodeType.objects.all()
+        ]
         nodes = [
             {
                 "id": layer.name,
@@ -36,30 +87,28 @@ class AutoKerasTemplateDetails(TemplateView):
             }
             for layer in template.blocks.all()
         ]
-        layers = [
-            {
-                "id": layer.id,
-                "name": layer.name,
-                "required_arguments": layer.required_arguments,
-            }
-            for layer in AutoKerasNodeType.objects.all()
-        ]
-        self.context["layers"] = layers
-        self.context["editable"] = True
-        self.context["nodes"] = nodes
-        self.context["template"] = template
-        return self.render_to_response(self.context)
+        return (nodes, layers)
+
+    def node_to_layers(self, template, layers):
+        node_to_layers = {}
+        template.blocks.clear()
+        for layer in layers:
+            if layer["id"] == "input_node":
+                continue
+            naso_layer = AutoKerasNode(
+                node_type_id=layer["naso_type"],
+                name=layer["id"],
+                additional_arguments=layer["additional_arguments"],
+            )
+            naso_layer.save()
+            node_to_layers[layer["id"]] = naso_layer.id
+            template.blocks.add(naso_layer)
+
+        template.node_to_layer_id = node_to_layers
 
 
-class TemplateDetails(TemplateView):
-    template_name = "templates/details.html"
-
-    page = PageSetup(title="NetworkTemplate", description="Details")
-    context = {"page": page.get_context()}
-
-    def get(self, request, *args, **kwargs):
-        # get all templates
-        template = KerasNetworkTemplate.objects.get(pk=kwargs["pk"])
+class TemplateDetails(TemplateDetails):
+    def build_nodes_and_layers(self, template):
         nodes = [
             {
                 "id": layer.name,
@@ -94,11 +143,27 @@ class TemplateDetails(TemplateView):
             }
             for layer in NetworkLayerType.objects.all()
         ]
-        self.context["layers"] = layers
-        self.context["editable"] = True
-        self.context["nodes"] = nodes
-        self.context["template"] = template
-        return self.render_to_response(self.context)
+        return (nodes, layers)
+
+    def get_template(self, **kwargs):
+        return KerasNetworkTemplate.objects.get(pk=kwargs["pk"])
+
+    def node_to_layers(self, template, layers):
+        node_to_layers = {}
+        template.layers.clear()
+        for layer in layers:
+            if layer["id"] == "input_node":
+                continue
+            naso_layer = NetworkLayer(
+                layer_type_id=layer["naso_type"],
+                name=layer["id"],
+                additional_arguments=layer["additional_arguments"],
+            )
+            naso_layer.save()
+            node_to_layers[layer["id"]] = naso_layer.id
+            template.layers.add(naso_layer)
+
+        template.node_to_layer_id = node_to_layers
 
 
 class TemplateList(TemplateView):
@@ -144,7 +209,7 @@ class AutoKerasTemplateNew(TemplateView):
             if layer["id"] == "input_node":
                 continue
             naso_layer = AutoKerasNode.objects.create(
-                layer_type_id=layer["naso_type"],
+                node_type_id=layer["naso_type"],
                 name=layer["id"],
                 additional_arguments=layer["additional_arguments"],
             )

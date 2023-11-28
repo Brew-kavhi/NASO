@@ -185,7 +185,7 @@ class NewRun(TemplateView):
         template = form_data["network_template"]
         if template:
             network_config.node_to_layer_id = template.node_to_layer_id
-            network_config.layers.set(template.layers)
+            network_config.layers.set(template.layers.all())
             network_config.connections = template.connections
         else:
             node_to_layers = {}

@@ -140,6 +140,15 @@
             },
         {% endfor %}
     ];
+    var layerOptions = [
+        {% for layer in form.layers.field.queryset %}
+            {
+                "id": {{ layer.id }},
+                "name": "{{ layer.name }}",
+                "jsonConfig": {{ layer.required_arguments|safe|default:"{}" }},
+            },
+        {% endfor %}
+    ];
     var kerasBlocksOptions = [
         {% for kerasBlocks in form.layers.field.queryset %}
             {

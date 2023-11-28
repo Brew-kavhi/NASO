@@ -53,19 +53,22 @@
                 <input type='hidden' name='edges' id='architecture_edges'>
             </div>
         </div>
-        <div class="field mt-5">
-            <label class="label" for='name'>Name</label>
-            <div class="control">
-                <input class="input"
-                       type="text"
-                       required
-                       name='name'
-                       id='name'
-                       placeholder="Template1">
+        {% if editable %}
+            <div class="field mt-5">
+                <label class="label" for='name'>Name</label>
+                <div class="control">
+                    <input class="input"
+                           type="text"
+                           required
+                           name='name'
+                           id='name'
+                           {% if template.name %}value='{{ template.name }}'{% endif %}
+                           placeholder="Template1">
+                </div>
             </div>
-        </div>
-        <input type='submit'
-               class="button is is-fullwidth is-info"
-               value='Speichern'>
+            <input type='submit'
+                   class="button is is-fullwidth is-info"
+                   value='Speichern'>
+        {% endif %}
     </form>
 {% endblock %}
