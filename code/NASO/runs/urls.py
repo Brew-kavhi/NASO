@@ -20,4 +20,8 @@ urlpatterns = [
         "autokeras/",
         include(("runs.autokeras_urls", "autokeras"), namespace="autokeras"),
     ),
+    path(
+        "templates/",
+        include(("runs.template_urls", "templates"), namespace="templates"),
+    ),
 ]

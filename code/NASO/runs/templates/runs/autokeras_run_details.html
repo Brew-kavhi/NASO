@@ -58,6 +58,22 @@
         </div>
     </div>
     </div>
+    <div class="" id="accordion_network_graph">
+    <div data-toggle="" data-target="#_network_graph" class="card">
+        
+        <div class="card-header d-flex justify-content-between is-align-items-center">
+            <h5 class="my-2">
+                Network Graph
+            </h5>
+            <i class="fas fa-angle-down"></i>
+        </div>
+        <div id="_network_graph" class=" show" aria-labelledby="heading_network_graph" data-parent="#accordion_network_graph">
+        <div class="card-body has-background-light d-flex">
+            {% include 'templates/graph.html' %}
+        </div>
+        </div>
+    </div>
+    </div>
     <!-- create accordion with bulma for optimizer-->
     <div class="accordion" id="accordion_loss">
         <div class="card">
@@ -293,7 +309,7 @@
             <div id="collapse_trials" class="collapse" aria-labelledby="heading_trials" data-parent="#trial_overview">
                 <div class="card-body d-flex">
                     <div class="col-9" id='trial_overview_container'>
-                        <canvas class='h-100 w-100' id='canvas_trial_overview' width="400" height="400"></canvas>
+                        <canvas class='h-100 w-100' style='max-height:100vh' id='canvas_trial_overview' width="400" height="400"></canvas>
                     </div>
                     <div class="col-3">
                         <div class="axis-selection">
@@ -309,7 +325,7 @@
                                 </select>
                             </div>
                         </div>
-                        <div id="trial_selection">
+                        <div id="trial_selection" class="d-flex flex-wrap">
 
                         </div>
                     </div>
@@ -337,6 +353,9 @@
         </div>
     </div>
 </div>
+            {% with run.model.connections as edges %}
+{% include 'components/graph_js.html' %}
+{% endwith %}
 <script>
     let run_metrics = {};
     let trialOverviewChart = null;
@@ -404,7 +423,7 @@
                     build_graph(trial_id, trial_data);
 
                     // now add teh checkbox to trial_selection for the trial overview
-                    let checkBoxHTML = '<div><input type="checkbox" data-trial=' + trial_id + ' class="form-check-inline" id="trial_checkbox_'+trial_id+'"><label for="trial_checkbox_'+trial_id+'">Trial '+(trial_id)+'</label></div>';
+                    let checkBoxHTML = '<div class="me-2"><input type="checkbox" data-trial=' + trial_id + ' class="form-check-inline" id="trial_checkbox_'+trial_id+'"><label for="trial_checkbox_'+trial_id+'">Trial '+(trial_id)+'</label></div>';
                     $('#trial_selection').append(checkBoxHTML);
                     $('#trial_checkbox_'+trial_id).change(function() {
                         let trial_id = this.getAttribute('data-trial');

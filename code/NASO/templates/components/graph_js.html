@@ -1,0 +1,49 @@
+{% load static %}
+{% block javascript %}
+    <script src="{% static 'js/naso.js' %}"></script>
+    <script src="{% static 'js/sigma.min.js' %}"></script>
+    <script src="{% static 'js/sigma.plugins.dragnodes.js' %}"></script>
+    <script src="{% static 'js/graphs.js' %}"></script>
+    <script>
+        const None = null;
+        const True = true;
+        const False = false;
+    var layerOptions = [
+        {% for layer in layers%}
+            {
+                "id": {{ layer.id }},
+                "name": "{{ layer.name }}",
+                "jsonConfig": {{ layer.required_arguments|safe|default:"{}" }},
+            },
+        {% endfor %}
+    ];
+    {% if edges and nodes %}
+        // load the nodes an dedegs into the graph
+        edges = {{edges | safe}};
+        nodes.clear();
+        load_nodes = {{nodes | safe}};
+        var counter = 0;
+        for (const edge of edges) {
+            var node = load_nodes.find((node) => node.id ===edge.source);
+            node.y = counter;
+            if (!(node in nodes)) {
+                node['type']='image';
+                nodes.set(node.id, node)
+            }
+            var node = load_nodes.find((node) => node.id ===edge.target);
+            node.y = counter +1;
+            if (!(node in nodes)) {
+                node['type']='image';
+                nodes.set(node.id, node)
+            }
+            counter += 1;
+        }
+        // we dont need this anymore.
+        delete load_nodes;
+        refreshGraph();
+    {% endif %}
+    document.addEventListener("DOMContentLoaded", () => {
+        handleLayerChange(document.getElementById('id_layers'));
+    });
+    </script>
+{% endblock %}

@@ -1,4 +1,5 @@
 from django.http import JsonResponse
+import random
 from django.urls import reverse_lazy
 from django.views.generic.base import TemplateView, View
 
@@ -30,6 +31,42 @@ class RunDetails(TemplateView):
             "Run again",
             color="primary",
         )
+        nodes = [
+            {
+                "id": layer.name,
+                "label": f"{layer.name} ({layer.id})",
+                "x": 0.0,
+                "y": 1,
+                "size": 3,
+                "color": "#008cc2",
+                "naso_type": layer.layer_type.id,
+                "type": "image",
+                "additional_arguments": layer.additional_arguments,
+            }
+            for layer in run.network_config.layers.all()
+        ]
+        nodes.append(
+            {
+                "id": "input_node",
+                "label": "Input",
+                "x": 0,
+                "y": nodes[0]["y"] - 1,
+                "size": 3,
+                "color": "#008cc2",
+                "type": "image",
+            }
+        )
+
+        layers = [
+            {
+                "id": layer.layer_type.id,
+                "name": layer.layer_type.name,
+                "required_arguments": layer.layer_type.required_arguments,
+            }
+            for layer in run.network_config.layers.all()
+        ]
+        self.context["layers"] = layers
+        self.context["nodes"] = nodes
         self.context["page"] = self.page.get_context()
         return self.render_to_response(self.context)
 
@@ -43,6 +80,30 @@ class AutoKerasRunDetails(TemplateView):
     def get(self, request, *args, **kwargs):
         run = AutoKerasRun.objects.get(pk=kwargs["pk"])
         self.context["run"] = run
+        nodes = [
+            {
+                "id": layer.name,
+                "label": f"{layer.name} ({layer.id})",
+                "x": 0.0,
+                "y": 1,
+                "size": 3,
+                "color": "#008cc2",
+                "naso_type": layer.node_type.id,
+                "type": "image",
+                "additional_arguments": layer.additional_arguments,
+            }
+            for layer in run.model.blocks.all()
+        ]
+        layers = [
+            {
+                "id": layer.node_type.id,
+                "name": layer.node_type.name,
+                "required_arguments": layer.node_type.required_arguments,
+            }
+            for layer in run.model.blocks.all()
+        ]
+        self.context["layers"] = layers
+        self.context["nodes"] = nodes
         self.page.title = run.model.project_name
         self.page.actions = []
         self.page.add_pageaction(

@@ -153,6 +153,15 @@
             },
         {% endfor %}
     ];
+    var lossOptions = [
+        {% for loss in form.loss.field.queryset %}
+            {
+                "id": {{ loss.id }},
+                "name": "{{ loss.name }}",
+                "jsonConfig": {{ loss.required_arguments|safe|default:"{}" }},
+            },
+        {% endfor %}
+    ];
     var metricOptions = [
         {% for metric in form.metrics.field.queryset %}
             {

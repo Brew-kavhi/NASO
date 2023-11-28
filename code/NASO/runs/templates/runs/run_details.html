@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load get_values %}
+{% load static %}
 {% block content %}
 
 <div class="container pb-1">
@@ -45,6 +46,23 @@
                     </p>
                 </div>
             </div>
+        </div>
+        </div>
+    </div>
+    </div>
+
+    <div class="" id="accordion_network_graph">
+    <div data-toggle="" data-target="#_network_graph" class="card">
+        
+        <div class="card-header d-flex justify-content-between is-align-items-center">
+            <h5 class="my-2">
+                Network Graph
+            </h5>
+            <i class="fas fa-angle-down"></i>
+        </div>
+        <div id="_network_graph" class=" show" aria-labelledby="heading_network_graph" data-parent="#accordion_network_graph">
+        <div class="card-body has-background-light d-flex">
+            {% include 'templates/graph.html' %}
         </div>
         </div>
     </div>
@@ -307,10 +325,17 @@
         </div>
     </div>
 </div>
+            {% with run.network_config.connections as edges %}
+{% include 'components/graph_js.html' %}
+{% endwith %}
+{% endblock %}
+{% block javascript %}
+{{ block.super }}
 <script>
     let run_metrics = {};
     let graph = null;
     let allEpochs = [];
+
     document.addEventListener("DOMContentLoaded", () => {
         let canvas = document.getElementById("canvas").getContext('2d');
         graphChart = new Chart(canvas, {
@@ -369,7 +394,6 @@
 
             });
         });
-        
             });
 
     // This function converts a dictionary to an array of objects with 'y' and 'x' properties.
