@@ -2,30 +2,27 @@
 {% load crispy_forms_tags %}
 {% load static %}
 {% load get_values %}
-
-
 {% block content %}
-<div class="container">
-    <div class="card">
-        <div class="card-body">
-            <div class="d-flex flex-wrap">
-                {% for item in hp %}
-                <div class="col-4">
-                    <strong>{{item}}</strong>: {% get_attribute_tag hp item %}
+    <div class="container">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex flex-wrap">
+                    {% for item in hp %}
+                        <div class="col-4">
+                            <strong>{{ item }}</strong>: {% get_attribute_tag hp item %}
+                        </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
             </div>
         </div>
+        <br>
+        {% crispy form %}
     </div>
-    <br>
-    {% crispy form %}
-</div>
 {% endblock %}
-
 {% block javascript %}
-<script src="{% static 'js/pruning.js' %}"></script>
-{{block.super}}
-<script>
+    <script src="{% static 'js/pruning.js' %}"></script>
+    {{ block.super }}
+    <script>
     $(document).ready(function() {
         {% if metric_configs %}
         // load the metric values
@@ -112,5 +109,5 @@
         {% endfor %}
     ];
 
-</script>
+    </script>
 {% endblock javascript %}

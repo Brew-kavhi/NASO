@@ -1,97 +1,103 @@
 {% extends 'adminlte/lib/_main_sidebar.html' %}
-
 {% load static %}
 {% load adminlte_helpers %}
-
 {% block logo %}
-<a href="/" class="brand-link text-decoration-none">
-    <img src="{% static 'img/logo.png' %}" alt="AdminLTE Logo" class="brand-image"
-        style="opacity: .8; filter:invert(1)">
-    <span class="brand-text font-weight-light">{{ APP_TITLE}}</span>
-</a>
+    <a href="/" class="brand-link text-decoration-none">
+        <img src="{% static 'img/logo.png' %}"
+             alt="AdminLTE Logo"
+             class="brand-image"
+             style="opacity: .8;
+                    filter:invert(1)">
+        <span class="brand-text font-weight-light">{{ APP_TITLE }}</span>
+    </a>
 {% endblock %}
-
-{% block user_panel %}
-
-{% endblock %}
-{% block nav_header %}
-{% endblock %}
+{% block user_panel %}{% endblock %}
+{% block nav_header %}{% endblock %}
 {% block nav_links %}
-<li class="nav-item">
-    <a class="{% add_active 'dashboard:index' %} nav-link" href="{% url 'dashboard:index' %}">
-        <i class="nav-icon me-3 fa fa-tachometer-alt"></i> <span class="ml-3">Dashboard</span>
-    </a>
-</li>
-<li class=" nav-item has-tree-view">
-    <a class="{% add_active 'runs:list' exact_match=True %} nav-link" href="{% url 'runs:list' %}">
-        <i class="nav-icon me-3 fa fa-flask"></i> <span class="ml-3">Runs</span>
-        <p><i class="right fas fa-angle-left"></i>
-        </p>
-    </a>
-    <ul class="nav nav-treeview menu-open">
-        <li class="nav-item">
-            <a class="nav-link {% add_active 'runs:new' exact_match=True %}" href="{% url 'runs:new' %}">
-                <i class="nav-icon me-3 fa fa-flask"></i> <span class="ml-3">Neues Experiment</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link {% add_active 'runs:autokeras:new' exact_match=True %}" href="{% url 'runs:autokeras:new' %}">
-                <i class="nav-icon me-3 fa fa-flask"></i> <span class="ml-3">Neues Autokeras</span>
-            </a>
-        </li>
-
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'runs:list' %}">
-                <i class="nav-icon me-3 fa fa-flask"></i> <span class="ml-3">Alle Experimente</span>
-            </a>
-        </li>
-    </ul>
-</li>
-<li class=" nav-item has-tree-view">
-    <a class="{% add_active 'runs:templates:list' exact_match=True %} nav-link" href="{% url 'runs:templates:list' %}">
-        <i class="nav-icon me-3 fa fa-flask"></i> <span class="ml-3">Templates</span>
-        <p><i class="right fas fa-angle-left"></i>
-        </p>
-    </a>
-    <ul class="nav nav-treeview menu-open">
-        <li class="nav-item">
-            <a class="nav-link {% add_active 'runs:templates:new' exact_match=True %}" href="{% url 'runs:templates:new' %}">
-                <i class="nav-icon me-3 fa fa-flask"></i> <span class="ml-3">Neues Template</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'runs:templates:list' %}">
-                <i class="nav-icon me-3 fa fa-flask"></i> <span class="ml-3">Alle Templates</span>
-            </a>
-        </li>
-    </ul>
-</li>
-<hr>
-<li class="nav-item has-tree-view">
-    <a class="{% add_active 'plugins:list' %} nav-link" href="{% url 'plugins:list' %}">
-        <i class="nav-icon me-3 fa fa-plug"></i> <span class="ml-3">Plugins</span>
-        <p><i class="right fas fa-angle-left"></i>
-        </p>
-    </a>
-    <ul class="nav nav-treeview menu-open">
-        <li class="nav-item">
-            <a class="nav-link {% add_active 'plugins:new' exact_match=True %}" href="{% url 'plugins:new' %}">
-                <i class="nav-icon me-3 fa fa-plug"></i> <span class="ml-3">Plugin installieren</span>
-            </a>
-        </li>
-
-        <li class="nav-item">
-            <a class="nav-link {% add_active 'plugins:list' exact_match=True %}" href="{% url 'plugins:list' %}">
-                <i class="nav-icon me-3 fa fa-plug"></i> <span class="ml-3">Plugins</span>
-            </a>
-        </li>
-    </ul>
-</li>
-
-<li class="nav-item">
-    <a class="{% add_active 'system:logs' exact_match=True %} nav-link" href="{% url 'system:logs' %}">
-        <i class="nav-icon me-3 fa fa-history"></i> <span class="ml-3">Logs</span>
-    </a>
-</li>
-
+    <li class="nav-item">
+        <a class="{% add_active 'dashboard:index' %} nav-link"
+           href="{% url 'dashboard:index' %}">
+            <i class="nav-icon me-3 fa fa-tachometer-alt"></i> <span class="ml-3">Dashboard</span>
+        </a>
+    </li>
+    <li class=" nav-item has-tree-view">
+        <a class="{% add_active 'runs:list' exact_match=True %} nav-link"
+           href="{% url 'runs:list' %}">
+            <i class="nav-icon me-3 fa fa-flask"></i> <span class="ml-3">Runs</span>
+            <p>
+                <i class="right fas fa-angle-left"></i>
+            </p>
+        </a>
+        <ul class="nav nav-treeview menu-open">
+            <li class="nav-item">
+                <a class="nav-link {% add_active 'runs:new' exact_match=True %}"
+                   href="{% url 'runs:new' %}">
+                    <i class="nav-icon me-3 fa fa-flask"></i> <span class="ml-3">Neues Experiment</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% add_active 'runs:autokeras:new' exact_match=True %}"
+                   href="{% url 'runs:autokeras:new' %}">
+                    <i class="nav-icon me-3 fa fa-flask"></i> <span class="ml-3">Neues Autokeras</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'runs:list' %}">
+                    <i class="nav-icon me-3 fa fa-flask"></i> <span class="ml-3">Alle Experimente</span>
+                </a>
+            </li>
+        </ul>
+    </li>
+    <li class=" nav-item has-tree-view">
+        <a class="{% add_active 'runs:templates:list' exact_match=True %} nav-link"
+           href="{% url 'runs:templates:list' %}">
+            <i class="nav-icon me-3 fa fa-flask"></i> <span class="ml-3">Templates</span>
+            <p>
+                <i class="right fas fa-angle-left"></i>
+            </p>
+        </a>
+        <ul class="nav nav-treeview menu-open">
+            <li class="nav-item">
+                <a class="nav-link {% add_active 'runs:templates:new' exact_match=True %}"
+                   href="{% url 'runs:templates:new' %}">
+                    <i class="nav-icon me-3 fa fa-flask"></i> <span class="ml-3">Neues Template</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'runs:templates:list' %}">
+                    <i class="nav-icon me-3 fa fa-flask"></i> <span class="ml-3">Alle Templates</span>
+                </a>
+            </li>
+        </ul>
+    </li>
+    <hr>
+    <li class="nav-item has-tree-view">
+        <a class="{% add_active 'plugins:list' %} nav-link"
+           href="{% url 'plugins:list' %}">
+            <i class="nav-icon me-3 fa fa-plug"></i> <span class="ml-3">Plugins</span>
+            <p>
+                <i class="right fas fa-angle-left"></i>
+            </p>
+        </a>
+        <ul class="nav nav-treeview menu-open">
+            <li class="nav-item">
+                <a class="nav-link {% add_active 'plugins:new' exact_match=True %}"
+                   href="{% url 'plugins:new' %}">
+                    <i class="nav-icon me-3 fa fa-plug"></i> <span class="ml-3">Plugin installieren</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% add_active 'plugins:list' exact_match=True %}"
+                   href="{% url 'plugins:list' %}">
+                    <i class="nav-icon me-3 fa fa-plug"></i> <span class="ml-3">Plugins</span>
+                </a>
+            </li>
+        </ul>
+    </li>
+    <li class="nav-item">
+        <a class="{% add_active 'system:logs' exact_match=True %} nav-link"
+           href="{% url 'system:logs' %}">
+            <i class="nav-icon me-3 fa fa-history"></i> <span class="ml-3">Logs</span>
+        </a>
+    </li>
 {% endblock nav_links %}

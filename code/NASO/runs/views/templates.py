@@ -3,7 +3,6 @@ from django.views.generic.base import TemplateView
 from django.contrib import messages
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse_lazy
 
 from naso.models.page import PageSetup
 from neural_architecture.models.architecture import NetworkLayerType, NetworkLayer

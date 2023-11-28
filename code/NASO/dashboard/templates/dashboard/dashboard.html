@@ -1,89 +1,88 @@
 {% extends 'base.html' %}
-
 {% load get_values %}
 {% load static %}
-
 {% block content %}
-<div class="container">
-    {% for celery_run in run %}
-    <div class="card">
-        <div class="card-header justify-content-between">
-            <strong>
-                Trainiere <a href="{{celery_run.link}}">{{ celery_run.name }}</a>
-            </strong>
-            <div id="training-tags-{{celery_run.task_id}}" class="d-flex is-align-items-center">
-
-            </div>
-            <div>
-                <a data-tooltip='cancel this task' class="button is-danger" href="{% url 'dashboard:kill_celery_task' celery_run.task_id %}">
-                    <i class="fa fa-times"></i>
-                </a>
-            </div>
-        </div>
-        <div class="card-body">
-            <div class="training-progress-bar">
-                <p id="import_job_state_text_{{celery_run.task_id}}">
-                    
-                </p>
-                <div class="progress">
-                    <progress id="task_progress_{{celery_run.task_id}}" class="is-link progress progress-bar-animated progress-bar progress-bar-striped" role="progressbar" value="0" min="0" max="100"></progress>
-                </div>
-            </div>
-            <div class='mt-3'>
-                <a class='is-light button is-info' id='training_detail_link_{{celery_run.task_id}}' href="{{celery_run.link}}">Details...</a>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-    {% if run|length == 0 %}
-    <div class="card">
-        <div class="card-body">
-            Derzeit werden keine Netze trainiert.
-        </div>
-    </div>
-    {% endif %}
-    {% if registered_tasks %}
-        <h2>Queued Tasks</h2>
-        <div id='queued_tasks'>
-        {% for task in registered_tasks %}
+    <div class="container">
+        {% for celery_run in run %}
             <div class="card">
                 <div class="card-header justify-content-between">
                     <strong>
-                        <a href="{{task.link}}">{{ task.name }}</a>
+                        Trainiere <a href="{{ celery_run.link }}">{{ celery_run.name }}</a>
                     </strong>
-                    <div id="training-tags" class="d-flex is-align-items-center">
-
-                    </div>
+                    <div id="training-tags-{{ celery_run.task_id }}"
+                         class="d-flex is-align-items-center"></div>
                     <div>
-                        <a class="button is-danger" href="{% url 'dashboard:kill_celery_task' task.id %}">
-                            <i class="fa fa-trash"></i>
+                        <a data-tooltip='cancel this task'
+                           class="button is-danger"
+                           href="{% url 'dashboard:kill_celery_task' celery_run.task_id %}">
+                            <i class="fa fa-times"></i>
                         </a>
                     </div>
                 </div>
                 <div class="card-body">
-                    
+                    <div class="training-progress-bar">
+                        <p id="import_job_state_text_{{ celery_run.task_id }}"></p>
+                        <div class="progress">
+                            <progress id="task_progress_{{ celery_run.task_id }}"
+                                      class="is-link progress progress-bar-animated progress-bar progress-bar-striped"
+                                      role="progressbar"
+                                      value="0"
+                                      min="0"
+                                      max="100"></progress>
+                        </div>
+                    </div>
                     <div class='mt-3'>
-                        <a class='is-light button is-info' id='training_detail_link' href="Link zu run details">Details...</a>
+                        <a class='is-light button is-info'
+                           id='training_detail_link_{{ celery_run.task_id }}'
+                           href="{{ celery_run.link }}">Details...</a>
                     </div>
                 </div>
             </div>
         {% endfor %}
-        </div>
-    {% endif %}
-    <div id='previous_tasks'>
+        {% if run|length == 0 %}
+            <div class="card">
+                <div class="card-body">Derzeit werden keine Netze trainiert.</div>
+            </div>
+        {% endif %}
+        {% if registered_tasks %}
+            <h2>Queued Tasks</h2>
+            <div id='queued_tasks'>
+                {% for task in registered_tasks %}
+                    <div class="card">
+                        <div class="card-header justify-content-between">
+                            <strong>
+                                <a href="{{ task.link }}">{{ task.name }}</a>
+                            </strong>
+                            <div id="training-tags" class="d-flex is-align-items-center"></div>
+                            <div>
+                                <a class="button is-danger"
+                                   href="{% url 'dashboard:kill_celery_task' task.id %}">
+                                    <i class="fa fa-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class='mt-3'>
+                                <a class='is-light button is-info'
+                                   id='training_detail_link'
+                                   href="Link zu run details">Details...</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <div id='previous_tasks'></div>
     </div>
-    </div>
-{{ block.super }}
+    {{ block.super }}
 {% endblock %}
 {% block javascript %}
-    
-        <script>
+    <script>
             var progressUrls = {
                 {% for  celery_run in run %}
                 '{{celery_run.task_id}}':'{% url "runs:training_progress" celery_run.task_id %}',
                 {% endfor %}
             };
-        </script>
-        {{ block.super }}
-    {% endblock javascript %}
-
+    </script>
+    {{ block.super }}
+{% endblock javascript %}

@@ -1,59 +1,64 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="container">
-    {% if plugins %}
-    {% for plugin in plugins %}
-        <div class="accordion" id="accordion{{ plugin.id }}">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between is-align-items-center" id="heading{{ plugin.id }}">
-                    <h2 class="mb-0">
-                        <button class="btn" type="button" data-toggle="collapse" data-target="#collapse{{ plugin.id }}" aria-expanded="true" aria-controls="collapse{{ plugin.id }}">
-                            {{ plugin.name }}
-                        </button>
-                    </h2>
-                    <div class='d-flex is-align-items-center'>
-                        <a class='button is-danger' href="{% url 'plugins:remove' plugin.id %}">
-                            <i class="fas fa-trash-alt"></i>
-                        </a>
-                    </div>
-                </div>
-    
-                <div id="collapse{{ plugin.id }}" class="collapse" aria-labelledby="heading{{ plugin.id }}" data-parent="#accordion{{ plugin.id }}">
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-6">
-                                <p>Plugin Name: {{ plugin.name }}</p>
-                                <p>Plugin Description: {{ plugin.description }}</p>
-                                <p>Plugin Version: {{ plugin.version }}</p>
-                                <p>Plugin Author: {{ plugin.author }}</p>
-                                <p>Plugin License: {{ plugin.license }}</p>
-                                <p>Plugin URL: {{ plugin.url }}</p>
-                                <p>Plugin Path: {{ plugin.path }}</p>
-                                <p>Plugin Enabled: {{ plugin.enabled }}</p>
+    <div class="container">
+        {% if plugins %}
+            {% for plugin in plugins %}
+                <div class="accordion" id="accordion{{ plugin.id }}">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between is-align-items-center"
+                             id="heading{{ plugin.id }}">
+                            <h2 class="mb-0">
+                                <button class="btn"
+                                        type="button"
+                                        data-toggle="collapse"
+                                        data-target="#collapse{{ plugin.id }}"
+                                        aria-expanded="true"
+                                        aria-controls="collapse{{ plugin.id }}">{{ plugin.name }}</button>
+                            </h2>
+                            <div class='d-flex is-align-items-center'>
+                                <a class='button is-danger' href="{% url 'plugins:remove' plugin.id %}">
+                                    <i class="fas fa-trash-alt"></i>
+                                </a>
                             </div>
-                            <div class="col-6">
-                                <p>Plugin Type: {{ plugin.type }}</p>
-                                <p>Plugin Category: {{ plugin.category }}</p>
-                                <p>Plugin Dependencies: {{ plugin.dependencies }}</p>
-                                <p>Plugin Required: {{ plugin.required }}</p>
-                                <p>Plugin Installed: {{ plugin.installed }}</p>
-                                <p>Plugin Loaded: {{ plugin.loaded }}</p>
-                                <p>Plugin Active: {{ plugin.active }}</p>
+                        </div>
+                        <div id="collapse{{ plugin.id }}"
+                             class="collapse"
+                             aria-labelledby="heading{{ plugin.id }}"
+                             data-parent="#accordion{{ plugin.id }}">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <p>Plugin Name: {{ plugin.name }}</p>
+                                        <p>Plugin Description: {{ plugin.description }}</p>
+                                        <p>Plugin Version: {{ plugin.version }}</p>
+                                        <p>Plugin Author: {{ plugin.author }}</p>
+                                        <p>Plugin License: {{ plugin.license }}</p>
+                                        <p>Plugin URL: {{ plugin.url }}</p>
+                                        <p>Plugin Path: {{ plugin.path }}</p>
+                                        <p>Plugin Enabled: {{ plugin.enabled }}</p>
+                                    </div>
+                                    <div class="col-6">
+                                        <p>Plugin Type: {{ plugin.type }}</p>
+                                        <p>Plugin Category: {{ plugin.category }}</p>
+                                        <p>Plugin Dependencies: {{ plugin.dependencies }}</p>
+                                        <p>Plugin Required: {{ plugin.required }}</p>
+                                        <p>Plugin Installed: {{ plugin.installed }}</p>
+                                        <p>Plugin Loaded: {{ plugin.loaded }}</p>
+                                        <p>Plugin Active: {{ plugin.active }}</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-center">
+                <p>No plugins found.</p>
+                <a href="{% url 'plugins:new' %}" class="button is-primary">
+                    <i class="fas fa-plus"></i> New Plugin
+                </a>
             </div>
-        </div>  
-    {% endfor %}
-    {% else %}
-        <div class="text-center">
-            <p>No plugins found.</p>
-            <a href="{% url 'plugins:new' %}" class="button is-primary">
-                <i class="fas fa-plus"></i> New Plugin
-            </a>
-        </div>
-
-    {% endif %}
-</div>
+        {% endif %}
+    </div>
 {% endblock %}

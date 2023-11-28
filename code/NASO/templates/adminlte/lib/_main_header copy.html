@@ -1,7 +1,4 @@
 {% extends 'adminlte/lib/_main_header.html' %}
-
-
-
 {% block nav_bar %}
     <ul class="navbar-nav">
         <li class="nav-item">
@@ -14,11 +11,9 @@
             <a href="/admin" class="nav-link">Admin</a>
         </li>
     </ul>
-    
     <!-- Right navbar links -->
     <ul class="navbar-nav ml-auto">
         <ul class="nav navbar-nav">
-            
             <!-- Notifications Dropdown Menu -->
             <li class="nav-item dropdown">
                 <a class="nav-link" data-toggle="dropdown" href="#">
@@ -47,39 +42,39 @@
                 </div>
             </li>
             <!-- Notifications Dropdown Menu -->
-            
-            
             <li class="nav-item dropdown">
-                    <a class="nav-link" data-toggle="dropdown" href="#">
-                        <i class="far fa-user fa-2x"></i>
+                <a class="nav-link" data-toggle="dropdown" href="#">
+                    <i class="far fa-user fa-2x"></i>
+                </a>
+                <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+                    <a href="#" class="dropdown-item">
+                        <!-- Message Start -->
+                        <div class="media">
+                            <img src="/static/admin-lte/dist/img/avatar5.png"
+                                 alt="User Avatar"
+                                 class="img-size-50 mr-3 img-circle">
+                            <div class="media-body">
+                                <h3 class="dropdown-item-title">
+                                    admin
+                                    <span class="float-right text-sm text-danger"><i class="fas fa-online"></i></span>
+                                </h3>
+                                <p class="text-sm">
+                                    <small>Member since :</small>
+                                </p>
+                                <p class="text-sm text-muted">
+                                    <i class="far fa-clock mr-1"></i>  <small>Sept. 19, 2023, 7:27 p.m.</small>
+                                </p>
+                            </div>
+                        </div>
+                        <!-- Message End -->
                     </a>
-                    <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-                        <a href="#" class="dropdown-item">
-                            <!-- Message Start -->
-                            <div class="media">
-                                <img src="/static/admin-lte/dist/img/avatar5.png" alt="User Avatar" class="img-size-50 mr-3 img-circle">
-                                <div class="media-body">
-                                    <h3 class="dropdown-item-title">
-                                            admin
-                                        <span class="float-right text-sm text-danger"><i class="fas fa-online"></i></span>
-                                    </h3>
-                                    <p class="text-sm"><small>Member since :</small></p>
-                                    <p class="text-sm text-muted"><i class="far fa-clock mr-1"></i>  <small>Sept. 19, 2023, 7:27 p.m.</small></p>
-                                </div>
-                            </div>
-                            <!-- Message End -->
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <div class="dropdown-footer">
-                                <a href="/admin/password_change/" class="btn btn-primary btn-sm">Change password</a>
-                                <a href="/logout/" class="btn btn-danger btn-sm">Sign out</a>
-                            </div>
-                        
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-footer">
+                        <a href="/admin/password_change/" class="btn btn-primary btn-sm">Change password</a>
+                        <a href="/logout/" class="btn btn-danger btn-sm">Sign out</a>
                     </div>
-                </li>
-            
-            
-            
+                </div>
+            </li>
         </ul>
     </ul>
 {% endblock nav_bar %}

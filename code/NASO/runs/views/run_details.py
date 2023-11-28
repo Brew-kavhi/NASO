@@ -1,5 +1,4 @@
 from django.http import JsonResponse
-import random
 from django.urls import reverse_lazy
 from django.views.generic.base import TemplateView, View
 
