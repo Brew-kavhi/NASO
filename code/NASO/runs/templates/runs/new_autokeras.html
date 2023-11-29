@@ -43,10 +43,18 @@
             $('#div_id_network_template_name').addClass("d-none");
 
             $('#id_objective').autocomplete({
-                source: fixedObjectiveOptions,
+                source: fixedObjectiveOptions.concat(callbackObjectiveOptions).concat(Array.from(metricObjectiveOptions.values())),
                 minLength: 0,
                 select: function(event, ui) {
                     $('#id_objective').val(ui.item.value);
+                    if (ui.item.value ==='metrics') {
+                        $('#metric_weights_arguments').addClass('d-block');
+                        $('#metric_weights_arguments').removeClass('d-none');
+                    }
+                    else {
+                        $('#metric_weights_arguments').removeClass('d-block');
+                        $('#metric_weights_arguments').addClass('d-none');
+                    }
                     return false;
                 }
             }).focus(function() {

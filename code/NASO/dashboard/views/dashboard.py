@@ -51,7 +51,7 @@ class Dashboard(TemplateView):
                 task["link"] = reverse_lazy(
                     "runs:autokeras:details", kwargs={"pk": run.id}
                 )
-            elif task["is_autokeras_trial"]:
+            elif "is_autoekras_trial" in task and task["is_autokeras_trial"]:
                 run = KerasModelRun.objects.get(id=task["run_id"])
                 task["name"] = run.model.name
                 task["link"] = reverse_lazy("runs:list")
