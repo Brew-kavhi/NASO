@@ -192,6 +192,10 @@ class Run(models.Model):
         Dataset, on_delete=models.deletion.SET_NULL, null=True, blank=True
     )
 
+    rate = models.IntegerField(default=0)
+
+    description = models.TextField()
+
     prediction_metrics = models.ManyToManyField(
         "TrainingMetric",
         related_name="tensorflow_prediction_metrics",

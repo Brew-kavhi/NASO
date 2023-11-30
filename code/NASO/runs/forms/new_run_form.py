@@ -65,6 +65,7 @@ class NewRunForm(BaseRunWithCallback, PrunableForm):
         self.helper.layout = Layout(
             HTML('<div class="row mb-3"><h2>Training konfigurieren</h2></div>'),
             Field("name"),
+            Field("description"),
             self.metric_html(),
             self.callback_html(),
             Field("optimizer", css_class="select2 w-100 mt-3"),
@@ -264,6 +265,7 @@ class NewAutoKerasRunForm(BaseRunWithCallback, PrunableForm):
         self.helper.layout = Layout(
             HTML('<div class="row mb-3"><h2>Autokeras konfigurieren</h2></div>'),
             Field("name"),
+            Field("description"),
             self.metric_html(),
             self.loss_html(),
             self.callback_html(),

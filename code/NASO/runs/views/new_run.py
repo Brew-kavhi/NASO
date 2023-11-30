@@ -124,6 +124,7 @@ class NewRun(TemplateView):
             form.initial["steps_per_epoch"] = training.fit_parameters.steps_per_epoch
             form.initial["workers"] = training.fit_parameters.workers
             form.initial["dataset_loaders"] = training.dataset.dataset_loader
+            form.initial["description"] = training.description
             form.initial[
                 "use_multiprocessing"
             ] = training.fit_parameters.use_multiprocessing
@@ -327,6 +328,7 @@ class NewRun(TemplateView):
                 training.fit_parameters = fit_parameters
                 training.evaluation_parameters = eval_parameters
                 training.gpu = form.cleaned_data["gpu"]
+                training.description = form.cleaned_data["description"]
 
                 training.save()
 
@@ -494,6 +496,7 @@ class NewAutoKerasRun(TemplateView):
             form.initial["tuner"] = autokeras_run.model.tuner.tuner_type
             form.initial["metric_weights"] = autokeras_run.model.metric_weights
             form.initial["max_epochs"] = autokeras_run.model.epochs
+            form.initial["description"] = autokeras_run.description
             nodes = [
                 {
                     "id": layer.name,
@@ -646,6 +649,7 @@ class NewAutoKerasRun(TemplateView):
                 dataset=build_dataset(form.cleaned_data),
                 model=model,
                 gpu=form.cleaned_data["gpu"],
+                description=form.cleaned_data["description"],
             )
 
             run_autokeras.delay(run.id)

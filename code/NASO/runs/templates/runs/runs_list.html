@@ -91,13 +91,12 @@
         });
     }
 
-    function initFilterSort(containerID) {
-        $('#sortButton').on('click', function() {
+    function sortByDataset(element, type, containerID) {
             // Toggle sorting direction
             ascending = !ascending;
 
             // Toggle the arrow icon
-            var sortIcon = $(this).find('.sort-icon');
+            var sortIcon = element.find('.sort-icon');
             if (ascending) {
                 sortIcon.text('↑'); // Up arrow
             } else {
@@ -105,10 +104,18 @@
             }
 
             $('#'+containerID).find('.accordion').sort(function(a, b) {
-                var timeA = parseFloat($(a).data('time'));
-                var timeB = parseFloat($(b).data('time'));
+                var timeA = parseFloat($(a).data(type));
+                var timeB = parseFloat($(b).data(type));
                 return ascending ? timeA - timeB : timeB - timeA;
             }).appendTo('#'+containerID);
+    }
+
+    function initFilterSort(containerID) {
+        $('#sortButton').on('click', function() {
+            sortByDataset($(this), 'time', containerID);
+        });
+        $('#sortRateButton').on('click', function() {
+            sortByDataset($(this), 'rating', containerID);
         });
         $('#filterOptimizer').on('change', function() {
             var selectedOptimizer = $(this).val();
@@ -143,6 +150,9 @@
             <button class='button is-light is-info' id="sortButton">
                 Sort by time <span class="sort-icon ml-3"></span>
             </button>
+            <button class='button is-light is-info' id="sortRateButton">
+                Sort by rating <span class="sort-icon ml-3"></span>
+            </button>
         </div>
         <div class="container" id="runs_list">
             {% for network_training in network_training_data %}
@@ -150,7 +160,8 @@
                      id="accordion{{ network_training.id }}"
                      data-app-version='{{ network_training.naso_app_version }}'
                      data-optimizer='{{ network_training.hyper_parameters.optimizer.instance_type.name }}'
-                     data-time="{% get_metric network_training.final_metrics.metrics 'time' %}">
+                     data-time="{% get_metric network_training.final_metrics.metrics 'time' %}"
+                     data-rating="{{network_training.rate}}">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between is-align-items-center"
                              id="heading{{ network_training.id }}">
@@ -174,6 +185,14 @@
                                         <span class="mx-1 tag is-primary is-light">time: {% get_attribute_tag metric 'time' %}</span>
                                     {% endif %}
                                 {% endfor %}
+                                <select class='star-rating'  data-type='tensorflow' data-id="{{ network_training.id }}">
+                                    <option value="0"></option>
+                                    {% for i in "12345"|make_list %}
+                                        <option value='{{ i }}'
+                                                {% if network_training.rate == forloop.counter %}selected{% endif %}>
+                                        </option>
+                                    {% endfor %}
+                                </select>
                                 <a class="button is-info ml-2 has-tooltip-arrow has-tooltip-left"
                                    href="{% url 'runs:new' %}?rerun={{ network_training.id }}"
                                    data-tooltip='Dieses Experiment neu starten'>
@@ -192,6 +211,7 @@
                              aria-labelledby="heading{{ network_training.id }}"
                              data-parent="#accordion{{ network_training.id }}">
                             <div class="card-body">
+                                <div>{{ network_training.description }}</div>
                                 <div class="row">
                                     <div class="col-8">
                                         <canvas class='h-100 w-100' id="chart{{ network_training.id }}"></canvas>
@@ -238,6 +258,7 @@
                 <div class="accordion"
                      id="accordion{{ keras_run.id }}"
                      data-app-version='{{ keras_run.naso_app_version }}'
+                     data-rating="{{keras_run.rate}}"
                      data-tuner='{{ keras_run.model.tuner.tuner_type.name }}'>
                     <div class="card">
                         <div class="card-header d-flex justify-content-between is-align-items-center"
@@ -264,6 +285,13 @@
                                         {% endif %}
                                     {% endif %}
                                 {% endfor %}
+                                <select class='star-rating'  data-type="autokeras" data-id="{{ keras_run.id }}">
+                                    <option value="0"></option>
+                                    {% for i in "12345"|make_list %}
+                                        <option value='{{ i }}'
+                                                {% if keras_run.rate == forloop.counter %}selected{% endif %}></option>
+                                    {% endfor %}
+                                </select>
                                 <a class="button is-info ml-2 has-tooltip-arrow has-tooltip-left"
                                    href="{% url 'runs:autokeras:new' %}?rerun={{ keras_run.id }}"
                                    data-tooltip='Dieses Experiment neu starten'>
@@ -282,6 +310,7 @@
                              aria-labelledby="heading{{ keras_run.id }}"
                              data-parent="#accordion{{ keras_run.id }}">
                             <div class="card-body">
+                                <div>{{ keras_run.description }}</div>
                                 <div class="row">
                                     <div class="col-8">
                                         <canvas class='h-100 w-100' id="autokeras_chart{{ keras_run.id }}"></canvas>
