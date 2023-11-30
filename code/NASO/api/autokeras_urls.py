@@ -21,4 +21,5 @@ urlpatterns = [
         autokeras.get_metrics_for_run,
         name="get_metrics_for_run",
     ),
+    path("<int:pk>/rate/", autokeras.rate_run, name="rate_run"),
 ]

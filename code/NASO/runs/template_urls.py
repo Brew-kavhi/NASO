@@ -1,12 +1,13 @@
+from django.urls import path
+
 from runs.views.templates import (
-    TemplateList,
-    TemplateDetails,
-    TemplateNew,
-    AutoKerasTemplateNew,
     AutoKerasTemplateDetails,
+    AutoKerasTemplateNew,
+    TemplateDetails,
+    TemplateList,
+    TemplateNew,
     delete_template,
 )
-from django.urls import path
 
 urlpatterns = [
     path("keras/<int:pk>", TemplateDetails.as_view(), name="details"),

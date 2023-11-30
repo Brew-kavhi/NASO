@@ -5,6 +5,20 @@ from django.http import HttpResponse, JsonResponse
 
 from neural_architecture.models.autokeras import AutoKerasRun
 
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def rate_run(request, pk):
+    run = AutoKerasRun.objects.get(pk=pk)
+    rate = request.data.get("rate")
+    run.rate = rate
+    run.save()
+    return Response({"success": True})
+
 
 def get_metrics(request, pk, trial_id):
     autokeras_run = AutoKerasRun.objects.get(pk=pk)

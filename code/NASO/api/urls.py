@@ -1,4 +1,5 @@
 from django.urls import include, path
+from rest_framework.authtoken import views
 
 urlpatterns = [
     path(
@@ -13,4 +14,5 @@ urlpatterns = [
         "system/",
         include(("api.system_urls", "system"), namespace="system"),
     ),
+    path("api-token-auth/", views.obtain_auth_token),
 ]

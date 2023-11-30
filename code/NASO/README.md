@@ -27,6 +27,8 @@ If its not possible to start or install a rabbitmq server. you can ask me (Mariu
 
 Last step is to configure the environment. This roject uses python-decouple to laod environment variables into the django app. This is important to keep sensitive information local and to have all the config in one place. You can find a sample configuration in the file .envrc. just copy it to a file named .env and adjust it to your needs. Here you also need to configure the rabbitmq server instance. This env file also holds the database connection credentials. This is only necessary if you are using something else than sqlite, which is preconfigured in the project settings. So if you are using SQLite, because you might not be able to install a proper SQL-database server, you need to change the database settings in the file naso/settings_local.py. 
 
+For rating the runs there exists an api call. This api call is protected by TokenAuthentication. Therefor you must create an API_TOKEN. This can be done by executing the javascript code from inside the helper_scripts/get_token.html in a console on a browser window of opened NASO. Keep in mind, that therefor you have to create an superuser and set the username and password accordingly in the authentication call. Furthmore, the received token ahs to be adde to the environment variabnles files .env.
+
 # Execution
 If you are starting it for the first time, you need to migrate the database:
 ```poetry run python manage.py migrate```

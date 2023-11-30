@@ -32,6 +32,10 @@ class BaseRun(forms.Form):
         required=True,
     )
 
+    description = forms.CharField(
+        widget=forms.Textarea, label=("Beschreibung"), required=False
+    )
+
     save_network_as_template = forms.BooleanField(
         label="Als Vorlage speichern", required=False
     )
