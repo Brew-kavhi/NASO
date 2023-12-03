@@ -1,0 +1,17 @@
+stages:
+  - version
+  - changelog
+  
+version:
+  stage: version
+  script:
+    - bumpversion patch  # Choose your desired version part to bump
+  only:
+    - main
+
+changelog:
+  stage: changelog
+  script:
+    - towncrier
+  only:
+    - main
