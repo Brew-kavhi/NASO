@@ -1,12 +1,12 @@
 
 repos:
   - repo: https://github.com/psf/black
-    rev: stable
+    rev: 23.11.0
     hooks:
       - id: black
 
   - repo: https://github.com/Riverside-Healthcare/djLint
-    rev: v1.33.0
+    rev: v1.34.0
     hooks:
       - id: djlint-reformat-django
       - id: djlint-django
@@ -17,6 +17,8 @@ repos:
     hooks:
       - id: commitizen
       - id: commitizen-branch
+        entry: cz
+        args: ['-nr', '21', 'bump']
         stages:
           - post-commit
           - push
