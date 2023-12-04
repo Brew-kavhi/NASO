@@ -1,3 +1,13 @@
+## 0.3.0 (2023-12-04)
+
+### Feat
+
+- **worker**: task states in run details page and worker control
+
+### Refactor
+
+- **header**: mov4ed logs in header and state bar of workers
+
 ## 0.2.0 (2023-12-03)
 
 ### Feat
