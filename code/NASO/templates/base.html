@@ -37,6 +37,7 @@
     <script>
         const logUrl = '{% url "api:system:get_logs" %}';
         const rateUrl = '{% url "api:tensorflow:rate_run" 0 %}';
+        const token = '{{API_TOKEN}}';
         $(document).ready(function() {
             $('.select2').select2({
                 placeholder: 'Please choose...',
@@ -56,10 +57,32 @@
                     document.querySelector('#runs_list_autokeras>#accordion' + event.target.dataset.id).dataset.rating = event.target.value;
                 }
             });
+            var taskStates = document.querySelectorAll('[name^="header_task_management"]');
+            taskStates.forEach((element) => {
+                let taskID = element.getAttribute('name').split('management_')[1];
+                // start a timer to update the power of this element every 5 seconds:
+                setTimeout(updateTaskPower, 5000, taskID);
+            });
         });
 
+        function updateTaskPower(taskID) {
+            fetch("{% url 'api:celery:task_details' 0 %}".replace(0,taskID),{
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Token ${token}`,
+                    },
+            }).then(function(response) {
+                if (response.ok) {
+                    response.json().then(function(data) {
+                        $('#header_task_power_' + taskID).text(data['gpu']['power'].toLocaleString() + ' W');
+                        setTimeout(updateTaskPower, 5000, taskID);
+                    });
+                }
+            });
+        }
+
         async function setRate(objectId, newRate, type) {
-            const token = '{{API_TOKEN}}';
         
             try {
                 const response = await fetch(rateUrl.replace("0", objectId).replace('tensorflow', type), {
@@ -109,20 +132,6 @@
             {% endif %}
         </div>
     </section>
-{% endblock %}
-{% block content %}
-    <div style="right:2em; bottom: 2em" class="position-fixed">
-        <button id="showLogButton" class="bg-dark tag text-sm">Show Log</button>
-        <span id="new_logs_counter"
-              class="position-absolute badge badge-danger"
-              style="right:-9px;
-                     bottom: 15px"></span>
-    </div>
-    <div id="logContainer"
-         class="d-none h-25 bg-dark overflow-auto p-3 rounded"
-         style="position: fixed;
-                bottom: 4em;
-                z-index: 1111"></div>
 {% endblock %}
 {% block messages %}
     {% include 'messages.html' %}

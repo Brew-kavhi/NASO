@@ -2,6 +2,33 @@
 {% load get_values %}
 {% block content %}
     <div class="container pb-1">
+        <div class="card d-none" id='training_progress'>
+            <div class="card-header justify-content-between">
+                <strong>Trainingsfortschritt</strong>
+                <div id="training-tags-" class="d-flex is-align-items-center"></div>
+                <div>
+                    <a data-tooltip='cancel this task'
+                       class="button is-danger"
+                       id='task_kill_link'
+                       href="{% url 'dashboard:kill_celery_task' 0 %}">
+                        <i class="fa fa-times"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="training-progress-bar">
+                    <p id="import_job_state_text_"></p>
+                    <div class="progress">
+                        <progress id="task_progress_"
+                                  class="is-link progress progress-bar-animated progress-bar progress-bar-striped"
+                                  role="progressbar"
+                                  value="0"
+                                  min="0"
+                                  max="100"></progress>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="accordion" id="accordion_general">
             <div data-toggle="collapse" data-target="#collapse_general" class="card">
                 <div class="card-header d-flex justify-content-between is-align-items-center">
@@ -481,6 +508,24 @@
                     }
                 }
                 $('#best_trial_id_container').html(' ' + bestTrial);
+            });
+        });
+        fetch("{% url 'api:celery:is_running' %}", {
+            method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Token ${token}`,
+                    },
+            body: JSON.stringify({'run_id':{{run.id}}, 'run_type':'autokeras'}),
+        }).then(function(response) {
+            response.json().then(function(data) {
+                console.log(data);
+                if (data['success']) {
+                    $('#training_progress').toggleClass('d-none');
+                    // this run is currently in training, so display the progreessbar
+                    $('#task_kill_link').attr('href', $('#task_kill_link').attr('href').replace(0,data['task_id']));
+                    updateProgress("{% url 'runs:training_progress' 0 %}".replace(0,data['task_id']), '');
+                }
             });
         });
         

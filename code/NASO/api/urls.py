@@ -15,4 +15,8 @@ urlpatterns = [
         include(("api.system_urls", "system"), namespace="system"),
     ),
     path("api-token-auth/", views.obtain_auth_token),
+    path(
+        "celery/",
+        include(("api.celery_urls", "celery"), namespace="celery"),
+    ),
 ]

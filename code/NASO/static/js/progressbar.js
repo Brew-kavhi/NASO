@@ -16,6 +16,13 @@ function updateProgress (progressUrl, idAppendix) {
                     toastr.success("Training beendet", 'INFO');
                     $('#training-tags-'+idAppendix).parent().parent().remove();
                 }
+                else if (data.state =='FAILURE') {
+                    toastr.error('Es ist ein Fehler aufgetreten.');
+                    $('#import_job_state_text_'+idAppendix).text(data.state);
+                }
+                else {
+                    $('#import_job_state_text_'+idAppendix).text(data.state);
+                }
             });
         } else {
             throw new Error('Something went wrong');

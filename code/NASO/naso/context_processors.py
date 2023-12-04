@@ -1,5 +1,10 @@
 from decouple import config
 from django.conf import settings
+from api.views.celery import get_workers_information
+
+
+def get_celery_workers(request):
+    return {"WORKERS": get_workers_information()}
 
 
 def api_token(request):

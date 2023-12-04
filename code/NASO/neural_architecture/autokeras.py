@@ -29,7 +29,7 @@ def run_autokeras(self, run_id):
         (train_dataset, test_dataset) = run.dataset.get_data()
 
         callback = AutoKerasCallback(self, run)
-        base_callback = BaseCallback(self, run, epochs=run.model.max_trials)
+        base_callback = BaseCallback(self, run, epochs=run.model.epochs)
         try:
             with open("net.log", "w", encoding="UTF-8") as _f, redirect_stdout(_f):
                 autokeras_model.build_model(run)

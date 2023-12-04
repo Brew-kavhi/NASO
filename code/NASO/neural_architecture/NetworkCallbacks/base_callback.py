@@ -16,6 +16,7 @@ class BaseCallback(tf.keras.callbacks.Callback):
         self.timer = Timer()
         self.epochs = epochs
         self.run = run
+        self.gpu_consumption = "NaN"
 
     def get_total_time(self):
         return round(self.timer.get_total_time(), 2)
@@ -32,6 +33,7 @@ class BaseCallback(tf.keras.callbacks.Callback):
             meta={
                 "current": (epoch + 1),
                 "total": self.epochs,
+                "gpu": {"device": self.run.gpu, "power": self.gpu_consumption},
                 "run_id": self.run.id,
                 "metrics": metrics,
                 "autokeras_trial": isinstance(self.run, KerasModelRun),
@@ -86,6 +88,9 @@ class BaseCallback(tf.keras.callbacks.Callback):
             metric.save()
             self.run.metrics.add(metric)
 
+        # energy consumption is only measured at the end of the epoch, so it is enough to get those information here.
+        if "energy_consumption" in logs:
+            self.gpu_consumption = logs["energy_consumption"]
         self.celery_task.update_state(
             state="PROGRESS",
             meta={
@@ -93,6 +98,7 @@ class BaseCallback(tf.keras.callbacks.Callback):
                 "total": self.epochs,
                 "run_id": self.run.id,
                 "metrics": metrics,
+                "gpu": {"device": self.run.gpu, "power": self.gpu_consumption},
                 "autokeras_trial": isinstance(self.run, KerasModelRun),
                 "autokeras": isinstance(self.run, AutoKerasRun),
             },

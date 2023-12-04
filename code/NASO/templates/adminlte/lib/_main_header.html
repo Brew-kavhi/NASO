@@ -1,1 +1,106 @@
 {% extends 'adminlte/lib/_main_header.html' %}
+{% block nav_bar %}
+    <ul class="navbar-nav">
+        <li class="nav-item">
+            <a class="nav-link" data-widget="pushmenu" href="#"><i class="fas fa-bars"></i></a>
+        </li>
+        <li class="nav-item d-none d-sm-inline-block">
+            <a href="/" class="nav-link">Home</a>
+        </li>
+        <li class="nav-item d-none d-sm-inline-block">
+            <a href="/admin" class="nav-link">Admin</a>
+        </li>
+    </ul>
+    <div class="nav-link">
+        <button id="showLogButton" class="bg-dark tag text-sm">Show Log</button>
+        <span id="new_logs_counter" class="navbar-badge badge badge-danger"></span>
+    </div>
+    <div id="logContainer"
+         class="d-none h-25 bg-dark overflow-auto p-3 rounded"
+         style="position: fixed;
+                bottom: 10px;
+                z-index: 1111"></div>
+    <!-- Right navbar links -->
+    <ul class="navbar-nav ml-auto">
+        <ul class="nav navbar-nav">
+            <a class="nav-link" data-toggle="dropdown" href="#">Worker</a>
+            <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+                {% for worker in WORKERS %}
+                    <div class='border-bottom p-3'>
+                        <div class='d-flex'>
+                            <div class="align-items-center d-flex h5 pr-3">{{ worker.name }}</div>
+                            <div name="{{ worker.name }}"
+                                 onclick='restart_worker(this)'
+                                 data-tooltip='Restart worker-pool'
+                                 class='btn btn-primary'>
+                                <i class='fa fa-redo'></i><span></span>
+                            </div>
+                        </div>
+                        <p>Concurrency: {{ worker.concurrency }}</p>
+                        Tasks:
+                        {% for task in worker.tasks %}
+                            <div class='p-2 has-background-light mt-2 rounded'
+                                 name='header_task_management_{{ task.id }}'>
+                                <div>
+                                    <a href='{{ task.link }}'>{{ task.name }}</a>
+                                </div>
+                                <div class='d-flex'>
+                                    <strong>{{ task.device }}</strong>:
+                                    <div class='pl-1' id='header_task_power_{{ task.id }}'>{{ task.power }}</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        </ul>
+        <ul class="nav navbar-nav">
+            <!-- Notifications Dropdown Menu -->
+            <li class="nav-item dropdown">
+                <a class="nav-link" data-toggle="dropdown" href="#">
+                    <i class="far fa-user fa-2x"></i>
+                </a>
+                <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+                    <a href="#" class="dropdown-item">
+                        <!-- Message Start -->
+                        <div class="media">
+                            <img src="/static/admin-lte/dist/img/avatar5.png"
+                                 alt="User Avatar"
+                                 class="img-size-50 mr-3 img-circle">
+                            <div class="media-body">
+                                <h3 class="dropdown-item-title">
+                                    admin
+                                    <span class="float-right text-sm text-danger"><i class="fas fa-online"></i></span>
+                                </h3>
+                                <p class="text-sm">
+                                    <small>Member since :</small>
+                                </p>
+                                <p class="text-sm text-muted">
+                                    <i class="far fa-clock mr-1"></i>  <small>Sept. 19, 2023, 7:27 p.m.</small>
+                                </p>
+                            </div>
+                        </div>
+                        <!-- Message End -->
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-footer">
+                        <a href="/admin/password_change/" class="my-2 btn btn-primary btn-sm">Change password</a>
+                        <a href="/logout/" class="btn btn-danger my-2 btn-sm">Sign out</a>
+                    </div>
+                </div>
+            </li>
+        </ul>
+    </ul>
+    <script>
+        const apiURL = '/api/celery/restart_worker/';
+        async function restart_worker(element) {
+            const response = await fetch(apiURL + element.getAttribute('name'), {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Token ${token}`,
+                    },
+                });
+        }
+    </script>
+{% endblock nav_bar %}
