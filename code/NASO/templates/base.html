@@ -110,20 +110,7 @@
         </div>
     </section>
 {% endblock %}
-{% block content %}
-    <div style="right:2em; bottom: 2em" class="position-fixed">
-        <button id="showLogButton" class="bg-dark tag text-sm">Show Log</button>
-        <span id="new_logs_counter"
-              class="position-absolute badge badge-danger"
-              style="right:-9px;
-                     bottom: 15px"></span>
-    </div>
-    <div id="logContainer"
-         class="d-none h-25 bg-dark overflow-auto p-3 rounded"
-         style="position: fixed;
-                bottom: 4em;
-                z-index: 1111"></div>
-{% endblock %}
+{% block content %}{% endblock %}
 {% block messages %}
     {% include 'messages.html' %}
 {% endblock messages %}
