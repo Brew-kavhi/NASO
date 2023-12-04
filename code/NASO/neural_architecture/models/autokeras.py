@@ -133,6 +133,7 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
             metrics=self.get_metrics(),
             objective=keras_tuner.Objective(self.objective, direction="min"),
         )
+        self.auto_model.tuner.max_epochs = self.epochs
         self.auto_model.tuner.hypermodel.build = custom_hypermodel_build(
             self.auto_model.tuner.hypermodel.build, run
         )

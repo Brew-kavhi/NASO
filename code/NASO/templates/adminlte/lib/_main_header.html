@@ -28,9 +28,10 @@
                 {% for worker in WORKERS %}
                     <div class='border-bottom p-3'>
                         <div class='d-flex'>
-                            <h2 class='h5'>{{ worker.name }}</h2>
+                            <div class="align-items-center d-flex h5 pr-3">{{ worker.name }}</div>
                             <div name="{{ worker.name }}"
                                  onclick='restart_worker(this)'
+                                 data-tooltip='Restart worker-pool'
                                  class='btn btn-primary'>
                                 <i class='fa fa-redo'></i><span></span>
                             </div>
@@ -38,9 +39,15 @@
                         <p>Concurrency: {{ worker.concurrency }}</p>
                         Tasks:
                         {% for task in worker.tasks %}
-                            <div class='p-2 has-background-light mt-2'>
-                                <div>{{ task.name }}</div>
-                                <div>{{ task.device }}: {{ task.power }}</div>
+                            <div class='p-2 has-background-light mt-2 rounded'
+                                 name='header_task_management_{{ task.id }}'>
+                                <div>
+                                    <a href='{{ task.link }}'>{{ task.name }}</a>
+                                </div>
+                                <div class='d-flex'>
+                                    <strong>{{ task.device }}</strong>:
+                                    <div class='pl-1' id='header_task_power_{{ task.id }}'>{{ task.power }}</div>
+                                </div>
                             </div>
                         {% endfor %}
                     </div>
@@ -48,33 +55,6 @@
             </div>
         </ul>
         <ul class="nav navbar-nav">
-            <!-- Notifications Dropdown Menu -->
-            <li class="nav-item dropdown">
-                <a class="nav-link" data-toggle="dropdown" href="#">
-                    <i class="far fa-bell fa-2x"></i>
-                    <span class="badge badge-warning navbar-badge">15</span>
-                </a>
-                <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-                    <span class="dropdown-item dropdown-header">15 Notifications</span>
-                    <div class="dropdown-divider"></div>
-                    <a href="#" class="dropdown-item">
-                        <i class="fas fa-envelope mr-2"></i> 4 new messages
-                        <span class="float-right text-muted text-sm">3 mins</span>
-                    </a>
-                    <div class="dropdown-divider"></div>
-                    <a href="#" class="dropdown-item">
-                        <i class="fas fa-users mr-2"></i> 8 friend requests
-                        <span class="float-right text-muted text-sm">12 hours</span>
-                    </a>
-                    <div class="dropdown-divider"></div>
-                    <a href="#" class="dropdown-item">
-                        <i class="fas fa-file mr-2"></i> 3 new reports
-                        <span class="float-right text-muted text-sm">2 days</span>
-                    </a>
-                    <div class="dropdown-divider"></div>
-                    <a href="#" class="dropdown-item dropdown-footer">See All Notifications</a>
-                </div>
-            </li>
             <!-- Notifications Dropdown Menu -->
             <li class="nav-item dropdown">
                 <a class="nav-link" data-toggle="dropdown" href="#">
@@ -112,7 +92,6 @@
         </ul>
     </ul>
     <script>
-        const token = "{{API_TOKEN}}";
         const apiURL = '/api/celery/restart_worker/';
         async function restart_worker(element) {
             const response = await fetch(apiURL + element.getAttribute('name'), {
@@ -122,7 +101,6 @@
                         'Authorization': `Token ${token}`,
                     },
                 });
-            console.log(response);
         }
     </script>
 {% endblock nav_bar %}

@@ -28,14 +28,12 @@ class BaseCallback(tf.keras.callbacks.Callback):
             if not math.isnan(logs[key]):
                 metrics[key] = logs[key]
 
-        if "energy_consumption" in metrics:
-            gpu_consumption = metrics["energy_consumption"]
         self.celery_task.update_state(
             state="PROGRESS",
             meta={
                 "current": (epoch + 1),
                 "total": self.epochs,
-                "gpu": {"device": self.run.gpu, "power": gpu_consumption},
+                "gpu": {"device": self.run.gpu, "power": self.gpu_consumption},
                 "run_id": self.run.id,
                 "metrics": metrics,
                 "autokeras_trial": isinstance(self.run, KerasModelRun),
@@ -90,8 +88,9 @@ class BaseCallback(tf.keras.callbacks.Callback):
             metric.save()
             self.run.metrics.add(metric)
 
+        # energy consumption is only measured at the end of the epoch, so it is enough to get those information here.
         if "energy_consumption" in logs:
-            gpu_consumption = logs["energy_consumption"]
+            self.gpu_consumption = logs["energy_consumption"]
         self.celery_task.update_state(
             state="PROGRESS",
             meta={
@@ -99,7 +98,7 @@ class BaseCallback(tf.keras.callbacks.Callback):
                 "total": self.epochs,
                 "run_id": self.run.id,
                 "metrics": metrics,
-                "gpu": {"device": self.run.gpu, "power": gpu_consumption},
+                "gpu": {"device": self.run.gpu, "power": self.gpu_consumption},
                 "autokeras_trial": isinstance(self.run, KerasModelRun),
                 "autokeras": isinstance(self.run, AutoKerasRun),
             },
