@@ -65,8 +65,11 @@ def is_run_executing(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_task_details(request, task_id):
-    details = get_celery_task_state(task_id)["details"]
-    return Response(details)
+    try:
+        details = get_celery_task_state(task_id)["details"]
+        return Response(details)
+    except Exception as e:
+        return Response({"sucess": False})
 
 
 def get_workers_information():

@@ -11,7 +11,10 @@ from runs.models.training import NetworkTraining
 def rate_run(request, pk):
     run = NetworkTraining.objects.get(pk=pk)
     rate = request.data.get("rate")
-    run.rate = rate
+    if rate != "":
+        run.rate = rate
+    else:
+        run.rate = 0
     run.save()
     return Response({"success": True})
 

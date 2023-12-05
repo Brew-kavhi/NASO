@@ -46,9 +46,7 @@ class NewRunForm(BaseRunWithCallback, PrunableForm):
     )
 
     shuffle = forms.BooleanField(required=False, initial=True, label="Shuffle data")
-    steps_per_epoch = forms.IntegerField(
-        required=False, initial=1, label="Steps per Epoch"
-    )
+    steps_per_epoch = forms.IntegerField(required=False, label="Steps per Epoch")
     workers = forms.IntegerField(required=False, initial=1, label="Workers")
     use_multiprocessing = forms.BooleanField(
         required=False, initial=False, label="Use multiprocessing"

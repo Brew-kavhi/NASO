@@ -92,11 +92,16 @@ def build_argument(argument, required_argument, arguments):
         elif required_argument["dtype"].startswith("tuple"):
             # this is a tuple
             arguments[argument["name"]] = ast.literal_eval(argument["value"])
+        elif (
+            required_argument["dtype"] == "str"
+            or required_argument["dtype"] == "NoneType"
+        ):
+            arguments[argument["name"]] = argument["value"]
         else:
             arguments[argument["name"]] = ast.literal_eval(argument["value"])
     except ValueError as exc:
         logger.error(
-            f"Fehler: Parameter {argument['name']} muss als Zahl gegeben sein: {exc}"
+            f"Fehler: Parameter {argument['name']} muss fur {required_argument['dtype']} als Zahl gegeben sein: {exc}"
         )
 
 

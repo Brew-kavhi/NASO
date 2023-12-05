@@ -15,7 +15,10 @@ from rest_framework.response import Response
 def rate_run(request, pk):
     run = AutoKerasRun.objects.get(pk=pk)
     rate = request.data.get("rate")
-    run.rate = rate
+    if rate != "":
+        run.rate = rate
+    else:
+        run.rate = 0
     run.save()
     return Response({"success": True})
 
