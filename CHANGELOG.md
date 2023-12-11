@@ -1,3 +1,10 @@
+## 0.4.3 (2023-12-11)
+
+### Fix
+
+- **CI**: commitizen arguments
+- **CI**: ignore NoIncrementError on Commitizen bump
+
 ## 0.4.2 (2023-12-11)
 
 ### Fix
