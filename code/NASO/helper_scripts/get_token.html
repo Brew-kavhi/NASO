@@ -1,10 +1,10 @@
 <script>
-const res = await fetch(apiUrl, {
+    // This is a fumction that can be copied in a console on an open NASO browser tab to get a token
+    const res = await fetch(apiUrl, {
             method: 'POST',  // Use PATCH for updates
             headers: {
                 'Content-Type': 'application/json',
             },
-	body: JSON.stringify({ username: <username>, password:<password> }),
+	        body: JSON.stringify({ username: <username>, password:<password> }),
         });
-console.log(res.json());
 </script>

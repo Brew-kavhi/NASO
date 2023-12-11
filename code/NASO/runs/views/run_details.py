@@ -9,18 +9,65 @@ from runs.models.training import NetworkTraining
 
 
 class TrainingProgress(View):
+    """
+    A view class for retrieving the training progress of a task.
+
+    This class handles the GET request and returns the training progress
+    of a task identified by its task_id. The progress is returned as a
+    JSON response.
+
+    Attributes:
+        None
+
+    Methods:
+        get: Retrieves the training progress of a task and returns it as
+             a JSON response.
+
+    Usage:
+        To use this class, create an instance of it and map it to a URL
+        pattern in your Django project's URL configuration.
+
+        Example:
+        ```
+        from django.urls import path
+        from .views import TrainingProgress
+
+        urlpatterns = [
+            path('progress/<str:task_id>/', TrainingProgress.as_view(), name='training_progress'),
+        ]
+        ```
+    """
+
     def get(self, request, task_id):
         context = get_celery_task_state(task_id)
         return JsonResponse(context, safe=False)
 
 
 class RunDetails(TemplateView):
+    """
+    View class for displaying details of a network training run.
+    """
+
     template_name = "runs/run_details.html"
 
     page = PageSetup(title="Experimente", description="Details")
     context = {"page": page.get_context()}
 
     def get(self, request, *args, **kwargs):
+        """
+        Handles the GET request for the run details view.
+
+        Retrieves the network training run based on the provided primary key (pk),
+        updates the context with the run details, and renders the response.
+
+        Args:
+            request (HttpRequest): The HTTP request object.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            HttpResponse: The rendered response with the run details.
+        """
         run = NetworkTraining.objects.get(pk=kwargs["pk"])
         self.context["run"] = run
         self.page.title = run.network_config.name
@@ -71,6 +118,18 @@ class RunDetails(TemplateView):
 
 
 class AutoKerasRunDetails(TemplateView):
+    """
+    A view class for displaying details of an AutoKeras run.
+
+    This class extends the `TemplateView` class and provides the necessary
+    methods to render the details of an AutoKeras run to a template.
+
+    Attributes:
+        template_name (str): The name of the template to be used for rendering.
+        page (PageSetup): An instance of the `PageSetup` class for setting up the page.
+        context (dict): A dictionary containing the context data for rendering the template.
+    """
+
     template_name = "runs/autokeras_run_details.html"
 
     page = PageSetup(title="Experimente", description="Details")

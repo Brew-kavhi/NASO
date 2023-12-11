@@ -14,6 +14,19 @@ logger.add("net.log", backtrace=True, diagnose=True)
 
 @shared_task(bind=True)
 def run_neural_net(self, training_id):
+    """
+    Runs the neural network training process.
+
+    Args:
+        training_id (int): The ID of the network training.
+
+    Returns:
+        None
+
+    Raises:
+        Exception: If there is a failure while training the network.
+
+    """
     self.update_state(state="PROGRESS", meta={"run_id": training_id})
     training = NetworkTraining.objects.get(pk=training_id)
     gpus = tf.config.experimental.list_physical_devices("GPU")
@@ -40,12 +53,31 @@ class NeuralNetwork:
     test_dataset = None
 
     def __init__(self, training_config: NetworkTraining = None):
+        """
+        Initializes a NeuralNetwork object.
+
+        Args:
+            training_config (NetworkTraining, optional): The configuration object for network training. Defaults to None.
+
+        Returns:
+            None
+        """
         if training_config:
             self.training_config = training_config
             self.load_data()
             self.build_model_from_config(training_config.network_config)
 
     def run_from_config(self, config: NetworkTraining, celery_callback):
+        """
+        Runs the neural network training and validation process based on the provided configuration.
+
+        Args:
+            config (NetworkTraining): The configuration object containing the network training settings.
+            celery_callback: The callback function to be executed during the training process.
+
+        Returns:
+            None
+        """
         self.celery_callback = celery_callback
 
         if config:
@@ -57,8 +89,21 @@ class NeuralNetwork:
         self.validate()
 
     def build_model_from_config(self, config: NetworkConfiguration = None) -> None:
+        """
+        Builds a neural network model based on the provided configuration.
+
+        Args:
+            config (NetworkConfiguration): The configuration object specifying the network architecture.
+
+        Raises:
+            AttributeError: If the training configuration or hyperparameters are not set.
+
+        Returns:
+            None
+        """
         if not self.training_config or not self.training_config.hyper_parameters:
             raise AttributeError
+
         try:
             input_shape = self.training_config.dataset.get_element_size()
             logger.info(f"Using input shape {input_shape}")
@@ -78,6 +123,12 @@ class NeuralNetwork:
         self.model = model
 
     def load_data(self):
+        """
+        Loads the training and test datasets using the specified dataset configuration.
+
+        Returns:
+            None
+        """
         (
             self.train_dataset,
             self.test_dataset,
@@ -86,6 +137,16 @@ class NeuralNetwork:
         logger.success("Data is loaded.")
 
     def train(self, training_config: NetworkTraining = None):
+        """
+        Trains the neural network model.
+
+        Args:
+            training_config (NetworkTraining, optional): Configuration for training the network. If not provided,
+                the default training configuration of the network will be used.
+
+        Returns:
+            None
+        """
         if training_config:
             self.training_config = training_config
         fit_parameters = self.training_config.fit_parameters
@@ -120,6 +181,12 @@ class NeuralNetwork:
         logger.success("Finished training of neural network.")
 
     def validate(self):
+        """
+        Perform network validation using the test dataset.
+
+        Returns:
+            None
+        """
         batch_size = self.training_config.evaluation_parameters.batch_size
         steps = self.training_config.evaluation_parameters.steps
 
@@ -153,6 +220,18 @@ class NeuralNetwork:
         self.predict(self.test_dataset.take(200).batch(1))
 
     def predict(self, dataset):
+        """
+        Predicts the output for the given dataset using the trained model.
+
+        Args:
+            dataset: The input dataset for prediction.
+
+        Returns:
+            The predicted output for the dataset.
+
+        Raises:
+            None.
+        """
         batch_size = 1
         return self.model.predict(
             dataset,

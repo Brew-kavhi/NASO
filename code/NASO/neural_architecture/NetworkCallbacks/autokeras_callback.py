@@ -9,14 +9,37 @@ from runs.models.training import TrainingMetric
 
 
 class AutoKerasCallback(tf.keras.callbacks.Callback):
+    """
+    Custom callback for AutoKeras training. Saves metrics to the database
+
+    Args:
+        celery_task: The Celery task associated with the training.
+        run: The AutoKerasRun object representing the current run.
+
+    Attributes:
+        celery_task: The Celery task associated with the training.
+        run: The AutoKerasRun object representing the current run.
+        timer: Timer object to measure the total training time.
+
+    Methods:
+        on_train_end: Callback method called at the end of training.
+
+    """
+
     def __init__(self, celery_task, run: AutoKerasRun):
         super().__init__()
         self.celery_task = celery_task
         self.run = run
-        # i need the epochs here from the run.
         self.timer = Timer()
 
     def on_train_end(self, logs=None):
+        """
+        Callback method called at the end of training.
+
+        Args:
+            logs: Dictionary containing the training metrics.
+
+        """
         metrics = {}
         for key in logs:
             if not math.isnan(logs[key]):

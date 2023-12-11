@@ -13,6 +13,17 @@ from rest_framework.response import Response
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def rate_run(request, pk):
+    """
+    This view rates a run.
+
+    Args:
+        request (Request): The request object. Its body must contain rate parameter.
+        pk (int): The primary key of the run.
+
+    Returns:
+        Response: The response object with parameter 'success'
+    """
+
     run = AutoKerasRun.objects.get(pk=pk)
     rate = request.data.get("rate")
     if rate != "":
@@ -24,6 +35,18 @@ def rate_run(request, pk):
 
 
 def get_metrics(request, pk, trial_id):
+    """
+    This view returns the metrics for a specific trial of the run.
+
+    Args:
+        request (Request): The request object.
+        pk (int): The primary key of the run.
+        trial_id (str): The id of the trial.
+
+    Returns:
+        epochal_metriocs: Dict of metrics given by epoch
+
+    """
     autokeras_run = AutoKerasRun.objects.get(pk=pk)
     metrics = autokeras_run.metrics.all()
 
@@ -43,6 +66,17 @@ def get_metrics(request, pk, trial_id):
 
 
 def download_metrics(request, pk, trial_id):
+    """
+    This view offers a downloadable CSV file containiong the metrics for a specific trial of the run.
+
+    Args:
+        request (Request): The request object.
+        pk (int): The primary key of the run.
+        trial_id (str): The id of the trial.
+
+    Returns:
+        response: CSV file containing the metrics for a specific trial of the run.
+    """
     json_data = get_metrics(request, pk, trial_id)
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = 'attachment; filename="data_' + trial_id + '.csv"'
@@ -65,6 +99,16 @@ def download_metrics(request, pk, trial_id):
 
 
 def get_all_metrics(request, pk):
+    """
+    This view returns the metrics for all trials of the run.
+
+    Args:
+        request (Request): The request object.
+        pk (int): The primary key of the run.
+
+    Returns:
+        JsonResponse: Dict of metrics given by trial_id and epoch
+    """
     autokeras_run = AutoKerasRun.objects.get(pk=pk)
     metrics = autokeras_run.metrics.all()
 
@@ -87,6 +131,19 @@ def get_all_metrics(request, pk):
 
 
 def get_all_trial_details(request, pk):
+    """
+    Retrieve details of all trials for a given AutoKerasRun.
+
+    Args:
+        request: The HTTP request object.
+        pk: The primary key of the AutoKerasRun.
+
+    Returns:
+        A JSON response containing the trial details for the AutoKerasRun.
+
+    Raises:
+        AutoKerasRun.DoesNotExist: If the AutoKerasRun with the given primary key does not exist.
+    """
     autokeras_run = AutoKerasRun.objects.get(pk=pk)
     metrics = autokeras_run.metrics.all()
 
@@ -102,6 +159,16 @@ def get_all_trial_details(request, pk):
 
 
 def get_trial_details(autokeras_run: AutoKerasRun, trial_id):
+    """
+    Retrieve the hyperparameters values for a specific trial in an AutoKeras run.
+
+    Args:
+        autokeras_run (AutoKerasRun): The AutoKeras run object.
+        trial_id (int): The ID of the trial.
+
+    Returns:
+        dict: A dictionary containing the hyperparameter values for the specified trial.
+    """
     path = autokeras_run.model.get_trial_hyperparameters_path(trial_id)
     # read json file from path and convert to dict
     with open(path, "r", encoding="UTF-8") as file:
@@ -110,6 +177,19 @@ def get_trial_details(autokeras_run: AutoKerasRun, trial_id):
 
 
 def get_metrics_for_run(request, pk):
+    """
+    Retrieve the metrics for a specific AutoKeras run.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+        pk (int): The primary key of the AutoKeras run.
+
+    Returns:
+        JsonResponse: A JSON response containing the metrics data.
+
+    Raises:
+        AutoKerasRun.DoesNotExist: If the AutoKeras run with the given primary key does not exist.
+    """
     run = AutoKerasRun.objects.get(pk=pk)
     metrics = run.metrics.all()
     data = []

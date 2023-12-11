@@ -2,6 +2,18 @@ from runs.models.training import TrainingMetric
 
 
 def custom_on_epoch_end_decorator(original_on_epoch_end, run):
+    """
+    This function is a decorator for the on_epoch_end function of the hyper tuner.
+    It extends the on_epoch_end function with the functionality to save the model size and the metrics to the database.
+
+    Args:
+        original_on_epoch_end (function): The original on_epoch_end function.
+        run (Run): The run object.
+
+    Returns:
+        function: The decorated on_epoch_end function.
+    """
+
     def on_epoch_end(self, trial, model, epoch, logs=None):
         if "model_size" not in logs:
             logs["model_size"] = model.count_params()
@@ -41,6 +53,17 @@ def custom_on_epoch_end_decorator(original_on_epoch_end, run):
 
 
 def custom_on_epoch_begin_decorator(original_on_epoch_begin):
+    """
+    This function is a decorator for the on_epoch_begin function of the hyper tuner.
+    It extends the on_epoch_begin function with the functionality to save the model size and the trial id to the logs.
+
+    Args:
+        original_on_epoch_begin (function): The original on_epoch_begin function.
+
+    Returns:
+        function: The decorated on_epoch_begin function.
+    """
+
     def on_epoch_begin(self, trial, model, epoch, logs=None):
         if "model_size" not in logs:
             logs["model_size"] = model.count_params()
@@ -55,6 +78,16 @@ def custom_on_epoch_begin_decorator(original_on_epoch_begin):
 
 # Define a decorator function that wraps the on_epoch_end method
 def custom_on_trial_end_decorator(original_on_trial_end):
+    """
+    This function is a decorator for the on_trial_end function of the hyper tuner.
+
+    Args:
+        original_on_trial_end (function): The original on_trial_end function.
+
+    Returns:
+        function: The decorated on_trial_end function.
+    """
+
     def on_trial_end(self, trial):
         if original_on_trial_end:
             original_on_trial_end(self, trial)
@@ -63,6 +96,16 @@ def custom_on_trial_end_decorator(original_on_trial_end):
 
 
 def custom_on_trial_begin_decorator(original_on_trial_begin):
+    """
+    This function is a decorator for the on_trial_begin function of the hyper tuner.
+
+    Args:
+        original_on_trial_begin (function): The original on_trial_begin function.
+
+    Returns:
+        function: The decorated on_trial_begin function.
+    """
+
     def on_trial_begin(self, trial):
         if original_on_trial_begin:
             original_on_trial_begin(self, trial)
@@ -71,6 +114,18 @@ def custom_on_trial_begin_decorator(original_on_trial_begin):
 
 
 def custom_hypermodel_build(original_build_fn, run):
+    """
+    This function is a decorator for the build function of the hyper model.
+    It extends the build function with the functionality to prune the model.
+
+    Args:
+        original_build_fn (function): The original build function.
+        run (Run): The run object.
+
+    Returns:
+        function: The decorated build function.
+    """
+
     def build_fn(hp):
         if original_build_fn:
             model = original_build_fn(hp)

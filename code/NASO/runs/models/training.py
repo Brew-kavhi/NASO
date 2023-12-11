@@ -19,6 +19,21 @@ from neural_architecture.validators import validate_dtype
 
 
 class Optimizer(TypeInstance):
+    """
+    Represents an optimizer used for model training.
+
+    Attributes:
+        instance_type (ForeignKey): The type of optimizer.
+        weight_decay (float): The weight decay value.
+        clipnorm (float): The norm value for gradient clipping.
+        clipvalue (float): The value for gradient clipping.
+        global_clipnorm (float): The global norm value for gradient clipping.
+        use_ema (bool): Whether to use exponential moving average.
+        ema_momentum (float): The momentum value for exponential moving average.
+        ema_overwrite_frequency (int): The frequency of overwriting the exponential moving average.
+        jit_compile (bool): Whether to use just-in-time compilation.
+    """
+
     instance_type = models.ForeignKey(
         OptimizerType, on_delete=models.deletion.DO_NOTHING
     )
@@ -49,7 +64,18 @@ class Metric(TypeInstance):
 
 
 class NetworkHyperparameters(models.Model):
-    # this should be extendable by plugins
+    """
+    Represents the hyperparameters for a network model.
+
+    Attributes:
+        optimizer (Optimizer): The optimizer used for training the model.
+        loss (LossFunction): The loss function used for training the model.
+        metrics (ManyToManyField): The metrics used for evaluating the model.
+        run_eagerly (bool): Whether to run the model eagerly.
+        steps_per_execution (int): The number of steps per execution.
+        jit_compile (bool): Whether to use just-in-time (JIT) compilation.
+    """
+
     optimizer = models.ForeignKey(
         Optimizer, on_delete=models.deletion.CASCADE, null=True
     )
@@ -60,6 +86,12 @@ class NetworkHyperparameters(models.Model):
     jit_compile = models.BooleanField(default=False)
 
     def get_as_dict(self):
+        """
+        Returns the hyperparameters as a dictionary.
+
+        Returns:
+            dict: A dictionary containing the hyperparameters.
+        """
         model_optimizer = "adam"
         if self.optimizer:
             model_optimizer = get_object(
@@ -102,6 +134,15 @@ class NetworkHyperparameters(models.Model):
 
 
 class EvaluationParameters(models.Model):
+    """
+    Represents the evaluation parameters for network training.
+
+    Attributes:
+        batch_size (int): The batch size for evaluation.
+        steps (int): The number of steps for evaluation.
+        callbacks (ManyToManyField): The evaluation callbacks associated with the parameters.
+    """
+
     batch_size = models.IntegerField(default=32)
     steps = models.IntegerField(null=True)
     callbacks = models.ManyToManyField(
@@ -109,6 +150,15 @@ class EvaluationParameters(models.Model):
     )
 
     def get_callbacks(self, run: "NetworkTraining"):
+        """
+        Get the evaluation callbacks for the given network training run.
+
+        Args:
+            run (NetworkTraining): The network training run.
+
+        Returns:
+            list: A list of evaluation callbacks.
+        """
         callbacks = []
         for callback in self.callbacks.all():
             if callback.instance_type.name == "EnergyCallback":
@@ -133,6 +183,27 @@ class EvaluationParameters(models.Model):
 
 
 class FitParameters(models.Model):
+    """
+    Represents the parameters for model fitting.
+
+    Attributes:
+        batch_size (int): The number of samples per gradient update.
+        epochs (int): The number of epochs to train the model.
+        callbacks (ManyToManyField): The callbacks to be used during training.
+        shuffle (bool): Whether to shuffle the training data before each epoch.
+        class_weight (JSONField): The class weights for imbalanced datasets.
+        sample_weight (JSONField): The sample weights for individual samples.
+        initial_epoch (int): The epoch at which to start training.
+        steps_per_epoch (int): The number of steps (batches) per epoch.
+        max_queue_size (int): The maximum size of the generator queue.
+        workers (int): The number of worker processes for data loading.
+        use_multiprocessing (bool): Whether to use multiprocessing for data loading.
+
+    Methods:
+        get_callbacks(run: NetworkTraining) -> List: Returns a list of callback objects.
+
+    """
+
     batch_size = models.IntegerField(null=True)
     epochs = models.IntegerField()
     callbacks = callbacks = models.ManyToManyField(
@@ -140,7 +211,6 @@ class FitParameters(models.Model):
     )
 
     shuffle = models.BooleanField(default=True)
-    # TODO implement this
     class_weight = models.JSONField(null=True)
     sample_weight = models.JSONField(null=True)
     initial_epoch = models.IntegerField(default=0)

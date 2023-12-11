@@ -17,11 +17,28 @@ from runs.views.new_run import build_dataset, get_pruning_parameters
 
 
 class TrialView(TemplateView):
+    """
+    View for displaying and handling the details of a trial in an AutoKeras run.
+    """
+
     template_name = "runs/autokeras_trial.html"
     page = PageSetup(title="Autokeras Trial", description="Details")
     context = {"page": page.get_context()}
 
     def get(self, request, run_id, trial_id, *args, **kwargs):
+        """
+        Handles the HTTP GET request for the trial view.
+
+        Args:
+            request (HttpRequest): The HTTP request object.
+            run_id (int): The ID of the AutoKeras run.
+            trial_id (int): The ID of the trial.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            HttpResponse: The HTTP response object.
+        """
         run = AutoKerasRun.objects.get(pk=run_id)
 
         try:
@@ -62,6 +79,19 @@ class TrialView(TemplateView):
         return self.render_to_response(self.context)
 
     def post(self, request, run_id, trial_id, *args, **kwargs):
+        """
+        Handles the HTTP POST request for the trial view.
+
+        Args:
+            request (HttpRequest): The HTTP request object.
+            run_id (int): The ID of the AutoKeras run.
+            trial_id (int): The ID of the trial.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            HttpResponse: The HTTP response object.
+        """
         form = RerunTrialForm(request.POST)
         if form.is_valid():
             autokeras_run = AutoKerasRun.objects.get(pk=run_id)

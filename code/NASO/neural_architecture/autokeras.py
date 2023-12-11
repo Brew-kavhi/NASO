@@ -15,6 +15,15 @@ logger.add("net.log", backtrace=True, diagnose=True)
 
 @shared_task(bind=True)
 def run_autokeras(self, run_id):
+    """
+    Runs the AutoKeras model training and evaluation.
+
+    Args:
+        run_id (int): The ID of the AutoKeras run.
+
+    Returns:
+        None
+    """
     self.update_state(state="PROGRESS", meta={"autokeras_id": run_id})
 
     run = AutoKerasRun.objects.get(pk=run_id)
@@ -56,6 +65,17 @@ def run_autokeras(self, run_id):
 
 @shared_task(bind=True)
 def run_autokeras_trial(self, run_id, trial_id, keras_model_run_id):
+    """
+    Runs a trial of AutoKeras model training.
+
+    Args:
+        run_id (int): The ID of the AutoKerasRun object.
+        trial_id (int): The ID of the trial.
+        keras_model_run_id (int): The ID of the KerasModelRun object.
+
+    Returns:
+        None
+    """
     gpus = tf.config.experimental.list_physical_devices("GPU")
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu, True)

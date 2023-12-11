@@ -116,5 +116,12 @@ class Dashboard(TemplateView):
 
 
 def kill_task(request, task_id):
+    """
+    A view that kills a task.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+        task_id (str): The task id.
+    """
     kill_celery_task(task_id)
     return redirect("dashboard:index")
