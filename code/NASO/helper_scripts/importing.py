@@ -59,6 +59,7 @@ def get_arguments_as_dict(additional_arguments, required_arguments):
             argument["value"]
             and argument["value"] != "undefined"
             and argument["value"] != "None"
+            and argument["value"] != "null"
             and argument["value"] != ""
         ):
             # check for dtype:
