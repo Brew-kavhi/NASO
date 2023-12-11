@@ -1,17 +1,33 @@
 stages:
-  - version
-  - changelog
-  
-version:
-  stage: version
-  script:
-    - bumpversion patch  # Choose your desired version part to bump
-  only:
-    - main
+  - auto-bump
 
-changelog:
-  stage: changelog
+auto-bump:
+  stage: auto-bump
+  image: python:3.11-alpine
+  before_script:
+    - "which ssh-agent || ( apk add openssh-client && apk add git )"
+    - eval `ssh-agent -s`
+    - echo "${SSH_PRIVATE_KEY}" | tr -d '\r' | ssh-add - > /dev/null # add ssh key
+    - pip3 install -U Commitizen # install commitizen
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo "$SSH_PUBLIC_KEY" >> ~/.ssh/id_rsa.pub
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+  
   script:
-    - towncrier
+    - git remote set-url origin git@gitlab-sim.informatik.uni-stuttgart.de:domanspr/dnn_nas_and_pruning.git # git configuration
+    - git config --global user.email "${CI_EMAIL}" && git config --global user.name "${CI_USERNAME}"
+    - 'exists=`git show-ref refs/heads/main` && if [ -n "$exists" ]; then git branch -D main; fi'
+    - git checkout -b main
+    - cz bump --yes # execute auto bump and push to main
+    - git push origin main:$CI_COMMIT_REF_NAME
+    - TAG=$(head -n 1 VERSION) # get the new software version and save into artifacts
+    - echo "#!/bin/sh" >> variables
+    - echo "export TAG='$TAG'" >> variables
+    - git push --set-upstream origin $TAG
   only:
-    - main
+    refs:
+      - main
+  artifacts:
+    paths:
+      - variables
