@@ -81,6 +81,9 @@ def kill_celery_task(task_id):
 
 
 def get_tasks():
+    """
+    Returns a list of objects that map all the active Celery task ids.
+    """
     inspector = app.control.inspect()
     active_tasks = inspector.active()
     running_tasks = []
@@ -96,6 +99,9 @@ def get_tasks():
 
 
 def get_registered_tasks():
+    """
+    Returns a list of objects that map all the registered Celery task ids.
+    """
     inspector = app.control.inspect()
     registered_tasks = inspector.reserved()
     tasks = []

@@ -33,15 +33,41 @@ from .types import BaseType, BuildModelFromGraph, TypeInstance
 # that is in these types i just want to save what optimizers are availabel and how to call these classes
 # instantiation with all arguments is done by the actual models, that jsut have this type assigned
 class AutoKerasNodeType(BaseType):
+    """
+    Represents a node type in AutoKeras.
+
+    Attributes:
+        autokeras_type (str): The type of the node in AutoKeras.
+    """
+
     autokeras_type = models.CharField(max_length=100)
 
 
 class AutoKerasNode(TypeInstance):
+    """
+    Represents a node in the AutoKeras architecture.
+
+    Attributes:
+        name (str): The name of the node.
+        node_type (AutoKerasNodeType): The type of the node.
+    """
+
     name = models.CharField(max_length=50)
     node_type = models.ForeignKey(AutoKerasNodeType, on_delete=models.deletion.CASCADE)
 
 
 class AutoKerasTunerType(BaseType):
+    """
+    Represents the type of AutoKeras tuner.
+
+    Attributes:
+        native_tuner (bool): Indicates whether the tuner is a native AutoKeras tuner.
+            If True, it is a native tuner. If False, it is not a native tuner and requires
+            a class to import the tuner from.
+        module_name (str): The name of the module to import the tuner class from.
+            This attribute is only applicable when native_tuner is False.
+    """
+
     native_tuner = models.BooleanField(default=True)
 
     def save(self, *args, **kwargs):
@@ -59,12 +85,50 @@ class AutoKerasTunerType(BaseType):
 
 
 class AutoKerasTuner(TypeInstance):
+    """
+    A class representing an AutoKeras tuner.
+
+    Attributes:
+        tuner_type (ForeignKey): The type of AutoKeras tuner.
+    """
+
     tuner_type = models.ForeignKey(
         AutoKerasTunerType, on_delete=models.deletion.CASCADE
     )
 
 
 class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
+    """
+    A class representing an AutoKeras model.
+
+    Attributes:
+        project_name (str): The name of the project.
+        blocks (ManyToManyField): The blocks used in the model.
+        max_trials (int): The maximum number of trials for the model.
+        directory (str): The directory where the model is saved.
+        objective (str): The objective used for model optimization.
+        tuner (ForeignKey): The tuner used for model tuning.
+        max_model_size (int): The maximum size of the model.
+        node_to_layer_id (JSONField): A mapping of nodes to layer IDs.
+        metrics (ManyToManyField): The metrics used for model evaluation.
+        callbacks (ManyToManyField): The callbacks used during training.
+        loss (ForeignKey): The loss function used for model training.
+        metric_weights (JSONField): The weights for each metric.
+        epochs (int): The number of epochs for model training.
+        auto_model (AutoModel): The AutoKeras model.
+        loaded_model (AutoModel): The loaded AutoKeras model.
+        inputs (dict): The input nodes of the model.
+        tuner_object: The tuner object used for model tuning.
+
+    Methods:
+        build_tuner(run): Builds the tuner object for the model.
+        build_model(run): Builds the AutoKeras model.
+        load_model(run): Loads the AutoKeras model.
+        load_trial(run, trial_id): Loads a trial of the AutoKeras model.
+        save_trial_as_model(run, keras_model_run, trial_id): Saves a trial as a KerasModel.
+
+    """
+
     project_name = models.CharField(max_length=100, default="auto_model")
     blocks = models.ManyToManyField(AutoKerasNode, related_name="Blocks")
     max_trials = models.IntegerField(default=100)
@@ -92,6 +156,13 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
     tuner_object = None
 
     def build_tuner(self, run: "AutoKerasRun"):
+        """
+        Builds the tuner object for the model.
+
+        Args:
+            run (AutoKerasRun): The AutoKerasRun object.
+
+        """
         if not self.tuner_object:
             self.tuner_object = get_class(
                 self.tuner.tuner_type.module_name, self.tuner.tuner_type.name
@@ -110,6 +181,13 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
             )
 
     def build_model(self, run: "AutoKerasRun"):
+        """
+        Builds the AutoKeras model.
+
+        Args:
+            run (AutoKerasRun): The AutoKerasRun object.
+
+        """
         # build the model here:
         # first build the layers:
         for input_node in self.get_input_nodes():
@@ -139,6 +217,16 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         )
 
     def load_model(self, run: "AutoKerasRun"):
+        """
+        Loads the AutoKeras model.
+
+        Args:
+            run (AutoKerasRun): The AutoKerasRun object.
+
+        Returns:
+            loaded_model (AutoModel): The loaded AutoKeras model.
+
+        """
         if len(self.inputs) == 0 or len(self.outputs) == 0:
             for input_node in self.get_input_nodes():
                 self.layer_outputs[input_node] = self.inputs[input_node]
@@ -164,6 +252,17 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         return self.loaded_model
 
     def load_trial(self, run: "AutoKerasRun", trial_id: str):
+        """
+        Loads a trial of the AutoKeras model.
+
+        Args:
+            run (AutoKerasRun): The AutoKerasRun object.
+            trial_id (str): The ID of the trial.
+
+        Returns:
+            trial_model (AutoModel): The loaded trial model.
+
+        """
         if not self.loaded_model:
             self.loaded_model = self.load_model(run)
 
@@ -189,7 +288,17 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         self, run: "AutoKerasRun", keras_model_run: KerasModelRun, trial_id: str
     ) -> (tf.data.Dataset, tf.data.Dataset):
         """
-        This method saves a trial as a KerasModel and returns the train and the validation dataset
+        Saves a trial as a KerasModel and returns the train and validation datasets.
+
+        Args:
+            run (AutoKerasRun): The AutoKerasRun object.
+            keras_model_run (KerasModelRun): The KerasModelRun object.
+            trial_id (str): The ID of the trial.
+
+        Returns:
+            train_data (tf.data.Dataset): The train dataset.
+            validation_data (tf.data.Dataset): The validation dataset.
+
         """
         keras_model_run.model.metrics.set(self.metrics.all())
 
@@ -205,14 +314,43 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         return (train_dataset, validation_dataset)
 
     def get_trial_checkpoint_path(self, trial_id) -> str:
+        """
+        Returns the checkpoint path for a specific trial.
+
+        Args:
+            trial_id (int): The ID of the trial.
+
+        Returns:
+            str: The checkpoint path for the specified trial.
+        """
         return f"auto_model/{self.directory}/{self.project_name}/trial_{trial_id}/checkpoint"
 
     def get_trial_hyperparameters_path(self, trial_id) -> str:
+        """
+        Returns the path to the trial hyperparameters file.
+
+        Args:
+            trial_id (int): The ID of the trial.
+
+        Returns:
+            str: The path to the trial hyperparameters file.
+        """
         return f"auto_model/{self.directory}/{self.project_name}/trial_{trial_id}/trial.json"
 
     def prepare_data_for_trial(
         self, train_dataset, test_dataset, trial_id: str
     ) -> tuple:
+        """
+        Prepares the data for a trial in AutoKeras.
+
+        Args:
+            train_dataset: The training dataset.
+            test_dataset: The test dataset.
+            trial_id: The ID of the trial.
+
+        Returns:
+            A tuple containing the pipeline, hyperparameters, trial data, and validation data.
+        """
         if not self.loaded_model:
             raise ValueError("load model first")
         if not trial_id:
@@ -237,12 +375,30 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         return (pipeline, trial.hyperparameters, trial_data, validation_data)
 
     def get_trial(self, trial_id):
+        """
+        Retrieve a trial object based on the given trial ID.
+
+        Args:
+            trial_id (int): The ID of the trial to retrieve.
+
+        Returns:
+            Trial: The trial object corresponding to the given trial ID.
+
+        Raises:
+            ValueError: If the model has not been loaded yet.
+        """
         if not self.loaded_model:
             raise ValueError("load model first")
         trial = self.loaded_model.tuner.oracle.trials[trial_id]
         return trial
 
     def get_metrics(self):
+        """
+        Retrieve the metrics used for evaluating the model.
+
+        Returns:
+            A list of metric objects used for evaluating the model.
+        """
         metrics = []
         for metric in self.metrics.all():
             metrics.append(
@@ -270,7 +426,14 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         return callbacks
 
     def get_input_nodes(self):
-        # input nodes are nodes that are no target. but at list one source:
+        """
+        Returns a dictionary of input nodes in the neural architecture.
+
+        Input nodes are nodes that are not targets but have at least one source.
+
+        Returns:
+            dict: A dictionary where the keys are input nodes and the values are the corresponding blocks.
+        """
         for node in self.node_to_layer_id:
             incoming_edges = self.edges_to_target(node)
             if len(incoming_edges) == 0:
@@ -281,6 +444,15 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         return self.inputs
 
     def get_block_for_node(self, node_id):
+        """
+        Retrieve the block associated with a given node ID.
+
+        Parameters:
+            node_id (int): The ID of the node.
+
+        Returns:
+            block: The block associated with the given node ID.
+        """
         autokeras_node_id = self.node_to_layer_id[node_id]
         autokeras_node = self.blocks.get(pk=autokeras_node_id)
         block = get_object(
@@ -293,11 +465,34 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
 
     # calls the fit method of the autokeras model
     def fit(self, *args, **kwargs):
+        """
+        Fits the AutoKeras model to the training data.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Raises:
+            ValueError: If the model has not been built yet.
+        """
         if not self.auto_model:
             raise ValueError("Model has not been built yet.")
         self.auto_model.fit(*args, **kwargs)
 
     def predict(self, dataset, run: "AutoKerasRun"):
+        """
+        Predicts the output for the given dataset using the built model.
+
+        Args:
+            dataset: The dataset to make predictions on.
+            run: An instance of AutoKerasRun.
+
+        Returns:
+            The predicted output for the dataset.
+
+        Raises:
+            ValueError: If the model has not been built yet.
+        """
         if not self.auto_model:
             raise ValueError("Model has not been built yet.")
         batch_size = 1
@@ -310,12 +505,31 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         )
 
     def evaluate(self, *args, **kwargs):
+        """
+        Evaluates the model on a given dataset.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Raises:
+            ValueError: If the model has not been built yet.
+        """
         if not self.auto_model:
             raise ValueError("Model has not been built yet.")
         self.auto_model.evaluate(*args, **kwargs)
 
 
 class AutoKerasRun(Run):
+    """
+    Represents a run of the AutoKeras model.
+
+    Attributes:
+        model (AutoKerasModel): The AutoKeras model associated with this run.
+        metrics (ManyToManyField): The training metrics associated with this run.
+        prediction_metrics (ManyToManyField): The prediction metrics associated with this run.
+    """
+
     model = models.ForeignKey(AutoKerasModel, on_delete=models.deletion.CASCADE)
     metrics = models.ManyToManyField(TrainingMetric, related_name="autokeras_metrics")
     prediction_metrics = models.ManyToManyField(

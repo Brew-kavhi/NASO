@@ -4,6 +4,16 @@ from system.templatetags.log_filters import colorize_log
 
 
 def get_logs(request):
+    """
+    This view returns the logs of the net.log file.
+    it also returns the new position of the file if the file was updated.
+
+    Args:
+        request (Request): The request object.
+
+    Returns:
+        JsonResponse: The logs of the net.log file.
+    """
     log_file_path = "net.log"  # Adjust the path to your log file
     try:
         last_position = int(request.GET.get("last_position", 0))

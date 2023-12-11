@@ -36,11 +36,33 @@ class PruningPolicyTypes(BaseType):
 
 
 class PruningMethod(TypeInstance):
+    """
+    Represents a pruning method for neural network models.
+
+    Attributes:
+        instance_type (ForeignKey): The type of pruning method.
+    """
+
     instance_type = models.ForeignKey(
         PruningMethodTypes, on_delete=models.deletion.CASCADE
     )
 
     def get_pruned_model(self, to_prune, *args, **kwargs):
+        """
+        Returns a pruned model based on the specified pruning parameters.
+
+        Args:
+            to_prune: The model to be pruned.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            The pruned model.
+
+        Raises:
+            ValidationError: If the additional_arguments attribute is not a list.
+        """
+
         # add to_prune to the additional_arguments
         if not isinstance(self.additional_arguments, list):
             raise ValidationError("JSON data should be a list of objects.")
@@ -49,7 +71,7 @@ class PruningMethod(TypeInstance):
 
         if "pruning_schedule" in kwargs:
             pruning_schedule = kwargs["pruning_schedule"]
-            # check if there is already a argument  with name pruning_schedule in the additional_arguments:
+            # check if there is already an argument with name pruning_schedule in the additional_arguments:
             pruning_schedule_arg = [
                 arg for arg in additional_arguments if arg["name"] == "pruning_schedule"
             ]
@@ -64,7 +86,7 @@ class PruningMethod(TypeInstance):
 
         if "pruning_policy" in kwargs:
             pruning_policy = kwargs["pruning_policy"]
-            # check if there is already a argument  with name pruning_policy in the additional_arguments:
+            # check if there is already an argument with name pruning_policy in the additional_arguments:
             pruning_policy_arg = [
                 arg for arg in additional_arguments if arg["name"] == "pruning_policy"
             ]
@@ -87,18 +109,48 @@ class PruningMethod(TypeInstance):
 
 
 class PruningSchedule(TypeInstance):
+    """
+    Represents a pruning schedule for neural network models.
+
+    Attributes:
+        instance_type (ForeignKey): The type of pruning schedule.
+    """
+
     instance_type = models.ForeignKey(
         PruningScheduleTypes, on_delete=models.deletion.CASCADE
     )
 
 
 class PruningPolicy(TypeInstance):
+    """
+    Represents a pruning policy for neural network models.
+
+    Attributes:
+        instance_type (ForeignKey): The type of pruning policy.
+    """
+
     instance_type = models.ForeignKey(
         PruningPolicyTypes, on_delete=models.deletion.CASCADE
     )
 
 
 class PrunableNetwork(models.Model):
+    """
+    A base class for prunable neural network models.
+
+    Attributes:
+        enable_quantization (bool): Flag indicating whether quantization is enabled.
+        pruning_method (PruningMethod): The pruning method to be used.
+        pruning_schedule (PruningSchedule): The pruning schedule to be used.
+        pruning_policy (PruningPolicy): The pruning policy to be used.
+
+    Methods:
+        build_pruning_model(model): Builds a pruning model based on the specified pruning method, schedule, and policy.
+        get_pruning_callbacks(): Returns the pruning callbacks based on the specified pruning method.
+        get_export_model(model): Returns the exported model with pruning applied.
+
+    """
+
     enable_quantization = models.BooleanField(default=False)
     pruning_method = models.ForeignKey(
         PruningMethod, on_delete=models.deletion.SET_NULL, null=True
@@ -114,6 +166,16 @@ class PrunableNetwork(models.Model):
         abstract = True
 
     def build_pruning_model(self, model):
+        """
+        Builds a pruning model based on the specified pruning method, schedule, and policy.
+
+        Args:
+            model: The original model to be pruned.
+
+        Returns:
+            The pruned model.
+
+        """
         args = {"to_prune": model}
         if self.pruning_method:
             if self.pruning_schedule:
@@ -138,6 +200,13 @@ class PrunableNetwork(models.Model):
         return model
 
     def get_pruning_callbacks(self):
+        """
+        Returns the pruning callbacks based on the specified pruning method.
+
+        Returns:
+            A list of pruning callbacks.
+
+        """
         if self.pruning_method:
             return [
                 tfmot.sparsity.keras.UpdatePruningStep(),
@@ -145,6 +214,16 @@ class PrunableNetwork(models.Model):
         return []
 
     def get_export_model(self, model):
+        """
+        Returns the exported model with pruning applied.
+
+        Args:
+            model: The original model.
+
+        Returns:
+            The exported model with pruning applied.
+
+        """
         if self.pruning_method:
             export_model = tfmot.sparsity.keras.strip_pruning(model)
             print("final model")

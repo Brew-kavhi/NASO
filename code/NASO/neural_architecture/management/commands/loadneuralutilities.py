@@ -20,6 +20,10 @@ from neural_architecture.models.types import (
 
 
 class Command(BaseCommand):
+    """
+    Loads all predefined activation functions, optimizers, loss function, and other utilities in the database.
+    """
+
     help = "Loads all predefined activation functions, optimizers, loss function and so on in the database"
 
     def build_arguments(self, constructor_parameters):
@@ -89,11 +93,21 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                "Successfully installed all predefined nueral definitions."
+                "Successfully installed all predefined neural definitions."
             )
         )
 
     def load_types(self, type_class, module_name):
+        """
+        Loads types from a specified module and saves them in the database.
+
+        Args:
+            type_class (class): The class representing the type in the database.
+            module_name (str): The name of the module to import types from.
+
+        Returns:
+            None
+        """
         module = importlib.import_module(module_name)  # blocks
         classes = inspect.getmembers(module, inspect.isclass)
         self.stdout.write(self.style.SUCCESS(f"Importing {module_name}"))
@@ -116,6 +130,15 @@ class Command(BaseCommand):
 
 
 def load_dataset_loaders():
+    """
+    Loads dataset loaders into the database.
+
+    This function creates instances of DatasetLoader model and saves them into the database.
+    The DatasetLoader objects represent different dataset loaders available for use in the application.
+
+    Returns:
+        None
+    """
     _, _ = DatasetLoader.objects.get_or_create(
         module_name="neural_architecture.models.dataset",
         class_name="TensorflowDatasetLoader",
@@ -131,6 +154,15 @@ def load_dataset_loaders():
 
 
 def load_pruning_utilities():
+    """
+    Loads pruning utilities into the database.
+
+    This function creates or updates pruning method types, pruning schedule types,
+    and pruning policy types in the database. It sets the required arguments for each type.
+
+    Returns:
+        None
+    """
     method, _ = PruningMethodTypes.objects.get_or_create(
         module_name="tensorflow_model_optimization.sparsity.keras",
         name="prune_low_magnitude",

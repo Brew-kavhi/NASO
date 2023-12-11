@@ -2,9 +2,25 @@ from django.views.generic import TemplateView
 
 
 class LogFileView(TemplateView):
+    """
+    A view that displays the content of a log file.
+
+    Attributes:
+        template_name (str): The name of the template to be rendered.
+
+    Methods:
+        get_context_data(**kwargs): Retrieves the context data for rendering the template.
+    """
+
     template_name = "system/logfile.html"
 
     def get_context_data(self, **kwargs):
+        """
+        Retrieves the context data for rendering the template.
+
+        Returns:
+            dict: The context data containing the log content or an error message.
+        """
         context = super().get_context_data(**kwargs)
         log_file_path = "net.log"  # Adjust the path to your log file
         try:

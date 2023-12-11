@@ -5,6 +5,16 @@ from loguru import logger
 
 
 def get_class(module_name: str, class_name: str):
+    """
+    This function returns a class instance build from the module and the class.
+
+    Args:
+        module_name (str): The name of the module.
+        class_name (str): The name of the class.
+
+    Returns:
+        class_instance: The instance of the class.
+    """
     module = importlib.import_module(module_name)
     class_instance = getattr(module, class_name)
     return class_instance
@@ -13,6 +23,18 @@ def get_class(module_name: str, class_name: str):
 def get_object(
     module_name: str, class_name: str, additional_arguments, required_arguments=None
 ):
+    """
+    This function returns a class instance build from the module and the class and instantiated with given arguments.
+
+    Args:
+        module_name (str): The name of the module.
+        class_name (str): The name of the class.
+        additional_arguments (list): A list of arguments passed to the constructor.
+        required_arguments (list): A list of required arguments.
+
+    Returns:
+        class_instance: The instance of the class.
+    """
     if required_arguments is None:
         required_arguments = []
     try:
@@ -34,6 +56,16 @@ def get_object(
 
 
 def get_callback(callback_definition, required_arguments=None):
+    """
+    This function returns a callback instance build from the module and the class and instantiated with given arguments.
+
+    Args:
+        callback_definition (dict): A dictionary containing the module_name, class_name and additional_arguments.
+        required_arguments (list): A list of required arguments.
+
+    Returns:
+        class_instance: The instance of the class.
+    """
     if required_arguments is None:
         required_arguments = []
     try:
@@ -53,6 +85,17 @@ def get_callback(callback_definition, required_arguments=None):
 
 
 def get_arguments_as_dict(additional_arguments, required_arguments):
+    """
+    This function build and retrusn a dictionary of arguments from the given additional arguments.
+
+
+    Args:
+        additional_arguments (list): A list of arguments passed to the constructor.
+        required_arguments (list): A list of required arguments.
+
+    Returns:
+        dict: A dictionary of arguments.
+    """
     arguments = {}
     for argument in additional_arguments:
         if (
@@ -73,6 +116,17 @@ def get_arguments_as_dict(additional_arguments, required_arguments):
 
 
 def build_argument(argument, required_argument, arguments):
+    """
+    This function builds an argument from the given argument and required argument.
+
+    Args:
+        argument (dict): A dictionary containing the name and value of the argument.
+        required_argument (dict): A dictionary containing the name and dtype of the argument.
+        arguments (dict): A dictionary of arguments.
+
+    Returns:
+        dict: A dictionary of arguments.
+    """
     try:
         if required_argument["dtype"] == "int":
             if is_int(argument["value"]):
@@ -107,6 +161,15 @@ def build_argument(argument, required_argument, arguments):
 
 
 def is_int(string):
+    """
+    This function checks if the given string is an integer.
+
+    Args:
+        string (str): The string to check.
+
+    Returns:
+        bool: True if the string is an integer, False otherwise.
+    """
     try:
         int(string)
         return True

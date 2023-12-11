@@ -57,6 +57,16 @@ class ListRuns(TemplateView):
 
 
 def delete_run(request, pk):
+    """
+    Deletes a NetworkTraining object with the given primary key.
+
+    Args:
+        request: The HTTP request object.
+        pk: The primary key of the NetworkTraining object to be deleted.
+
+    Returns:
+        A JSON response indicating the successful deletion of the object.
+    """
     # Fetch the object or return a 404 response if it doesn't exist
     obj = get_object_or_404(NetworkTraining, pk=pk)
 
@@ -68,6 +78,19 @@ def delete_run(request, pk):
 
 
 def delete_autokeras_run(request, pk):
+    """
+    Deletes an AutoKerasRun object and its associated folder.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+        pk (int): The primary key of the AutoKerasRun object to be deleted.
+
+    Returns:
+        JsonResponse: A JSON response indicating the successful deletion of the object.
+
+    Raises:
+        Http404: If the AutoKerasRun object with the given primary key does not exist.
+    """
     # Fetch the object or return a 404 response if it doesn't exist
     obj = get_object_or_404(AutoKerasRun, pk=pk)
 

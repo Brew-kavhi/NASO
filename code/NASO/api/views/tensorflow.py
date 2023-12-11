@@ -9,6 +9,16 @@ from runs.models.training import NetworkTraining
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def rate_run(request, pk):
+    """
+    This view rates a run.
+
+    Args:
+        request (Request): The request object.
+        pk (int): The primary key of the run.
+
+    Returns:
+        Response: The response object with parameter 'success'
+    """
     run = NetworkTraining.objects.get(pk=pk)
     rate = request.data.get("rate")
     if rate != "":
@@ -20,6 +30,16 @@ def rate_run(request, pk):
 
 
 def get_metrics_for_run(request, pk):
+    """
+    This view returns the metrics for a run.
+
+    Args:
+        request (Request): The request object.
+        pk (int): The primary key of the run.
+
+    Returns:
+        JsonResponse: Array of metrics for this run
+    """
     run = NetworkTraining.objects.get(pk=pk)
     metrics = run.trainingmetric_set.all()
     data = []

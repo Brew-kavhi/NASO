@@ -4,11 +4,21 @@ from plugins.models.plugins import Plugin
 
 
 class InstallerInterface(ABC):
+    """
+    The base abstract class for plugin installers.
+    """
+
     plugin: Plugin
     module_name_prefix = "media.plugins"
     module_name = ""
 
     def __init__(self, plugin: Plugin):
+        """
+        Initializes the InstallerInterface with the specified plugin.
+
+        Args:
+            plugin (Plugin): The plugin to be installed.
+        """
         self.plugin = plugin
         self.module_name = (
             self.plugin.name
@@ -16,7 +26,13 @@ class InstallerInterface(ABC):
             + self.plugin.python_file.name.split("/")[-1].split(".")[0]
         )
 
-    def get_module_name(self):
+    def get_module_name(self) -> str:
+        """
+        Returns the fully qualified module name for the plugin.
+
+        Returns:
+            str: The fully qualified module name.
+        """
         return f"{self.module_name_prefix}.{self.module_name}"
 
     @abstractmethod

@@ -19,6 +19,18 @@ class OverwriteStorage(FileSystemStorage):
 
 
 class Plugin(models.Model):
+    """
+    Represents a plugin in the system.
+
+    Attributes:
+        name (str): The name of the plugin.
+        description (str): The description of the plugin.
+        author (str): The author of the plugin.
+        version (str): The version of the plugin.
+        python_file (FileField): The Python file associated with the plugin.
+        config_file (FileField): The configuration file associated with the plugin.
+    """
+
     name = models.CharField(max_length=100)
     description = models.TextField()
     author = models.CharField(max_length=100)

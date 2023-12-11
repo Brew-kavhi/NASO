@@ -40,12 +40,25 @@ from runs.models.training import (
 
 
 class NewRun(TemplateView):
+    """
+    View class for creating a new run/experiment.
+    """
+
     template_name = "runs/new_tensorflow.html"
     page = PageSetup(title="Experimente", description="Neu")
     page.add_pageaction(reverse_lazy("runs:list"), "Alle Experimente")
     context = {"page": page.get_context()}
 
     def get_typewise_arguments(self, request_params):
+        """
+        Extracts and organizes the typewise arguments from the request parameters.
+
+        Args:
+            request_params (dict): The request parameters.
+
+        Returns:
+            tuple: A tuple containing optimizer arguments, loss arguments, metrics arguments, and callbacks arguments.
+        """
         optimizer_arguments = []
         loss_arguments = []
         metrics_arguments = {}
@@ -86,6 +99,15 @@ class NewRun(TemplateView):
         )
 
     def get(self, request, *args, **kwargs):
+        """
+        Handles the GET request for creating a new run/experiment.
+
+        Args:
+            request (HttpRequest): The HTTP request object.
+
+        Returns:
+            HttpResponse: The HTTP response object.
+        """
         # there is no training going on right now, so show form to start a new one
         form = NewRunForm(
             initial={
@@ -150,6 +172,8 @@ class NewRun(TemplateView):
             form.load_metric_configs(
                 [
                     {
+                        "name": metric.name,
+                        "value": metric.value,
                         "id": metric.instance_type.id,
                         "arguments": metric.additional_arguments,
                     }
@@ -181,6 +205,18 @@ class NewRun(TemplateView):
         return self.render_to_response(self.context)
 
     def build_config(self, form_data, layers, connections):
+        """
+        Builds a network configuration based on the provided form data, layers, and connections.
+
+        Args:
+            form_data (dict): A dictionary containing the form data.
+            layers (list): A list of dictionaries representing the network layers.
+            connections (list): A list of dictionaries representing the network connections.
+
+        Returns:
+            NetworkConfiguration: The built network configuration.
+
+        """
         network_config = NetworkConfiguration(name=form_data["name"])
         network_config.save()
         template = form_data["network_template"]
@@ -210,6 +246,18 @@ class NewRun(TemplateView):
         return network_config
 
     def post(self, request, *args, **kwargs):
+        """
+        Handle the HTTP POST request for creating a new run.
+
+        Args:
+            request (HttpRequest): The HTTP request object.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            HttpResponse: The HTTP response object.
+
+        """
         if "epochs" in request.POST:
             form = NewRunForm(request.POST)
             if form.is_valid():
@@ -341,10 +389,35 @@ class NewRun(TemplateView):
 
 
 def get_pruning_parameters(request_params):
+    """
+    Extracts pruning parameters from the given request parameters.
+
+    Args:
+        request_params (dict): The request parameters containing the pruning arguments.
+
+    Returns:
+        tuple: A tuple containing three lists - method_arguments, scheduler_arguments, and policy_arguments.
+               Each list contains dictionaries with 'name' and 'value' keys representing the argument name and value.
+
+    Example:
+        >>> request_params = {
+        ...     'pruning-method_argument_threshold': '0.5',
+        ...     'pruning-scheduler_argument_epochs': '10',
+        ...     'pruning-policy_argument_decay': '0.1'
+        ... }
+        >>> get_pruning_parameters(request_params)
+        ([
+            {'name': 'threshold', 'value': '0.5'}
+        ], [
+            {'name': 'epochs', 'value': '10'}
+        ], [
+            {'name': 'decay', 'value': '0.1'}
+        ])
+    """
     method_arguments = []
     scheduler_arguments = []
     policy_arguments = []
-    for key, value in request_params:
+    for key, value in request_params.items():
         if key.startswith("pruning-method_argument_"):
             argument_name = key[len("pruning-method_argument_") :]
             method_argument = {"name": argument_name, "value": value}
@@ -361,6 +434,15 @@ def get_pruning_parameters(request_params):
 
 
 def build_dataset(form_data):
+    """
+    Build a dataset based on the provided form data.
+
+    Args:
+        form_data (dict): A dictionary containing the form data.
+
+    Returns:
+        Dataset: The built dataset object.
+    """
     data, _ = Dataset.objects.get_or_create(
         name=form_data["dataset"],
         as_supervised=form_data["dataset_is_supervised"],
@@ -370,6 +452,17 @@ def build_dataset(form_data):
 
 
 def build_loss_function(form_data, loss_arguments):
+    """
+    Builds a loss function based on the provided form data and loss arguments.
+
+    Args:
+        form_data (dict): A dictionary containing the form data.
+        loss_arguments (str): Additional arguments for the loss function.
+
+    Returns:
+        LossFunction: The built loss function.
+
+    """
     loss_function, _ = LossFunction.objects.get_or_create(
         instance_type=form_data["loss"],
         additional_arguments=loss_arguments,
@@ -378,6 +471,17 @@ def build_loss_function(form_data, loss_arguments):
 
 
 def build_metrics(form_data, metrics_arguments):
+    """
+    Build a list of metrics based on the given form data and metrics arguments.
+
+    Args:
+        form_data (dict): The form data containing the selected metrics.
+        metrics_arguments (dict): The arguments for each metric type.
+
+    Returns:
+        list: A list of Metric objects.
+
+    """
     metrics = []
 
     for metric_type in form_data["metrics"]:
@@ -390,6 +494,17 @@ def build_metrics(form_data, metrics_arguments):
 
 
 def build_callbacks(form_data, callbacks_arguments):
+    """
+    Build a list of callbacks based on the form data and callback arguments.
+
+    Args:
+        form_data (dict): The form data containing the selected callback types.
+        callbacks_arguments (dict): A dictionary mapping callback type IDs to their arguments.
+
+    Returns:
+        list: A list of callback objects.
+
+    """
     callbacks = []
 
     for callback_type in form_data["callbacks"]:
@@ -404,6 +519,19 @@ def build_callbacks(form_data, callbacks_arguments):
 def create_network_template(
     template_name, is_autokeras, layers, connections, node_to_layers
 ):
+    """
+    Create a network template based on the given parameters.
+
+    Args:
+        template_name (str): The name of the template.
+        is_autokeras (bool): Indicates whether the template is for AutoKeras or Keras.
+        layers (list): The list of layers to be associated with the template.
+        connections (list): The list of connections between layers.
+        node_to_layers (dict): A dictionary mapping nodes to their corresponding layers.
+
+    Returns:
+        None
+    """
     if is_autokeras:
         template = AutoKerasNetworkTemplate.objects.create(
             name=template_name,
@@ -423,11 +551,31 @@ def create_network_template(
 
 
 class NewAutoKerasRun(TemplateView):
+    """
+    View class for creating a new AutoKeras run.
+
+    This class handles the creation of a new AutoKeras run by providing the necessary form and data loading functionality.
+    """
+
     template_name = "runs/new_autokeras.html"
     page = PageSetup(title="Autokeras", description="Neu")
     context = {"page": page.get_context()}
 
     def get_typewise_arguments(self, request_dict):
+        """
+        Extracts and organizes the arguments from the given request dictionary based on their types.
+
+        Args:
+            request_dict (dict): A dictionary containing the request data.
+
+        Returns:
+            tuple: A tuple containing the following:
+                - tuner_arguments (list): A list of dictionaries representing tuner arguments.
+                - loss_arguments (list): A list of dictionaries representing loss arguments.
+                - metrics_arguments (dict): A dictionary where the keys are metric IDs and the values are lists of dictionaries representing metric arguments.
+                - callbacks_arguments (dict): A dictionary where the keys are callback IDs and the values are lists of dictionaries representing callback arguments.
+                - metric_weights (dict): A dictionary where the keys are metric names and the values are their corresponding weights.
+        """
         tuner_arguments = []
         loss_arguments = []
         metrics_arguments = {}
@@ -546,6 +694,18 @@ class NewAutoKerasRun(TemplateView):
         return self.render_to_response(self.context)
 
     def build_model(self, form_data, tuner, loss, weights):
+        """
+        Builds and saves an AutoKerasModel based on the provided form data.
+
+        Args:
+            form_data (dict): A dictionary containing the form data for creating the model.
+            tuner (str): The tuner used for the model.
+            loss (str): The loss function used for training the model.
+            weights (dict): A dictionary containing the weights for different metrics.
+
+        Returns:
+            AutoKerasModel: The created AutoKerasModel object.
+        """
         model = AutoKerasModel.objects.create(
             project_name=form_data["name"],
             max_trials=form_data["max_trials"],

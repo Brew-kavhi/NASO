@@ -32,6 +32,17 @@ class LayerConfig(models.Model):
 
 
 class NetworkLayer(TypeInstance):
+    """
+    Represents a network layer in a neural architecture.
+
+    Attributes:
+        layer_type (ForeignKey): The type of the network layer.
+        trainable (bool): Indicates whether the layer is trainable or not.
+        name (str): The name of the layer.
+        dtype (str): The data type of the layer.
+        dynamic (bool): Indicates whether the layer is dynamic or not.
+    """
+
     layer_type = models.ForeignKey(
         NetworkLayerType, on_delete=models.deletion.DO_NOTHING
     )
@@ -45,19 +56,39 @@ class NetworkLayer(TypeInstance):
         return "Layer"
 
     def get_size(self):
-        # the given module shuld someehow support this. consult tensorflow doc for layer
+        """
+        Calculates the size of the layer.
+
+        Returns:
+            int: The size of the layer.
+
+        Raises:
+            NotImplementedError: If the size calculation is not implemented.
+        """
         raise NotImplementedError(
-            "Hey, Don't forget to implement the sdize calculation!"
+            "Hey, Don't forget to implement the size calculation!"
         )
 
     def build_tensorflow_layer(self):
-        # This function should return a tensorflow object representing the object with this configuration
+        """
+        Builds a TensorFlow layer object based on the configuration.
+
+        Returns:
+            tensorflow.python.keras.layers.Layer: The TensorFlow layer object.
+
+        Raises:
+            NotImplementedError: If the TensorFlow build function is not implemented.
+        """
         raise NotImplementedError(
-            "Hey, Don't forget to implement the tensorflow build function!"
+            "Hey, Don't forget to implement the TensorFlow build function!"
         )
 
 
 class NetworkConfiguration(PrunableNetwork, BuildModelFromGraph):
+    """
+    Represents a network configuration with layers, connections, and model-related information.
+    """
+
     layers = models.ManyToManyField(NetworkLayer)
     name = models.CharField(max_length=50)
     connections = models.JSONField(default=dict)
@@ -72,6 +103,15 @@ class NetworkConfiguration(PrunableNetwork, BuildModelFromGraph):
     inputs: dict = {}
 
     def build_model(self, input_shape=(28, 28)):
+        """
+        Builds and returns a Keras model based on the network configuration.
+
+        Args:
+            input_shape (tuple): The shape of the input data. Defaults to (28, 28).
+
+        Returns:
+            tf.keras.Model: The built Keras model.
+        """
         if (
             self.load_model
             and len(self.model_file) > 0
@@ -86,6 +126,15 @@ class NetworkConfiguration(PrunableNetwork, BuildModelFromGraph):
         return tf.keras.Model(self.inputs, self.outputs)
 
     def get_block_for_node(self, node_id):
+        """
+        Retrieves the block associated with a given node ID.
+
+        Args:
+            node_id (int): The ID of the node.
+
+        Returns:
+            object: The block associated with the node.
+        """
         node_id = self.node_to_layer_id[node_id]
         node = self.layers.get(pk=node_id)
         block = get_object(
@@ -97,6 +146,12 @@ class NetworkConfiguration(PrunableNetwork, BuildModelFromGraph):
         return block
 
     def save_model_on_disk(self, model):
+        """
+        Saves the model on disk if the `save_model` flag is set to True.
+
+        Args:
+            model (tf.keras.Model): The model to be saved.
+        """
         if self.save_model:
             file_path = f"keras_models/tensorflow/{self.name}_{self.id}.h5"
             if not os.path.exists("keras_models/tensorflow/"):
@@ -111,6 +166,14 @@ class NetworkConfiguration(PrunableNetwork, BuildModelFromGraph):
 
 
 class ActivationFunction(TypeInstance):
+    """
+    Represents an activation function used in a neural network.
+
+    Attributes:
+        type (ActivationFunctionType): The type of activation function.
+        # add any additional activation properties here
+    """
+
     type = models.ForeignKey(
         ActivationFunctionType, on_delete=models.deletion.DO_NOTHING
     )
