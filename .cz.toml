@@ -1,5 +1,5 @@
 [tool.commitizen]
-version = "0.4.4"
+version = "0.4.5"
 update_changelog_on_bump = true
 version_files = [
 'code/NASO/pyproject.toml:version'
