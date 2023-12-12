@@ -24,7 +24,8 @@ auto-bump:
     - TAG=$(head -n 1 VERSION) # get the new software version and save into artifacts
     - echo "#!/bin/sh" >> variables
     - echo "export TAG='$TAG'" >> variables
-    - git push origin main $TAG
+    - git push --set-upstream origin main
+    - git push origin $TAG
   only:
     refs:
       - main
