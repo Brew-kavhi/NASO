@@ -85,17 +85,20 @@ def get_tasks():
     Returns a list of objects that map all the active Celery task ids.
     """
     inspector = app.control.inspect()
-    active_tasks = inspector.active()
-    running_tasks = []
-    if active_tasks:
-        for task_collection in active_tasks.values():
-            training_tasks = sorted(
-                list(task_collection), key=lambda d: d["time_start"]
-            )
-            for training_task in training_tasks:
-                if training_task and training_task["id"]:
-                    running_tasks.append({"training_task_id": training_task["id"]})
-    return running_tasks
+    try:
+        active_tasks = inspector.active()
+        running_tasks = []
+        if active_tasks:
+            for task_collection in active_tasks.values():
+                training_tasks = sorted(
+                    list(task_collection), key=lambda d: d["time_start"]
+                )
+                for training_task in training_tasks:
+                    if training_task and training_task["id"]:
+                        running_tasks.append({"training_task_id": training_task["id"]})
+        return running_tasks
+    except BrokenPipeError:
+        return []
 
 
 def get_registered_tasks():

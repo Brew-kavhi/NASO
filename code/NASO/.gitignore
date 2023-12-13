@@ -2,6 +2,7 @@ naso/static/
 poetry.lock
 neural_architecture/datasets/
 logs
+datasets/
 
 # Created by https://www.toptal.com/developers/gitignore/api/python
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
@@ -17,6 +18,7 @@ naso/settings.py
 __pycache__/
 *.py[cod]
 *$py.class
+.python-version
 
 # C extensions
 *.so

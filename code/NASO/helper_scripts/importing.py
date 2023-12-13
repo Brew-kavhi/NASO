@@ -138,10 +138,10 @@ def build_argument(argument, required_argument, arguments):
             arguments[argument["name"]] = float(argument["value"])
 
         elif required_argument["dtype"] == "bool":
-            if argument["value"] == "true":
-                argument["value"] = True
-            elif argument["value"] == "false":
-                argument["value"] = False
+            if argument["value"].lower() == "true":
+                arguments[argument["name"]] = True
+            elif argument["value"].lower() == "false":
+                arguments[argument["name"]] = False
             else:
                 arguments[argument["name"]] = bool(argument["value"])
         elif required_argument["dtype"].startswith("tuple"):
@@ -151,7 +151,12 @@ def build_argument(argument, required_argument, arguments):
             required_argument["dtype"] == "str"
             or required_argument["dtype"] == "NoneType"
         ):
-            arguments[argument["name"]] = argument["value"]
+            if argument["value"].lower() == "true":
+                arguments[argument["name"]] = True
+            elif argument["value"].lower() == "false":
+                arguments[argument["name"]] = False
+            else:
+                arguments[argument["name"]] = argument["value"]
         else:
             arguments[argument["name"]] = ast.literal_eval(argument["value"])
     except ValueError as exc:
