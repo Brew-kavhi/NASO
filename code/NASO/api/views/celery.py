@@ -113,56 +113,65 @@ def get_workers_information():
                 ]
             }
     """
-    i = app.control.inspect()
-    stats = app.control.inspect().stats()
-    active_tasks = i.active()
+    try:
+        i = app.control.inspect()
+        if not i:
+            return []
+        stats = i.stats()
+        active_tasks = i.active()
 
-    # Process the information to fit your template structure
-    workers_info = []
-    if not active_tasks:
-        return []
-    for worker, tasks in active_tasks.items():
-        worker_info = {
-            "name": worker,
-            "concurrency": stats[worker]["pool"]["max-concurrency"],
-            "tasks": [],
-        }
-        for task in tasks:
-            task_details = get_celery_task_state(task["id"])["details"]
-            print(task_details)
-            if "run_id" in task_details:
-                if "autokeras" in task_details and task_details["autokeras"]:
-                    run = AutoKerasRun.objects.get(id=task_details["run_id"])
-                    task["name"] = run.model.project_name
-                    task["link"] = reverse_lazy(
-                        "runs:autokeras:details", kwargs={"pk": run.id}
-                    )
-                elif (
-                    "autokeras_trial" in task_details
-                    and task_details["autokeras_trial"]
-                ):
-                    run = KerasModelRun.objects.get(id=task_details["run_id"])
-                    task["name"] = run.model.name
-                    task["link"] = reverse_lazy("runs:list")
+        # Process the information to fit your template structure
+        workers_info = []
+        if not active_tasks:
+            return []
+        for worker, tasks in active_tasks.items():
+            if not stats[worker]:
+                continue
+            worker_info = {
+                "name": worker,
+                "concurrency": stats[worker]["pool"]["max-concurrency"],
+                "tasks": [],
+            }
+            for task in tasks:
+                task_details = get_celery_task_state(task["id"])["details"]
+                print(task_details)
+                if "run_id" in task_details:
+                    if "autokeras" in task_details and task_details["autokeras"]:
+                        run = AutoKerasRun.objects.get(id=task_details["run_id"])
+                        task["name"] = run.model.project_name
+                        task["link"] = reverse_lazy(
+                            "runs:autokeras:details", kwargs={"pk": run.id}
+                        )
+                    elif (
+                        "autokeras_trial" in task_details
+                        and task_details["autokeras_trial"]
+                    ):
+                        run = KerasModelRun.objects.get(id=task_details["run_id"])
+                        task["name"] = run.model.name
+                        task["link"] = reverse_lazy("runs:list")
+                    else:
+                        run = NetworkTraining.objects.get(id=task_details["run_id"])
+                        task["name"] = run.network_config.name
+                        task["link"] = reverse_lazy(
+                            "runs:details", kwargs={"pk": run.id}
+                        )
                 else:
-                    run = NetworkTraining.objects.get(id=task_details["run_id"])
-                    task["name"] = run.network_config.name
-                    task["link"] = reverse_lazy("runs:details", kwargs={"pk": run.id})
-            else:
-                task["link"] = ""
-            if "gpu" in task_details:
-                worker_info["tasks"].append(
-                    {
-                        "id": task["id"],
-                        "name": task["name"],
-                        "link": task["link"],
-                        "device": task_details["gpu"]["device"],
-                        "power": task_details["gpu"]["power"],
-                    }
-                )
-            else:
-                worker_info["tasks"].append(
-                    {"name": task["name"], "device": "", "power": ""}
-                )
-        workers_info.append(worker_info)
-    return workers_info
+                    task["link"] = ""
+                if "gpu" in task_details:
+                    worker_info["tasks"].append(
+                        {
+                            "id": task["id"],
+                            "name": task["name"],
+                            "link": task["link"],
+                            "device": task_details["gpu"]["device"],
+                            "power": task_details["gpu"]["power"],
+                        }
+                    )
+                else:
+                    worker_info["tasks"].append(
+                        {"name": task["name"], "device": "", "power": ""}
+                    )
+            workers_info.append(worker_info)
+        return workers_info
+    except BrokenPipeError:
+        return []

@@ -172,8 +172,6 @@ class NewRun(TemplateView):
             form.load_metric_configs(
                 [
                     {
-                        "name": metric.name,
-                        "value": metric.value,
                         "id": metric.instance_type.id,
                         "arguments": metric.additional_arguments,
                     }

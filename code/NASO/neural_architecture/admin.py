@@ -8,6 +8,7 @@ from neural_architecture.models.autokeras import (
     AutoKerasRun,
     AutoKerasTunerType,
 )
+from neural_architecture.models.dataset import DatasetLoader
 from neural_architecture.models.templates import (
     AutoKerasNetworkTemplate,
     KerasNetworkTemplate,
@@ -32,3 +33,4 @@ admin.site.register(AutoKerasModel)
 admin.site.register(KerasNetworkTemplate)
 admin.site.register(AutoKerasTunerType)
 admin.site.register(NetworkConfiguration)
+admin.site.register(DatasetLoader)

@@ -16,8 +16,8 @@ Then clone this project:
 Next you need to install all the dependencies with poetry:
 ```poetry install```
 
-You may need to install tensorflow and autokeras separately by executing:
-```poetry run pip intall .```
+You may need to install tensorflow for gpu and autokeras separately by executing:
+```poetry run pip intall tensorflow[and-cuda] ```
 For async task io we use celery. This is automatically installed with poetry, but for the backend and message quieing, we need to install an additional server, namely a rabbitmq server (optional, see below). This handles all our task states and everything. Install the message queue with the following command:
 ```sudo apt-get install rabbitmq-server```
 
