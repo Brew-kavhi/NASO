@@ -2,96 +2,91 @@
 {% load get_values %}
 {% block content %}
     <script>
-    const options = {
-        responsive: true,
-        scales: {
-            y: {
-                type: 'linear',
-                display: true,
-                position: 'left',
-            },
-            y1: {
-                type: 'linear',
-                display: true,
-                position: 'right',
-
-                // grid line settings
-                grid: {
-                drawOnChartArea: false, // only want the grid lines for one axis to show up
+        const options = {
+            responsive: true,
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
                 },
-            }
-        },
-    };
-    var ascending = true; // Flag to track sorting direction
-    var tensorflowUrl = '{% url "api:tensorflow:get_metrics_for_run" 0 %}';
-    var autokerasUrl = '{% url "api:autokeras:get_metrics_for_run" 0 %}';
-    var tensorflowTrainings = [
-        {% for network_training_id in network_training_ids %}{{network_training_id}},{% endfor %}
-    ];
-    var kerasRuns = [
-        {% for keras_run_id in autokeras_run_ids %}{{keras_run_id}},{% endfor %}
-    ];
-    document.addEventListener("DOMContentLoaded", () => {
-        // for each tensorflowtraining in tensorflowTrainings, fetch the data from the api and display the graph:
-        tensorflowTrainings.forEach((tensorflowTraining) => {
-            fetch(tensorflowUrl.replace('0', tensorflowTraining))
-            .then(response => response.json())
-            .then(data => {
-                loadDataInGraph('chart', tensorflowTraining, data);
-            });
-        });
-        var ascending = true; // Flag to track sorting direction
-        initFilterSort('runs_list');
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
 
-        // for each kerasrun in kerasRuns, fetch the data from the api and display the graph:
-        kerasRuns.forEach((kerasRun) => {
-            fetch(autokerasUrl.replace('0', kerasRun))
-            .then(response => response.json())
-            .then(data => {
-                loadDataInGraph('autokeras_chart', kerasRun, data);
-            });
-        });
-    });
-
-
-    function loadDataInGraph(prependix='chart', trainigId, data) {
-        // first get canvas:
-        var canvas = document.getElementById(prependix + trainigId.toString()).getContext('2d');
-        // then get data:
-        var chartData = data.filter((point) =>{ 
-            return 'current' in point
-        })
-        .map((point) => {
-            let metrics = {'epoch': point.current};
-            for(const metric in point.metrics) {
-                metrics[metric] = point.metrics[metric];
-            }
-            return metrics;
-        });
-
-        // next create chart:
-        var chart = new Chart(canvas, {
-            type: 'line', // Choose the appropriate chart type
-            data: {
-                labels: chartData.map(row => row.epoch),
-                datasets: [
-                {
-                    label: 'loss',
-                    data: chartData.map(row => row.loss),
-                    yAxisID : 'y',
-                },
-                {
-                    label: 'accuracy',
-                    data: chartData.map(row => row.accuracy),
-                    yAxisID : 'y1',
+                    // grid line settings
+                    grid: {
+                        drawOnChartArea: false, // only want the grid lines for one axis to show up
+                    },
                 }
-                ]
             },
-            options: options
-        });
-    }
+        };
+        var ascending = true; // Flag to track sorting direction
+        var tensorflowUrl = '{% url "api:tensorflow:get_metrics_for_run" 0 %}';
+        var autokerasUrl = '{% url "api:autokeras:get_metrics_for_run" 0 %}';
+        var tensorflowTrainings = [{% for network_training_id in network_training_ids %} {{ network_training_id }}, {% endfor %}];
+        var kerasRuns = [{% for keras_run_id in autokeras_run_ids %} {{ keras_run_id }}, {% endfor %}];
+        document.addEventListener("DOMContentLoaded", () => {
+            // for each tensorflowtraining in tensorflowTrainings, fetch the data from the api and display the graph:
+            tensorflowTrainings.forEach((tensorflowTraining) => {
+                fetch(tensorflowUrl.replace('0', tensorflowTraining))
+                    .then(response => response.json())
+                    .then(data => {
+                        loadDataInGraph('chart', tensorflowTraining, data);
+                    });
+            });
+            var ascending = true; // Flag to track sorting direction
+            initFilterSort('runs_list');
 
-    function sortByDataset(element, type, containerID) {
+            // for each kerasrun in kerasRuns, fetch the data from the api and display the graph:
+            kerasRuns.forEach((kerasRun) => {
+                fetch(autokerasUrl.replace('0', kerasRun))
+                    .then(response => response.json())
+                    .then(data => {
+                        loadDataInGraph('autokeras_chart', kerasRun, data);
+                    });
+            });
+        });
+
+
+        function loadDataInGraph(prependix = 'chart', trainigId, data) {
+            // first get canvas:
+            var canvas = document.getElementById(prependix + trainigId.toString()).getContext('2d');
+            // then get data:
+            var chartData = data.filter((point) => {
+                    return 'current' in point
+                })
+                .map((point) => {
+                    let metrics = {
+                        'epoch': point.current
+                    };
+                    for (const metric in point.metrics) {
+                        metrics[metric] = point.metrics[metric];
+                    }
+                    return metrics;
+                });
+
+            // next create chart:
+            var chart = new Chart(canvas, {
+                type: 'line', // Choose the appropriate chart type
+                data: {
+                    labels: chartData.map(row => row.epoch),
+                    datasets: [{
+                        label: 'loss',
+                        data: chartData.map(row => row.loss),
+                        yAxisID: 'y',
+                    }, {
+                        label: 'accuracy',
+                        data: chartData.map(row => row.accuracy),
+                        yAxisID: 'y1',
+                    }]
+                },
+                options: options
+            });
+        }
+
+        function sortByDataset(element, type, containerID) {
             // Toggle sorting direction
             ascending = !ascending;
 
@@ -103,32 +98,43 @@
                 sortIcon.text('↓'); // Down arrow
             }
 
-            $('#'+containerID).find('.accordion').sort(function(a, b) {
+            $('#' + containerID).find('.accordion').sort(function(a, b) {
                 var timeA = parseFloat($(a).data(type));
                 var timeB = parseFloat($(b).data(type));
                 return ascending ? timeA - timeB : timeB - timeA;
-            }).appendTo('#'+containerID);
-    }
+            }).appendTo('#' + containerID);
+        }
 
-    function initFilterSort(containerID) {
-        $('#sortButton').on('click', function() {
-            sortByDataset($(this), 'time', containerID);
-        });
-        $('#sortRateButton').on('click', function() {
-            sortByDataset($(this), 'rating', containerID);
-        });
-        $('#filterOptimizer').on('change', function() {
-            var selectedOptimizer = $(this).val();
-            if (selectedOptimizer === 'all') {
-                $('#'+containerID + ' .accordion').show(); // Show all accordions when "All" is selected
-            } else {
-                $('#'+containerID + ' .accordion').hide(); // Hide all items
-                $('#'+containerID + ' .accordion[data-optimizer="' + selectedOptimizer + '"]').show(); // Show matching items
-            }
-        });
-    }
-        
-
+        function initFilterSort(containerID) {
+            $('#sortButton').on('click', function() {
+                sortByDataset($(this), 'time', containerID);
+            });
+            $('#sortRateButton').on('click', function() {
+                sortByDataset($(this), 'rating', containerID);
+            });
+            $('#filterOptimizer').on('change', function() {
+                var selectedOptimizer = $(this).val();
+                if (selectedOptimizer === 'all') {
+                    $('#' + containerID + ' .accordion').show(); // Show all accordions when "All" is selected
+                } else {
+                    $('#' + containerID + ' .accordion').hide(); // Hide all items
+                    $('#' + containerID + ' .accordion[data-optimizer="' + selectedOptimizer + '"]').show(); // Show matching items
+                }
+            });
+            $('#filterRating').on('change', function() {
+                var selectedRating = $(this).val();
+                if (selectedRating === '0') {
+                    $('#' + containerID + ' .accordion').show();
+                } else {
+                    $('#' + containerID + ' .accordion').hide();
+                    $('#' + containerID + ' .accordion').filter(function() {
+                        var rating = parseInt($(this).data('rating'));
+                        console.log(selectedRating);
+                        return rating >= selectedRating;
+                    }).show();
+                }
+            });
+        }
     </script>
     <div class="tabs is-centered is-toggle is-toggle-round">
         <ul>
@@ -146,6 +152,17 @@
             <div class="align-items-center col-3 d-flex">
                 <label class="column">Optimizer:</label>
                 <input id='filterOptimizer' class="input" type="text">
+            </div>
+            <div class="align-items-center col-3 d-flex">
+                <label class="column">Rating:</label>
+                <select id='filterRating' class="input">
+                    <option>0</option>
+                    <option>1</option>
+                    <option>2</option>
+                    <option>3</option>
+                    <option>4</option>
+                    <option>5</option>
+                </select>
             </div>
             <button class='button is-light is-info' id="sortButton">
                 Sort by time <span class="sort-icon ml-3"></span>
