@@ -134,7 +134,8 @@ def get_workers_information():
             }
             for task in tasks:
                 task_details = get_celery_task_state(task["id"])["details"]
-                print(task_details)
+                if not task_details:
+                    continue
                 if "run_id" in task_details:
                     if "autokeras" in task_details and task_details["autokeras"]:
                         run = AutoKerasRun.objects.get(id=task_details["run_id"])
