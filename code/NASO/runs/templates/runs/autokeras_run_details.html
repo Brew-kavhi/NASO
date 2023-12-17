@@ -403,524 +403,561 @@
         {% include 'components/graph_js.html' %}
     {% endwith %}
     <script>
-    let run_metrics = {};
-    let trialOverviewChart = null;
-    let allEpochs = [];
-    document.addEventListener("DOMContentLoaded", () => {
-        let canvas = document.getElementById("canvas_trial_overview").getContext('2d');
-        trialOverviewChart = new Chart(canvas, {
-            type: 'line',
-            data: {
-                labels: allEpochs,
-                datasets: []
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        type: 'linear',
-                        position: 'bottom',
-                        title: {
-                            display: true,
-                            text: 'Epochs' // Set the dynamic X-axis title
-                        }
-                    },
-                    y: {
-                        display: true,
-                        title: {
-                            display: true,
-                            text: 'Loss' // Set the dynamic Y-axis title
-                        }
-                    }
+        let run_metrics = {};
+        let trialOverviewChart = null;
+        let allEpochs = [];
+        document.addEventListener("DOMContentLoaded", () => {
+            let canvas = document.getElementById("canvas_trial_overview").getContext('2d');
+            trialOverviewChart = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: allEpochs,
+                    datasets: []
                 },
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                plugins: {
-                    colors: {
-                        forceOverride: true
-                    },
-                    tooltip: {
-                        enabled: false,
-                        position: 'nearest',
-                        external: externalTooltipHandler
-                    }
-                }
-            }
-        });
-
-        fetch("{% url 'api:autokeras:all_metrics' run.id %}").then(function(response) {
-            response.json().then(function(data) {
-                run_metrics = data;
-                let firstTrialID = undefined;
-
-                for (trial_id in run_metrics) {
-                    if (!firstTrialID) {
-                        firstTrialID = trial_id;
-                    }
-                    let trial_data = run_metrics[trial_id];
-                    let canvas_html = "<div class='has-background-white-bis my-5 p-3 rounded-lg'><h6 class='text-center mt-5'>Trial " + 
-                        (trial_id) + "</h6><div class='d-flex'><div class='col-9'><canvas class='h-100 w-100' id='canvas_trial_" + trial_id + "' width='400' height='400'></canvas></div><div id='canvas_configure_" + trial_id + "' class='col-3'></div></div>" + 
-                        "<div class='row p-3 border-top mt-5' id='trial_details_container_" + trial_id + "'></div></div>";
-                    $("#canvas_container").append(canvas_html);                    
-                    build_graph(trial_id, trial_data);
-
-                    // now add teh checkbox to trial_selection for the trial overview
-                    let checkBoxHTML = '<div class="me-2"><input type="checkbox" data-trial=' + trial_id + ' class="form-check-inline" id="trial_checkbox_'+trial_id+'"><label for="trial_checkbox_'+trial_id+'">Trial '+(trial_id)+'</label></div>';
-                    $('#trial_selection').append(checkBoxHTML);
-                    $('#trial_checkbox_'+trial_id).change(function() {
-                        let trial_id = this.getAttribute('data-trial');
-                        if(this.checked) {
-                            trialOverviewChart.data.datasets.push({
-                                label: 'Trial '+(trial_id),
-                                data: dictToArray(run_metrics[trial_id],$("#trial_overview_yaxis").val(), $('#trial_overview_xaxis').val()),
-                                id: trial_id
-                            });
-                            trialOverviewChart.update();
-                        } else {
-                            index = trialOverviewChart.data.datasets.findIndex(x => x.id == trial_id);
-                            trialOverviewChart.data.datasets.splice(index, 1);
-                            trialOverviewChart.update();
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'Epochs' // Set the dynamic X-axis title
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Loss' // Set the dynamic Y-axis title
+                            }
                         }
-                    });
-                    
-                }
-                let metrics = [];
-                for(metric in run_metrics[firstTrialID][0]) {
-                    metrics.push(metric);
-                    generateOption(metric, metric, $('#trial_overview_xaxis'));
-                    generateOption(metric, metric, $('#trial_overview_yaxis'));
-                }
-                generateSortSelect('canvas_container', metrics);
-
-                fetchTrialDetails();
-
-                let maxObjective = undefined;
-                let objective = '{{run.model.objective}}'
-                let bestTrial= undefined
-                for(const trial in run_metrics) {
-                    metrics = getMaxValuesPerTrial(run_metrics[trial]);
-                    if (!maxObjective || metrics[objective] > maxObjective) {
-                        maxObjective = metrics[objective];
-                        bestTrial = trial;
-                    }
-                }
-                $('#best_trial_id_container').html(' ' + bestTrial);
-            });
-        });
-        fetch("{% url 'api:celery:is_running' %}", {
-            method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Token ${token}`,
                     },
-            body: JSON.stringify({'run_id':{{run.id}}, 'run_type':'autokeras'}),
-        }).then(function(response) {
-            response.json().then(function(data) {
-                console.log(data);
-                if (data['success']) {
-                    $('#training_progress').toggleClass('d-none');
-                    // this run is currently in training, so display the progreessbar
-                    $('#task_kill_link').attr('href', $('#task_kill_link').attr('href').replace(0,data['task_id']));
-                    updateProgress("{% url 'runs:training_progress' 0 %}".replace(0,data['task_id']), '');
-                }
-            });
-        });
-        
-            });
-
-    function fetchTrialDetails() {
-        fetch("{% url 'api:autokeras:trial_details' run.id %}").then(function(response) {
-            response.json().then(function(data) {
-                // for every trial in data, append a div to trial_container_<trial_id> and fill in the values from data[trial_id]:
-                for (trial_id in data) {
-                    let trial_data = data[trial_id];
-                    let trial_html = "";
-                    for (hp in trial_data) {
-                        trial_html += "<div class='col-3'><span class='has-text-weight-bold'>" + hp + ":</span> " + trial_data[hp] + "</div>";
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        colors: {
+                            forceOverride: true
+                        },
+                        tooltip: {
+                            enabled: false,
+                            position: 'nearest',
+                            external: externalTooltipHandler
+                        }
                     }
-                    $("#trial_details_container_" + trial_id).append(trial_html);
                 }
             });
-        });
-    }
 
-    function dictToArray(dict, key, xAxisMetric='epochs') {
-        let array = [];
-        for (let i in dict) {
-            var label = '';
-            if (xAxisMetric == 'epochs') {
-                label = i.toString();
-            } else {
-                label = dict[i][xAxisMetric].toString();
-            }
-            array.push({y:dict[i][key], x: label});
+            fetch("{% url 'api:autokeras:all_metrics' run.id %}").then(function(response) {
+                response.json().then(function(data) {
+                    run_metrics = data;
+                    let firstTrialID = undefined;
+
+                    for (trial_id in run_metrics) {
+                        if (!firstTrialID) {
+                            firstTrialID = trial_id;
+                        }
+                        let trial_data = run_metrics[trial_id];
+                        let canvas_html = "<div class='has-background-white-bis my-5 p-3 rounded-lg'><h6 class='text-center mt-5'>Trial " +
+                            (trial_id) + "</h6><div class='d-flex'><div class='col-9'><canvas class='h-100 w-100' id='canvas_trial_" + trial_id + "' width='400' height='400'></canvas></div><div id='canvas_configure_" + trial_id + "' class='col-3'></div></div>" +
+                            "<div class='row p-3 border-top mt-5' id='trial_details_container_" + trial_id + "'></div></div>";
+                        $("#canvas_container").append(canvas_html);
+                        build_graph(trial_id, trial_data);
+
+                        // now add teh checkbox to trial_selection for the trial overview
+                        let checkBoxHTML = '<div class="me-2"><input type="checkbox" data-trial=' + trial_id + ' class="form-check-inline" id="trial_checkbox_' + trial_id + '"><label for="trial_checkbox_' + trial_id + '">Trial ' + (trial_id) + '</label></div>';
+                        $('#trial_selection').append(checkBoxHTML);
+                        $('#trial_checkbox_' + trial_id).change(function() {
+                            let trial_id = this.getAttribute('data-trial');
+                            if (this.checked) {
+                                trialOverviewChart.data.datasets.push({
+                                    label: 'Trial ' + (trial_id),
+                                    data: dictToArray(run_metrics[trial_id], $("#trial_overview_yaxis").val(), $('#trial_overview_xaxis').val()),
+                                    id: trial_id
+                                });
+                                trialOverviewChart.update();
+                            } else {
+                                index = trialOverviewChart.data.datasets.findIndex(x => x.id == trial_id);
+                                trialOverviewChart.data.datasets.splice(index, 1);
+                                trialOverviewChart.update();
+                            }
+                        });
+
+                    }
+                    let metrics = [];
+                    for (metric in run_metrics[firstTrialID][0]) {
+                        metrics.push(metric);
+                        generateOption(metric, metric, $('#trial_overview_xaxis'));
+                        generateOption(metric, metric, $('#trial_overview_yaxis'));
+                    }
+                    generateSortSelect('canvas_container', metrics);
+
+                    fetchTrialDetails();
+
+                    let maxObjective = undefined;
+                    let objective = '{{run.model.objective}}'
+                    let bestTrial = undefined
+                    for (const trial in run_metrics) {
+                        metrics = getMaxValuesPerTrial(run_metrics[trial]);
+                        if (!maxObjective || metrics[objective] > maxObjective) {
+                            maxObjective = metrics[objective];
+                            bestTrial = trial;
+                        }
+                    }
+                    $('#best_trial_id_container').html(' ' + bestTrial);
+                });
+            });
+            fetch("{% url 'api:celery:is_running' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${token}`,
+                },
+                body: JSON.stringify({
+                    'run_id': {{ run.id }},
+                    'run_type': 'autokeras'
+                }),
+            }).then(function(response) {
+                response.json().then(function(data) {
+                    console.log(data);
+                    if (data['success']) {
+                        $('#training_progress').toggleClass('d-none');
+                        // this run is currently in training, so display the progreessbar
+                        $('#task_kill_link').attr('href', $('#task_kill_link').attr('href').replace(0, data['task_id']));
+                        updateProgress("{% url 'runs:training_progress' 0 %}".replace(0, data['task_id']), '');
+                    }
+                });
+            });
+
+        });
+
+        function fetchTrialDetails() {
+            fetch("{% url 'api:autokeras:trial_details' run.id %}").then(function(response) {
+                response.json().then(function(data) {
+                    // for every trial in data, append a div to trial_container_<trial_id> and fill in the values from data[trial_id]:
+                    for (trial_id in data) {
+                        let trial_data = data[trial_id];
+                        let trial_html = "";
+                        for (hp in trial_data) {
+                            trial_html += "<div class='col-3'><span class='has-text-weight-bold'>" + hp + ":</span> " + trial_data[hp] + "</div>";
+                        }
+                        $("#trial_details_container_" + trial_id).append(trial_html);
+                    }
+                });
+            });
         }
-        return array;
-    }
 
-    const getOrCreateTooltip = (chart) => {
-        let tooltipEl = chart.canvas.parentNode.querySelector('div');
+        function dictToArray(dict, key, xAxisMetric = 'epochs') {
+            let array = [];
+            for (let i in dict) {
+                var label = '';
+                if (xAxisMetric == 'epochs') {
+                    label = i.toString();
+                } else {
+                    label = dict[i][xAxisMetric].toString();
+                }
+                array.push({
+                    y: dict[i][key],
+                    x: label
+                });
+            }
+            return array;
+        }
 
-        if (!tooltipEl) {
-            tooltipEl = document.createElement('div');
-            tooltipEl.style.background = 'rgba(0, 0, 0, 0.7)';
-            tooltipEl.style.borderRadius = '3px';
-            tooltipEl.style.color = 'white';
+        const getOrCreateTooltip = (chart) => {
+            let tooltipEl = chart.canvas.parentNode.querySelector('div');
+
+            if (!tooltipEl) {
+                tooltipEl = document.createElement('div');
+                tooltipEl.style.background = 'rgba(0, 0, 0, 0.7)';
+                tooltipEl.style.borderRadius = '3px';
+                tooltipEl.style.color = 'white';
+                tooltipEl.style.opacity = 1;
+                tooltipEl.style.pointerEvents = 'none';
+                tooltipEl.style.position = 'absolute';
+                tooltipEl.style.transform = 'translate(-50%, 0)';
+                tooltipEl.style.width = 'max-content';
+                tooltipEl.style.zIndex = 9999;
+                const table = document.createElement('table');
+                table.style.margin = '0px';
+
+                tooltipEl.appendChild(table);
+                chart.canvas.parentNode.appendChild(tooltipEl);
+            }
+
+            return tooltipEl;
+        };
+
+        const externalTooltipHandler = (context) => {
+            // Tooltip Element
+            const {
+                chart,
+                tooltip
+            } = context;
+            const tooltipEl = getOrCreateTooltip(chart);
+
+            // Hide if no tooltip
+            if (tooltip.opacity === 0) {
+                tooltipEl.style.opacity = 0;
+                return;
+            }
+
+            let dataIndex = tooltip.dataPoints[0].dataIndex;
+
+            // Set Text
+            if (tooltip.body) {
+                const titleLines = tooltip.title || [];
+                const bodyLines = tooltip.body.map(b => b.lines);
+
+                const tableHead = document.createElement('thead');
+
+                titleLines.forEach(title => {
+                    const tr = document.createElement('tr');
+                    tr.style.borderWidth = 0;
+
+                    const th = document.createElement('th');
+                    th.style.borderWidth = 0;
+                    th.style.color = 'white';
+                    const text = document.createTextNode($('#trial_overview_xaxis').val() + " " + title);
+
+                    th.appendChild(text);
+                    tr.appendChild(th);
+                    tableHead.appendChild(tr);
+                });
+
+                const tableBody = document.createElement('tbody');
+                bodyLines.forEach((body, i) => {
+                    let metrics = run_metrics[tooltip.dataPoints[i].dataset.id][dataIndex];
+                    const colors = tooltip.labelColors[i];
+                    const span = document.createElement('span');
+                    span.style.background = colors.backgroundColor;
+                    span.style.borderColor = colors.borderColor;
+                    span.style.borderWidth = '2px';
+                    span.style.height = '10px';
+                    span.style.width = '10px';
+                    span.style.display = 'inline-block';
+
+                    const tr = document.createElement('tr');
+                    tr.style.backgroundColor = 'inherit';
+                    tr.style.borderWidth = 0;
+
+                    const td = document.createElement('td');
+                    td.style.borderWidth = 0;
+
+                    let bodyText = body + ', Modelsize: ' + metrics['model_size'].toLocaleString()
+                    if ('trial_energy_consumption' in metrics) {
+                        bodyText += ', Energy: ' + metrics['trial_energy_consumption'].toLocaleString() + ' W';
+                    }
+                    const text = document.createTextNode(bodyText);
+
+                    td.appendChild(span);
+                    td.appendChild(text);
+                    tr.appendChild(td);
+                    tableBody.appendChild(tr);
+                });
+
+                const tableRoot = tooltipEl.querySelector('table');
+
+                // Remove old children
+                while (tableRoot.firstChild) {
+                    tableRoot.firstChild.remove();
+                }
+
+                // Add new children
+                tableRoot.appendChild(tableHead);
+                tableRoot.appendChild(tableBody);
+            }
+
+            const {
+                offsetLeft: positionX,
+                offsetTop: positionY
+            } = chart.canvas;
+
+            // Display, position, and set styles for font
             tooltipEl.style.opacity = 1;
-            tooltipEl.style.pointerEvents = 'none';
-            tooltipEl.style.position = 'absolute';
-            tooltipEl.style.transform = 'translate(-50%, 0)';
-            tooltipEl.style.width = 'max-content';
-            tooltipEl.style.zIndex = 9999;
-            const table = document.createElement('table');
-            table.style.margin = '0px';
+            tooltipEl.style.left = positionX + tooltip.caretX + 'px';
+            tooltipEl.style.top = positionY + tooltip.caretY + 'px';
+        };
 
-            tooltipEl.appendChild(table);
-            chart.canvas.parentNode.appendChild(tooltipEl);
-        }
-
-        return tooltipEl;
-    };
-
-    const externalTooltipHandler = (context) => {
-        // Tooltip Element
-        const {chart, tooltip} = context;
-        const tooltipEl = getOrCreateTooltip(chart);
-
-        // Hide if no tooltip
-        if (tooltip.opacity === 0) {
-            tooltipEl.style.opacity = 0;
-            return;
-        }
-
-        let dataIndex = tooltip.dataPoints[0].dataIndex;
-        
-        // Set Text
-        if (tooltip.body) {
-            const titleLines = tooltip.title || [];
-            const bodyLines = tooltip.body.map(b => b.lines);
-
-            const tableHead = document.createElement('thead');
-
-            titleLines.forEach(title => {
-                const tr = document.createElement('tr');
-                tr.style.borderWidth = 0;
-
-                const th = document.createElement('th');
-                th.style.borderWidth = 0;
-                th.style.color = 'white';
-                const text = document.createTextNode($('#trial_overview_xaxis').val() + " " + title);
-
-                th.appendChild(text);
-                tr.appendChild(th);
-                tableHead.appendChild(tr);
+        function trialOverviewX(event) {
+            let xaxis = $('#trial_overview_xaxis').val();
+            let yaxis = $('#trial_overview_yaxis').val();
+            trialOverviewChart.data.datasets.forEach(function(dataset) {
+                dataset.data = dictToArray(run_metrics[dataset.id], yaxis, xaxis);
             });
+            trialOverviewChart.options.scales.x.title.text = xaxis;
+            trialOverviewChart.update();
+        }
 
-            const tableBody = document.createElement('tbody');
-            bodyLines.forEach((body, i) => {
-                let metrics = run_metrics[tooltip.dataPoints[i].dataset.id][dataIndex];
-                const colors = tooltip.labelColors[i];
-                const span = document.createElement('span');
-                span.style.background = colors.backgroundColor;
-                span.style.borderColor = colors.borderColor;
-                span.style.borderWidth = '2px';
-                span.style.height = '10px';
-                span.style.width = '10px';
-                span.style.display = 'inline-block';
-
-                const tr = document.createElement('tr');
-                tr.style.backgroundColor = 'inherit';
-                tr.style.borderWidth = 0;
-
-                const td = document.createElement('td');
-                td.style.borderWidth = 0;
-
-                let bodyText = body + ', Modelsize: ' + metrics['model_size'].toLocaleString()
-                if ('trial_energy_consumption' in metrics) {
-                    bodyText += ', Energy: ' + metrics['trial_energy_consumption'].toLocaleString() + ' W';
-                }
-                const text = document.createTextNode(bodyText);
-
-                td.appendChild(span);
-                td.appendChild(text);
-                tr.appendChild(td);
-                tableBody.appendChild(tr);
+        function trialOverviewY(event) {
+            let yaxis = $('#trial_overview_yaxis').val();
+            trialOverviewChart.data.datasets.forEach(function(dataset) {
+                dataset.data = dictToArray(run_metrics[dataset.id], yaxis, $('#trial_overview_xaxis').val());
             });
-
-            const tableRoot = tooltipEl.querySelector('table');
-
-            // Remove old children
-            while (tableRoot.firstChild) {
-                tableRoot.firstChild.remove();
-            }
-
-            // Add new children
-            tableRoot.appendChild(tableHead);
-            tableRoot.appendChild(tableBody);
+            trialOverviewChart.options.scales.y.title.text = yaxis;
+            trialOverviewChart.update();
         }
 
-        const {offsetLeft: positionX, offsetTop: positionY} = chart.canvas;
-
-        // Display, position, and set styles for font
-        tooltipEl.style.opacity = 1;
-        tooltipEl.style.left = positionX + tooltip.caretX + 'px';
-        tooltipEl.style.top = positionY + tooltip.caretY + 'px';
-    };
-
-    function trialOverviewX(event) {
-        let xaxis = $('#trial_overview_xaxis').val();
-        let yaxis = $('#trial_overview_yaxis').val();
-        trialOverviewChart.data.datasets.forEach(function(dataset) {
-            dataset.data = dictToArray(run_metrics[dataset.id], yaxis, xaxis);
-        });
-        trialOverviewChart.options.scales.x.title.text = xaxis;
-        trialOverviewChart.update();
-    }
-
-    function trialOverviewY(event) {
-        let yaxis = $('#trial_overview_yaxis').val();
-        trialOverviewChart.data.datasets.forEach(function(dataset) {
-            dataset.data = dictToArray(run_metrics[dataset.id], yaxis, $('#trial_overview_xaxis').val());
-        });
-        trialOverviewChart.options.scales.y.title.text = yaxis;
-        trialOverviewChart.update();
-    }
-
-    function generateOption(value, text, parent) {
-        let optionY = document.createElement('option');
-        optionY.value = value;
-        optionY.text = text;
-        parent.append(optionY);
-    }
-    
-    function build_graph(trial_id, trial_data) {
-        $("#trial_details_container_"+trial_id).toggleClass("d-none");        
-
-        let canvas = document.getElementById("canvas_trial_" + trial_id).getContext('2d');
-        var data = [];
-        var labels = [];
-
-        var dropdownX = document.createElement('select');
-        var dropdownY = document.createElement('select');
-        var configButton = document.createElement('button');
-        var hideDetailsButton = document.createElement("button");
-
-        dropdownX.className='form-control mb-5';
-        dropdownY.className='form-control mb-3';
-        configButton.className='btn btn-primary my-2 col-8';
-        configButton.innerHTML = 'Set for all';
-        hideDetailsButton.className='btn btn-primary my-2 col-8';
-        hideDetailsButton.innerHTML = 'Show Details';
-        dropdownX.name = 'xaxis';
-        dropdownY.name = 'yaxis';
-
-        let optionX = document.createElement('option');
-        optionX.value = 'epochs';
-        optionX.text = 'epochs';
-        dropdownX.appendChild(optionX);
-        
-        for (let key in trial_data[0]) {
-            if (trial_data[0].hasOwnProperty(key)) {
-                generateOption(key, key, dropdownX);
-                generateOption(key, key, dropdownY);
-            }
-        }
-        if(trial_data[0].hasOwnProperty('model_size')) {
-            $("#canvas_configure_"+trial_id).append('<span class="text-bold">Model size:</span> '+trial_data[0]['model_size'].toLocaleString()+'<br>');
-        }
-        $("#canvas_configure_"+trial_id).append('<label>X-Axis</label>');
-        $("#canvas_configure_"+trial_id).append(dropdownX);
-        $("#canvas_configure_"+trial_id).append('<label>Y-Axis</label>');
-        $("#canvas_configure_"+trial_id).append(dropdownY);
-        $("#canvas_configure_"+trial_id).append(configButton);
-        $("#canvas_configure_"+trial_id).append(hideDetailsButton);
-        $('#canvas_configure_'+trial_id).append('<a href="{% url 'api:autokeras:all_metrics' run.id %}'+ trial_id + '/download" class="my-2 col-8 btn btn-primary">Download CSV</a>');
-        let trialLink = "{% url 'runs:autokeras:trial' run.id 'naso.trial_id' %}".replace('naso.trial_id', trial_id);
-        $('#canvas_configure_'+trial_id).append('<br><a href="' + trialLink + '" class="btn btn-primary col-8 my-2">Rerun</a> ');
-
-        let maxMetrics = getMaxValuesPerTrial(trial_data);
-        for (let metric in maxMetrics) {
-            if (maxMetrics.hasOwnProperty(metric)) {
-                $('#canvas_configure_'+trial_id).parent().parent().attr('data-max-'+metric, maxMetrics[metric]);
-            }
+        function generateOption(value, text, parent) {
+            let optionY = document.createElement('option');
+            optionY.value = value;
+            optionY.text = text;
+            parent.append(optionY);
         }
 
-        hideDetailsButton.addEventListener("click", function() {
-            $("#trial_details_container_"+trial_id).toggleClass("d-none");
-        });
+        function build_graph(trial_id, trial_data) {
+            $("#trial_details_container_" + trial_id).toggleClass("d-none");
 
-        configButton.addEventListener('click', function () {
-            var xaxis = document.getElementsByName('xaxis');
-            xaxis.forEach(element => {
-                element.value = dropdownX.value;
-                element.dispatchEvent(new Event('change'));
-            });
-            var yaxis = document.getElementsByName('yaxis');
-            yaxis.forEach(element => {
-                element.value = dropdownY.value;
-                element.dispatchEvent(new Event('change'));
-            });
-        });
+            let canvas = document.getElementById("canvas_trial_" + trial_id).getContext('2d');
+            var data = [];
+            var labels = [];
 
-        dropdownX.addEventListener('change', function () {
-            labels=[];
-            if (dropdownX.value == 'epochs') {
-                for (let epoch in trial_data) {
-                    labels.push(epoch);
-                }
-            } else {
-                for (let epoch in trial_data) {
-                    labels.push(trial_data[epoch][dropdownX.value]);
+            var dropdownX = document.createElement('select');
+            var dropdownY = document.createElement('select');
+            var configButton = document.createElement('button');
+            var hideDetailsButton = document.createElement("button");
+
+            dropdownX.className = 'form-control mb-5';
+            dropdownY.className = 'form-control mb-3';
+            configButton.className = 'btn btn-primary my-2 col-8';
+            configButton.innerHTML = 'Set for all';
+            hideDetailsButton.className = 'btn btn-primary my-2 col-8';
+            hideDetailsButton.innerHTML = 'Show Details';
+            dropdownX.name = 'xaxis';
+            dropdownY.name = 'yaxis';
+
+            let optionX = document.createElement('option');
+            optionX.value = 'epochs';
+            optionX.text = 'epochs';
+            dropdownX.appendChild(optionX);
+
+            for (let key in trial_data[0]) {
+                if (trial_data[0].hasOwnProperty(key)) {
+                    generateOption(key, key, dropdownX);
+                    generateOption(key, key, dropdownY);
                 }
             }
-            updateChart();
-        });
+            if (trial_data[0].hasOwnProperty('model_size')) {
+                $("#canvas_configure_" + trial_id).append('<span class="text-bold">Model size:</span> ' + trial_data[0]['model_size'].toLocaleString() + '<br>');
+            }
+            $("#canvas_configure_" + trial_id).append('<label>X-Axis</label>');
+            $("#canvas_configure_" + trial_id).append(dropdownX);
+            $("#canvas_configure_" + trial_id).append('<label>Y-Axis</label>');
+            $("#canvas_configure_" + trial_id).append(dropdownY);
+            $("#canvas_configure_" + trial_id).append(configButton);
+            $("#canvas_configure_" + trial_id).append(hideDetailsButton);
+            $("#canvas_configure_" + trial_id).append('<a href="{% url 'api:autokeras:all_metrics' run.id %}' + trial_id + '/download" class="my-2 col-8 btn btn-primary">Download CSV</a>');
+            let trialLink = "{% url 'runs:autokeras:trial' run.id 'naso.trial_id' %}".replace('naso.trial_id', trial_id);
+            $('#canvas_configure_' + trial_id).append('<br><a href="' + trialLink + '" class="btn btn-primary col-8 my-2">Rerun</a> ');
 
-        dropdownY.addEventListener('change', function () {
-            if (dropdownY.value =='metrics') {
-                // show stacked bar chart:
-                let weights = {{run.model.metric_weights | safe  }};
-                let trialEpochs = [];
-                let index = 0;
-                for (const metricName in weights) {
-                    let barData  = [];
-                    for (epoch in trial_data) {
-                        trialEpochs.push(epoch);
-                        barData.push(weights[metricName] * Number(trial_data[epoch][metricName]));
+            let maxMetrics = getMaxValuesPerTrial(trial_data);
+            for (let metric in maxMetrics) {
+                if (maxMetrics.hasOwnProperty(metric)) {
+                    $('#canvas_configure_' + trial_id).parent().parent().attr('data-max-' + metric, maxMetrics[metric]);
+                }
+            }
+
+            let minMetrics = getMinValuesPerTrial(trial_data);
+            for (let metric in minMetrics) {
+                if (minMetrics.hasOwnProperty(metric)) {
+                    $('#canvas_configure_' + trial_id).parent().parent().attr('data-min-' + metric, minMetrics[metric]);
+                }
+            }
+            hideDetailsButton.addEventListener("click", function() {
+                $("#trial_details_container_" + trial_id).toggleClass("d-none");
+            });
+
+            configButton.addEventListener('click', function() {
+                var xaxis = document.getElementsByName('xaxis');
+                xaxis.forEach(element => {
+                    element.value = dropdownX.value;
+                    element.dispatchEvent(new Event('change'));
+                });
+                var yaxis = document.getElementsByName('yaxis');
+                yaxis.forEach(element => {
+                    element.value = dropdownY.value;
+                    element.dispatchEvent(new Event('change'));
+                });
+            });
+
+            dropdownX.addEventListener('change', function() {
+                labels = [];
+                if (dropdownX.value == 'epochs') {
+                    for (let epoch in trial_data) {
+                        labels.push(epoch);
                     }
-                    trialChart.data.datasets[index] = {
-                        label: metricName,
-                        data:  barData, 
-                    };
-                    index +=1;
-                }
-                trialChart.data.labels = trialEpochs;
-                trialChart.options.scales.x.stacked = true;
-                trialChart.options.scales.y.stacked = true;
-                trialChart.config.type = 'bar';
-                trialChart.update();
-            } else {
-                data =[];
-                for (let epoch in trial_data) {
-                    data.push(trial_data[epoch][dropdownY.value]);
-                }
-                trialChart.data.datasets = [{label:dropdownY.value}]
-                trialChart.options.scales = {
-                    x: {
-                        type:'linear'
+                } else {
+                    for (let epoch in trial_data) {
+                        labels.push(trial_data[epoch][dropdownX.value]);
                     }
-                };
-                trialChart.config.type = 'line';
+                }
                 updateChart();
-            }
-        });
+            });
 
-        function updateChart() {
-            trialChart.data.labels = [];
-            trialChart.data.datasets[0].data = dictToArray(trial_data, dropdownY.value, dropdownX.value);
-            trialChart.update();
-            console.log('update');
-        }
-
-        for (let epoch in trial_data) {
-            data.push(trial_data[epoch][dropdownY.value]);
-            labels.push(epoch);
-        }
-
-        if (labels.length > trialOverviewChart.data.labels.length) {
-            allEpochs = labels;
-            trialOverviewChart.data.labels = labels;
-        }
-
-        var trialChart = new Chart(canvas, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: dropdownY.value,
-                    data: data,
-                    id: trial_id,
-                }]
-            },
-            options: {
-                scales: {
-                    x: {
-                        type:'linear'
+            dropdownY.addEventListener('change', function() {
+                if (dropdownY.value == 'metrics') {
+                    // show stacked bar chart:
+                    let weights = {{ run.model.metric_weights | safe }};
+                    let trialEpochs = [];
+                    let index = 0;
+                    for (const metricName in weights) {
+                        let barData = [];
+                        for (epoch in trial_data) {
+                            trialEpochs.push(epoch);
+                            barData.push(weights[metricName] * Number(trial_data[epoch][metricName]));
+                        }
+                        trialChart.data.datasets[index] = {
+                            label: metricName,
+                            data: barData,
+                        };
+                        index += 1;
                     }
-                },
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                },
+                    trialChart.data.labels = trialEpochs;
+                    trialChart.options.scales.x.stacked = true;
+                    trialChart.options.scales.y.stacked = true;
+                    trialChart.config.type = 'bar';
+                    trialChart.update();
+                } else {
+                    data = [];
+                    for (let epoch in trial_data) {
+                        data.push(trial_data[epoch][dropdownY.value]);
+                    }
+                    trialChart.data.datasets = [{
+                        label: dropdownY.value
+                    }]
+                    trialChart.options.scales = {
+                        x: {
+                            type: 'linear'
+                        }
+                    };
+                    trialChart.config.type = 'line';
+                    updateChart();
+                }
+            });
+
+            function updateChart() {
+                trialChart.data.labels = [];
+                trialChart.data.datasets[0].data = dictToArray(trial_data, dropdownY.value, dropdownX.value);
+                trialChart.update();
+                console.log('update');
             }
-        });
-    
-    }
 
-    function getMaxValuesPerTrial(trial_data) {
-        let maxValues = {};
+            for (let epoch in trial_data) {
+                data.push(trial_data[epoch][dropdownY.value]);
+                labels.push(epoch);
+            }
 
-        for(const epoch in trial_data) {
-            for (let metric in trial_data[epoch]) {
-                if (trial_data[epoch].hasOwnProperty(metric)) {
-                    if (!maxValues[metric] || trial_data[epoch][metric] > maxValues[metric]) {
-                        maxValues[metric] = trial_data[epoch][metric];
+            if (labels.length > trialOverviewChart.data.labels.length) {
+                allEpochs = labels;
+                trialOverviewChart.data.labels = labels;
+            }
+
+            var trialChart = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: dropdownY.value,
+                        data: data,
+                        id: trial_id,
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'linear'
+                        }
+                    },
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                }
+            });
+
+        }
+
+        function getMaxValuesPerTrial(trial_data) {
+            let maxValues = {};
+
+            for (const epoch in trial_data) {
+                for (let metric in trial_data[epoch]) {
+                    if (trial_data[epoch].hasOwnProperty(metric)) {
+                        if (!maxValues[metric] || trial_data[epoch][metric] > maxValues[metric]) {
+                            maxValues[metric] = trial_data[epoch][metric];
+                        }
                     }
                 }
             }
+
+            return maxValues;
         }
-        
-        return maxValues;
-    }
 
-    function sortDivsByMetric(parentDivId, metric, sortOrder) {
-        const parentDiv = document.getElementById(parentDivId);
-        const divs = Array.from(parentDiv.querySelectorAll('div.rounded-lg'));
+        function getMinValuesPerTrial(trial_data) {
+            let minValues = {};
 
-        divs.sort((a, b) => {
-            const aValue = parseFloat(a.dataset[`max${metric}`]);
-            const bValue = parseFloat(b.dataset[`max${metric}`]);
-            if (sortOrder === 'asc') {
-                return aValue - bValue;
-            } else {
-                return bValue - aValue;
+            for (const epoch in trial_data) {
+                for (let metric in trial_data[epoch]) {
+                    if (trial_data[epoch].hasOwnProperty(metric)) {
+                        if (!minValues[metric] || trial_data[epoch][metric] < minValues[metric]) {
+                            minValues[metric] = trial_data[epoch][metric];
+                        }
+                    }
+                }
             }
-        });
 
-        divs.forEach(div => {
-            parentDiv.appendChild(div);
-        });
-    }
+            return minValues;
+        }
+
+        function sortDivsByMetric(parentDivId, metric, sortOrder) {
+            const parentDiv = document.getElementById(parentDivId);
+            const divs = Array.from(parentDiv.querySelectorAll('div.rounded-lg'));
+
+            divs.sort((a, b) => {
+                if (sortOrder === 'asc') {
+                    const aValue = parseFloat(a.dataset[`min${metric}`]);
+                    const bValue = parseFloat(b.dataset[`min${metric}`]);
+                    return aValue - bValue;
+                } else {
+                    const aValue = parseFloat(a.dataset[`max${metric}`]);
+                    const bValue = parseFloat(b.dataset[`max${metric}`]);
+                    return bValue - aValue;
+                }
+            });
+
+            divs.forEach(div => {
+                parentDiv.appendChild(div);
+            });
+        }
 
 
-    function generateSortSelect(parentDivId, availableMetrics) {
-        const parentDiv = $('#sorting_container');
+        function generateSortSelect(parentDivId, availableMetrics) {
+            const parentDiv = $('#sorting_container');
 
-        const select = document.createElement('select');
-        select.classList.add('form-control');
-        select.setAttribute('id', 'sortSelect');
-        select.addEventListener('change', function () {
-            const selectedOption = this.value;
-            const selectedMetric = selectedOption.split(':')[0];
-            const sortOrder = selectedOption.split(':')[1];
-            sortDivsByMetric(parentDivId, selectedMetric, sortOrder);
-        });
+            const select = document.createElement('select');
+            select.classList.add('form-control');
+            select.setAttribute('id', 'sortSelect');
+            select.addEventListener('change', function() {
+                const selectedOption = this.value;
+                const selectedMetric = selectedOption.split(':')[0];
+                const sortOrder = selectedOption.split(':')[1];
+                sortDivsByMetric(parentDivId, selectedMetric, sortOrder);
+            });
 
-        availableMetrics.forEach(metric => {
-            const metricCapitalized = metric.charAt(0).toUpperCase() + metric.slice(1);
+            availableMetrics.forEach(metric => {
+                const metricCapitalized = metric.charAt(0).toUpperCase() + metric.slice(1);
 
-            generateOption(metricCapitalized + ':asc', metricCapitalized + ' (Ascending)', select);
-            generateOption(metricCapitalized + ':desc', metricCapitalized + ' (Descending)', select);
-        });
+                generateOption(metricCapitalized + ':asc', metricCapitalized + ' (Ascending by lowest temporal value)', select);
+                generateOption(metricCapitalized + ':desc', metricCapitalized + ' (Descending by highest temporal value)', select);
+            });
 
-        parentDiv.append('<label>Sort by</label>');
-        parentDiv.append(select);
-    }
-
+            parentDiv.append('<label>Sort by</label>');
+            parentDiv.append(select);
+        }
     </script>
 {% endblock %}
