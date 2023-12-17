@@ -161,7 +161,7 @@
                      data-app-version='{{ network_training.naso_app_version }}'
                      data-optimizer='{{ network_training.hyper_parameters.optimizer.instance_type.name }}'
                      data-time="{% get_metric network_training.final_metrics.metrics 'time' %}"
-                     data-rating="{{network_training.rate}}">
+                     data-rating="{{ network_training.rate }}">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between is-align-items-center"
                              id="heading{{ network_training.id }}">
@@ -176,16 +176,20 @@
                                 </button>
                             </h2>
                             <div class='d-flex is-align-items-center'>
-                                <span class="mx-1 tag is-warning is-light">{{ network_training.dataset.name }}</span>
-                                {% for metric in network_training.final_metrics.metrics %}
-                                    {% for attr_name in metric.metrics %}
-                                        <span class="mx-1 tag is-info is-light">{{ attr_name }}: {% get_attribute_tag metric.metrics attr_name %}</span>
+                                <div class='d-flex flex-wrap'>
+                                    <span class="mx-1 my-1 tag is-warning is-light">{{ network_training.dataset.name }}</span>
+                                    {% for metric in network_training.final_metrics.metrics %}
+                                        {% for attr_name in metric.metrics %}
+                                            <span class="mx-1 my-1 tag is-info is-light">{{ attr_name }}: {% get_attribute_tag metric.metrics attr_name %}</span>
+                                        {% endfor %}
+                                        {% if 'time' in metric %}
+                                            <span class="my-1 mx-1 tag is-primary is-light">time: {% get_attribute_tag metric 'time' %}</span>
+                                        {% endif %}
                                     {% endfor %}
-                                    {% if 'time' in metric %}
-                                        <span class="mx-1 tag is-primary is-light">time: {% get_attribute_tag metric 'time' %}</span>
-                                    {% endif %}
-                                {% endfor %}
-                                <select class='star-rating'  data-type='tensorflow' data-id="{{ network_training.id }}">
+                                </div>
+                                <select class='star-rating'
+                                        data-type='tensorflow'
+                                        data-id="{{ network_training.id }}">
                                     <option value="0"></option>
                                     {% for i in "12345"|make_list %}
                                         <option value='{{ i }}'
@@ -258,7 +262,7 @@
                 <div class="accordion"
                      id="accordion{{ keras_run.id }}"
                      data-app-version='{{ keras_run.naso_app_version }}'
-                     data-rating="{{keras_run.rate}}"
+                     data-rating="{{ keras_run.rate }}"
                      data-tuner='{{ keras_run.model.tuner.tuner_type.name }}'>
                     <div class="card">
                         <div class="card-header d-flex justify-content-between is-align-items-center"
@@ -274,18 +278,22 @@
                                 </button>
                             </h2>
                             <div class='d-flex is-align-items-center'>
-                                <span class="mx-1 tag is-warning is-light">{{ keras_run.dataset.name }}</span>
-                                {% for metric in keras_run.metrics.last.metrics %}
-                                    {% if 'final_metric' in metric %}
-                                        {% for attr_name in metric.metrics %}
-                                            <span class="mx-1 tag is-info is-light">{{ attr_name }}: {% get_attribute_tag metric.metrics attr_name %}</span>
-                                        {% endfor %}
-                                        {% if 'time' in metric %}
-                                            <span class="mx-1 tag is-primary is-light">time: {% get_attribute_tag metric 'time' %}</span>
+                                <div class='d-flex flex-wrap'>
+                                    <span class="mx-1 my-1 tag is-warning is-light">{{ keras_run.dataset.name }}</span>
+                                    {% for metric in keras_run.metrics.last.metrics %}
+                                        {% if 'final_metric' in metric %}
+                                            {% for attr_name in metric.metrics %}
+                                                <span class="mx-1 my-1 tag is-info is-light">{{ attr_name }}: {% get_attribute_tag metric.metrics attr_name %}</span>
+                                            {% endfor %}
+                                            {% if 'time' in metric %}
+                                                <span class="mx-1 my-1 tag is-primary is-light">time: {% get_attribute_tag metric 'time' %}</span>
+                                            {% endif %}
                                         {% endif %}
-                                    {% endif %}
-                                {% endfor %}
-                                <select class='star-rating'  data-type="autokeras" data-id="{{ keras_run.id }}">
+                                    {% endfor %}
+                                </div>
+                                <select class='star-rating'
+                                        data-type="autokeras"
+                                        data-id="{{ keras_run.id }}">
                                     <option value="0"></option>
                                     {% for i in "12345"|make_list %}
                                         <option value='{{ i }}'
