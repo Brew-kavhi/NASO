@@ -3,6 +3,7 @@ import math
 from django.core.exceptions import ValidationError
 from django.db import models
 
+from safedelete.models import SafeDeleteModel
 from helper_scripts.git import get_current_git_hash
 from helper_scripts.importing import get_object
 from naso.settings import APP_VERSION
@@ -244,7 +245,7 @@ class FitParameters(models.Model):
         return callbacks
 
 
-class Run(models.Model):
+class Run(SafeDeleteModel):
     """
     A base model for training runs.
 
