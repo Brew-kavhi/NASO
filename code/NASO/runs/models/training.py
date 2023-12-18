@@ -376,5 +376,24 @@ class TrainingMetric(models.Model):
         self.validate_json_data()
         super().save(*args, **kwargs)
 
+    def get_energy_consumption(self):
+        """
+        Calculates the energy_consumption in kWH of the epoch this metric is representing.
+        """
+        energy = 0
+        for metric in self.metrics:
+            if (
+                "energy_consumption" in metric["metrics"]
+                and "execution_time" in metric["metrics"]
+            ):
+                energy += (
+                    metric["metrics"]["energy_consumption"]
+                    / 1000.0
+                    * metric["metrics"]["execution_time"]
+                    / 3600.0
+                )
+        print(energy)
+        return energy
+
     def __str__(self):
         return f"Neural Network {self.neural_network} - Epoch {self.epoch}"
