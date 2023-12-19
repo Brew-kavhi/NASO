@@ -19,9 +19,7 @@ app = Celery("naso", backend=config("CELERY_BROKER_URL"))
 # - namespace='CELERY' means all celery-related configuration keys
 #   should have a `CELERY_` prefix.
 app.config_from_object("django.conf:settings", namespace="CELERY")
-app.conf.update(
-    worker_pool_restarts=True,
-)
+app.conf.update(worker_pool_restarts=True, worker_prefetch_multiplier=1)
 
 # Load task modules from all registered Django apps.
 app.autodiscover_tasks()
