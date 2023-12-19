@@ -1,5 +1,7 @@
 import traceback
 from contextlib import redirect_stdout
+import threading
+from helper_scripts.extensions import start_async_measuring
 
 import tensorflow as tf
 from loguru import logger
@@ -39,9 +41,18 @@ def run_autokeras(self, run_id):
 
         callback = AutoKerasCallback(self, run)
         base_callback = BaseCallback(self, run, epochs=run.model.epochs)
+
+        stop_event = threading.Event()
+        database_lock = threading.Lock()
+
         try:
             with open("net.log", "w", encoding="UTF-8") as _f, redirect_stdout(_f):
                 autokeras_model.build_model(run)
+                threading.Thread(
+                    target=start_async_measuring,
+                    args=(stop_event, run, database_lock),
+                    daemon=True,
+                ).start()
                 autokeras_model.fit(
                     train_dataset,
                     callbacks=autokeras_model.get_callbacks(run)
@@ -59,7 +70,7 @@ def run_autokeras(self, run_id):
                 "Failure while executing the autokeras model: " + traceback.format_exc()
             )
             self.update_state(state="FAILED")
-
+    stop_event.set()
     self.update_state(state="SUCCESS")
 
 
@@ -89,10 +100,18 @@ def run_autokeras_trial(self, run_id, trial_id, keras_model_run_id):
 
     log_callback = BaseCallback(self, keras_model_run, epochs=run.fit_parameters.epochs)
 
+    stop_event = threading.Event()
+    database_lock = threading.Lock()
+
     try:
         with tf.device(run.gpu), open(
             "net.log", "w", encoding="UTF-8"
         ) as _f, redirect_stdout(_f):
+            threading.Thread(
+                target=start_async_measuring,
+                args=(stop_event, run, database_lock),
+                daemon=True,
+            ).start()
             model.fit(
                 train_dataset,
                 verbose=2,
@@ -109,5 +128,5 @@ def run_autokeras_trial(self, run_id, trial_id, keras_model_run_id):
             "Failure while executing the autokeras model: " + traceback.format_exc()
         )
         self.update_state(state="FAILED")
-
+    stop_event.set()
     self.update_state(state="SUCCESS")

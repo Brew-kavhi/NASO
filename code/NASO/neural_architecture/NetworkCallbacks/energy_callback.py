@@ -1,4 +1,5 @@
 import subprocess
+from helper_scripts.power_management import get_power_usage
 
 import tensorflow as tf
 
@@ -37,28 +38,6 @@ class EnergyCallback(tf.keras.callbacks.Callback):
         self.run = run
         self.trial_measurements = []
 
-    def get_power_usage(self):
-        """
-        Retrieves the power usage of the GPU.
-
-        Returns:
-            float: The power usage in watts.
-        """
-        gpu_index = int(self.run.gpu.split(":")[-1])
-        result = subprocess.run(
-            [
-                "nvidia-smi",
-                "-i",
-                str(gpu_index),
-                "--query-gpu=power.draw",
-                "--format=csv,noheader,nounits",
-            ],
-            capture_output=True,
-            text=True,
-        )
-        power_usage = float(result.stdout.strip())  # Power usage in watts
-        return power_usage
-
     def on_epoch_begin(self, epoch, logs=None, *args):
         """
         Callback method called at the beginning of each epoch.
@@ -75,7 +54,7 @@ class EnergyCallback(tf.keras.callbacks.Callback):
         if logs is None:
             logs = []
         self.measurements = []
-        measurement = self.get_power_usage()
+        measurement = get_power_usage(self.run.gpu)
         self.measurements.append(measurement)
 
     def on_epoch_end(self, epoch, logs=None, *args):
@@ -93,7 +72,7 @@ class EnergyCallback(tf.keras.callbacks.Callback):
         """
         if logs is None:
             logs = []
-        measurement = self.get_power_usage()
+        measurement = get_power_usage(self.run.gpu)
         self.measurements.append(measurement)
 
         # calculate average power usage:
@@ -116,7 +95,7 @@ class EnergyCallback(tf.keras.callbacks.Callback):
             None
         """
         self.measurements = []
-        measurement = self.get_power_usage()
+        measurement = get_power_usage(self.run.gpu)
         self.measurements.append(measurement)
 
     def on_test_end(self, logs=None):
@@ -135,7 +114,7 @@ class EnergyCallback(tf.keras.callbacks.Callback):
         based on all the measurements. The average power usage is then added to the
         logs dictionary with the key "energy_consumption".
         """
-        measurement = self.get_power_usage()
+        measurement = get_power_usage(self.run.gpu)
         self.measurements.append(measurement)
         average_power_usage = sum(self.measurements) / len(self.measurements)
         logs["energy_consumption"] = average_power_usage
@@ -151,7 +130,7 @@ class EnergyCallback(tf.keras.callbacks.Callback):
             None
         """
         self.measurements = []
-        measurement = self.get_power_usage()
+        measurement = get_power_usage(self.run.gpu)
         self.measurements.append(measurement)
 
     def on_predict_end(self, logs=None):
@@ -167,7 +146,7 @@ class EnergyCallback(tf.keras.callbacks.Callback):
         This method calculates the power usage measurement at the end of each prediction and updates the average power usage.
         The average power usage is then added to the logs dictionary with the key "energy_consumption".
         """
-        measurement = self.get_power_usage()
+        measurement = get_power_usage(self.run.gpu)
         self.measurements.append(measurement)
         average_power_usage = sum(self.measurements) / len(self.measurements)
         logs["energy_consumption"] = average_power_usage
@@ -183,7 +162,7 @@ class EnergyCallback(tf.keras.callbacks.Callback):
         Returns:
             None
         """
-        measurement = self.get_power_usage()
+        measurement = get_power_usage(self.run.gpu)
         self.measurements.append(measurement)
 
     def on_predict_batch_end(self, batch, logs=None):
@@ -197,5 +176,5 @@ class EnergyCallback(tf.keras.callbacks.Callback):
         Returns:
             None
         """
-        measurement = self.get_power_usage()
+        measurement = get_power_usage(self.run.gpu)
         self.measurements.append(measurement)

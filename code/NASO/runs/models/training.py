@@ -274,6 +274,8 @@ class Run(SafeDeleteModel):
 
     gpu = models.CharField(max_length=20, default="/gpu:0")
 
+    energy_measurements = models.TextField()
+
     class Meta:
         abstract = True
 
@@ -286,6 +288,24 @@ class Run(SafeDeleteModel):
         if not self.git_hash:
             self.git_hash = get_current_git_hash()
         super().save(*args, **kwargs)
+
+    def get_average_energy_consumption(self):
+        if self.energy_measurements == "":
+            return "NaN"
+        measurements = [float(energy) for energy in self.energy_measurements.split(",")]
+        return sum(measurements) / len(measurements)
+
+    def get_min_energy_consumption(self):
+        if self.energy_measurements == "":
+            return 0
+        measurements = [float(energy) for energy in self.energy_measurements.split(",")]
+        return min(measurements)
+
+    def get_max_energy_consumption(self):
+        if self.energy_measurements == "":
+            return 0
+        measurements = [float(energy) for energy in self.energy_measurements.split(",")]
+        return max(measurements)
 
 
 class NetworkTraining(Run):

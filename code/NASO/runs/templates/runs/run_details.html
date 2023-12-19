@@ -71,6 +71,10 @@
                                     <span class='has-text-weight-bold'>Device:</span>
                                     {{ run.gpu }}
                                 </p>
+                                <p>
+                                    <span class='has-text-weight-bold'>Avg. Power draw:</span>
+                                    {{ run.get_average_energy_consumption }} W
+                                </p>
                             </div>
                         </div>
                     </div>
