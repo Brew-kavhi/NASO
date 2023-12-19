@@ -61,8 +61,9 @@ class CaliforniaHousingDataset(DatasetLoaderInterface):
 
     module_name = "kaggle_datasets"
     dataset_path = "datasets/kaggle"
-    dataset_list = ["California Housing"]
+    dataset_list = ["California Housing", "DeepSat (SAT-6)"]
     size = 0
+    element_size = 0
     info: dict = {}
 
     def get_data(self, name: str, as_supervised: bool, *args, **kwargs) -> tuple:
@@ -84,18 +85,56 @@ class CaliforniaHousingDataset(DatasetLoaderInterface):
         self.dataset_path += str(dataset.id)
         if not os.path.exists(self.dataset_path):
             os.makedirs(self.dataset_path, exist_ok=True)
+            print("Downloading dataset files")
             kaggle.api.dataset_download_files(
                 dataset.ref, path=self.dataset_path, unzip=True
             )
 
-        dataset_url = dataset.url
+        if name == "California Housing":
+            self.element_size = 9
+            return self.get_california_housing()
+        elif name == "DeepSat (SAT-6)":
+            self.element_size = (28, 28, 4)
+            return self.get_deepsat()
+        return (None, None)
 
+    def get_california_housing(self):
         df = pd.read_csv(self.dataset_path + "/housing.csv")
 
         (training_set, test_set) = self._prep_dataframe(df)
 
         train_dataset = tf.data.Dataset.from_tensor_slices(training_set)
         test_dataset = tf.data.Dataset.from_tensor_slices(test_set)
+
+        return (train_dataset, test_dataset)
+
+    def get_deepsat(self):
+        n = 20000
+        x_train_df = pd.read_csv(
+            self.dataset_path + "/X_train_sat6.csv", nrows=n, header=None
+        )
+        x_train = (
+            x_train_df.values.reshape((-1, 28, 28, 4)).clip(0, 2555).astype("float32")
+        )
+        y_train_df = pd.read_csv(
+            self.dataset_path + "/y_train_sat6.csv", nrows=n, header=None
+        )
+        y_train = y_train_df.values.astype("float32")
+        x_test_df = pd.read_csv(
+            self.dataset_path + "/X_test_sat6.csv", nrows=n, header=None
+        )
+        x_test = (
+            x_test_df.values.reshape((-1, 28, 28, 4)).clip(0, 255).astype("float32")
+        )
+        y_test_df = pd.read_csv(
+            self.dataset_path + "/y_test_sat6.csv", nrows=n, header=None
+        )
+        y_test = y_test_df.values.astype("float32")
+
+        self.size = int(x_train.shape[0])
+
+        train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
+        test_dataset = tf.data.Dataset.from_tensor_slices((x_test, y_test))
 
         return (train_dataset, test_dataset)
 
@@ -146,7 +185,7 @@ class CaliforniaHousingDataset(DatasetLoaderInterface):
         Raises:
             Exception: If the dataset does not support size information.
         """
-        return 9
+        return self.element_size
 
     def get_datasets(self, *args, **kwargs):
         """
