@@ -505,13 +505,13 @@
 
                     fetchTrialDetails();
 
-                    let maxObjective = undefined;
+                    let minObjective = undefined;
                     let objective = '{{run.model.objective}}'
                     let bestTrial = undefined
                     for (const trial in run_metrics) {
-                        metrics = getMaxValuesPerTrial(run_metrics[trial]);
-                        if (!maxObjective || metrics[objective] > maxObjective) {
-                            maxObjective = metrics[objective];
+                        metrics = getMinValuesPerTrial(run_metrics[trial]);
+                        if (!minObjective || metrics[objective] < minObjective) {
+                            minObjective = metrics[objective];
                             bestTrial = trial;
                         }
                     }
