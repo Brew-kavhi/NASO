@@ -1,4 +1,25 @@
 from runs.models.training import TrainingMetric
+from helper_scripts.power_management import get_power_usage
+import asyncio
+from loguru import logger
+from runs.models.training import Run
+
+
+def start_async_measuring(stop_event, run: Run, database_lock):
+    task = asyncio.run(measure_energy(stop_event, run, database_lock))
+    with database_lock:
+        run.energy_measurements = ",".join([str(energy) for energy in task])
+        run.save()
+    return task
+
+
+async def measure_energy(stop_event, run: Run, database_lock):
+    power = []
+    while not stop_event.is_set():
+        logger.info("measuring")
+        power.append(get_power_usage(run.gpu))
+        await asyncio.sleep(2)
+    return power
 
 
 def custom_on_epoch_end_decorator(original_on_epoch_end, run):

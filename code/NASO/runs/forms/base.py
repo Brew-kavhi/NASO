@@ -92,10 +92,19 @@ class BaseRun(forms.Form):
         return [
             (
                 gpu.name.split("physical_device:")[1],
-                gpu.name.split("physical_device:")[1],
+                gpu.name.split("physical_device:")[1]
+                + " ("
+                + self.get_compute_device_name(gpu)
+                + ")",
             )
             for gpu in gpus
         ]
+
+    def get_compute_device_name(self, device):
+        details = tf.config.experimental.get_device_details(device)
+        if "device_name" in details:
+            return details["device_name"]
+        return ""
 
     def load_graph(self, nodes, edges):
         self.extra_context["nodes"] = nodes

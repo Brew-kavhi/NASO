@@ -1,4 +1,6 @@
 import tensorflow as tf
+import threading
+from helper_scripts.extensions import start_async_measuring
 from loguru import logger
 import traceback
 
@@ -37,8 +39,16 @@ def run_neural_net(self, training_id):
     update_call = BaseCallback(
         self, run=training, epochs=training.fit_parameters.epochs
     )
+    stop_event = threading.Event()
+    database_lock = threading.Lock()
+
     try:
         with tf.device(training.gpu):
+            threading.Thread(
+                target=start_async_measuring,
+                args=(stop_event, training, database_lock),
+                daemon=True,
+            ).start()
             _nn = NeuralNetwork(training)
             _nn.run_from_config(training, update_call)
     except Exception as _e:
@@ -46,7 +56,7 @@ def run_neural_net(self, training_id):
             "Failure while executing the autokeras model: " + traceback.format_exc()
         )
         self.update_state(state="FAILED")
-
+    stop_event.set()
     self.update_state(state="SUCCESS")
 
 

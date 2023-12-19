@@ -536,3 +536,10 @@ class AutoKerasRun(Run):
         TrainingMetric,
         related_name="autokeras_prediction_metrics",
     )
+
+    def get_energy_consumption(self):
+        energy = 0
+        for metric in self.metrics.all():
+            energy += metric.get_energy_consumption()
+
+        return energy

@@ -3,6 +3,7 @@ import math
 from django.core.exceptions import ValidationError
 from django.db import models
 
+from safedelete.models import SafeDeleteModel
 from helper_scripts.git import get_current_git_hash
 from helper_scripts.importing import get_object
 from naso.settings import APP_VERSION
@@ -244,7 +245,7 @@ class FitParameters(models.Model):
         return callbacks
 
 
-class Run(models.Model):
+class Run(SafeDeleteModel):
     """
     A base model for training runs.
 
@@ -273,6 +274,8 @@ class Run(models.Model):
 
     gpu = models.CharField(max_length=20, default="/gpu:0")
 
+    energy_measurements = models.TextField()
+
     class Meta:
         abstract = True
 
@@ -285,6 +288,24 @@ class Run(models.Model):
         if not self.git_hash:
             self.git_hash = get_current_git_hash()
         super().save(*args, **kwargs)
+
+    def get_average_energy_consumption(self):
+        if self.energy_measurements == "":
+            return "NaN"
+        measurements = [float(energy) for energy in self.energy_measurements.split(",")]
+        return sum(measurements) / len(measurements)
+
+    def get_min_energy_consumption(self):
+        if self.energy_measurements == "":
+            return 0
+        measurements = [float(energy) for energy in self.energy_measurements.split(",")]
+        return min(measurements)
+
+    def get_max_energy_consumption(self):
+        if self.energy_measurements == "":
+            return 0
+        measurements = [float(energy) for energy in self.energy_measurements.split(",")]
+        return max(measurements)
 
 
 class NetworkTraining(Run):
@@ -374,6 +395,25 @@ class TrainingMetric(models.Model):
     def save(self, *args, **kwargs):
         self.validate_json_data()
         super().save(*args, **kwargs)
+
+    def get_energy_consumption(self):
+        """
+        Calculates the energy_consumption in kWH of the epoch this metric is representing.
+        """
+        energy = 0
+        for metric in self.metrics:
+            if (
+                "energy_consumption" in metric["metrics"]
+                and "execution_time" in metric["metrics"]
+            ):
+                energy += (
+                    metric["metrics"]["energy_consumption"]
+                    / 1000.0
+                    * metric["metrics"]["execution_time"]
+                    / 3600.0
+                )
+        print(energy)
+        return energy
 
     def __str__(self):
         return f"Neural Network {self.neural_network} - Epoch {self.epoch}"
