@@ -53,6 +53,10 @@ def run_autokeras(self, run_id):
                     args=(stop_event, run, database_lock),
                     daemon=True,
                 ).start()
+                run.memory_usage = tf.config.experimental.get_memory_info(run.gpu)[
+                    "current"
+                ]
+                run.save()
                 autokeras_model.fit(
                     train_dataset,
                     callbacks=autokeras_model.get_callbacks(run)
@@ -113,6 +117,10 @@ def run_autokeras_trial(self, run_id, trial_id, keras_model_run_id):
                 args=(stop_event, run, database_lock),
                 daemon=True,
             ).start()
+            run.memory_usage = tf.config.experimental.get_memory_info(run.gpu)[
+                "current"
+            ]
+            run.save()
             model.fit(
                 train_dataset,
                 verbose=2,

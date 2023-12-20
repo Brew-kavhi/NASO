@@ -191,6 +191,10 @@ class NeuralNetwork:
             use_multiprocessing=fit_parameters.use_multiprocessing,
         )
         self.training_config.network_config.save_model_on_disk(self.model)
+        self.training_config.memory_usage = tf.config.experimental.get_memory_info(
+            self.training_config.gpu
+        )["current"]
+        self.training_config.save()
 
         logger.success("Finished training of neural network.")
 
