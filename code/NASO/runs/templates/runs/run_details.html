@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load get_values %}
+{% load crispy_forms_tags %}
 {% load static %}
 {% block content %}
     <!-- get a progressbar if this run is currently training -->
@@ -32,8 +33,10 @@
             </div>
         </div>
         <div class="accordion" id="accordion_general">
-            <div data-toggle="collapse" data-target="#collapse_general" class="card">
-                <div class="card-header d-flex justify-content-between is-align-items-center">
+            <div class="card">
+                <div data-toggle="collapse"
+                     data-target="#collapse_general"
+                     class="card-header d-flex justify-content-between is-align-items-center">
                     <h5 class="my-2">General</h5>
                     <i class="fas fa-angle-down"></i>
                 </div>
@@ -42,7 +45,7 @@
                      aria-labelledby="heading_general"
                      data-parent="#accordion_general">
                     <div class="card-body">
-                        <div>{{ run.description }}</div>
+                        {% crispy update_form %}
                         <div class="row">
                             <div class="col-6">
                                 <p>
