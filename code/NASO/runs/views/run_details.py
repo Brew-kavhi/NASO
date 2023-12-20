@@ -1,4 +1,5 @@
 from django.http import JsonResponse
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic.base import TemplateView, View
 
@@ -6,6 +7,7 @@ from naso.celery import get_celery_task_state
 from naso.models.page import PageSetup
 from neural_architecture.models.autokeras import AutoKerasRun
 from runs.models.training import NetworkTraining
+from runs.forms.update_runs import UpdateNetworkTrainingRun, UpdateAutokerasRun
 
 
 class TrainingProgress(View):
@@ -114,7 +116,20 @@ class RunDetails(TemplateView):
         self.context["layers"] = layers
         self.context["nodes"] = nodes
         self.context["page"] = self.page.get_context()
+
+        update_form = UpdateNetworkTrainingRun(instance=run)
+        self.context["update_form"] = update_form
+
         return self.render_to_response(self.context)
+
+    def post(self, request, *args, **kwargs):
+        run = NetworkTraining.objects.get(pk=kwargs.get("pk"))
+        form = UpdateNetworkTrainingRun(request.POST, instance=run)
+
+        if form.is_valid():
+            form.save()
+
+        return redirect(request.path)
 
 
 class AutoKerasRunDetails(TemplateView):
@@ -169,5 +184,17 @@ class AutoKerasRunDetails(TemplateView):
             "Run again",
             color="primary",
         )
+        update_form = UpdateAutokerasRun(instance=run)
+        self.context["update_form"] = update_form
+
         self.context["page"] = self.page.get_context()
         return self.render_to_response(self.context)
+
+    def post(self, request, *args, **kwargs):
+        run = AutoKerasRun.objects.get(pk=kwargs.get("pk"))
+        form = UpdateAutokerasRun(request.POST, instance=run)
+
+        if form.is_valid():
+            form.save()
+
+        return redirect(request.path)
