@@ -339,7 +339,7 @@ class NewRun(TemplateView):
                         method_arguments,
                         scheduler_arguments,
                         policy_arguments,
-                    ) = get_pruning_parameters(request.POST.items())
+                    ) = get_pruning_parameters(request.POST)
                     method, _ = PruningMethod.objects.get_or_create(
                         instance_type=form.cleaned_data["pruning_method"],
                         additional_arguments=method_arguments,
@@ -770,7 +770,7 @@ class NewAutoKerasRun(TemplateView):
                     method_arguments,
                     scheduler_arguments,
                     policy_arguments,
-                ) = get_pruning_parameters(request.POST.items())
+                ) = get_pruning_parameters(request.POST)
                 method, _ = PruningMethod.objects.get_or_create(
                     instance_type=form.cleaned_data["pruning_method"],
                     additional_arguments=method_arguments,
