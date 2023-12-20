@@ -51,13 +51,14 @@ def run_neural_net(self, training_id):
             ).start()
             _nn = NeuralNetwork(training)
             _nn.run_from_config(training, update_call)
+            self.update_state(state="SUCCESS")
     except Exception as _e:
         logger.error(
             "Failure while executing the autokeras model: " + traceback.format_exc()
         )
         self.update_state(state="FAILED")
-    stop_event.set()
-    self.update_state(state="SUCCESS")
+    finally:
+        stop_event.set()
 
 
 class NeuralNetwork:

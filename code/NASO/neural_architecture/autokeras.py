@@ -65,13 +65,14 @@ def run_autokeras(self, run_id):
             # Evaluate the best model with testing data.
             print(autokeras_model.evaluate(test_dataset))
             autokeras_model.predict(test_dataset.take(200).batch(1), run)
+            self.update_state(state="SUCCESS")
         except Exception:
             logger.error(
                 "Failure while executing the autokeras model: " + traceback.format_exc()
             )
             self.update_state(state="FAILED")
-    stop_event.set()
-    self.update_state(state="SUCCESS")
+        finally:
+            stop_event.set()
 
 
 @shared_task(bind=True)
@@ -123,10 +124,11 @@ def run_autokeras_trial(self, run_id, trial_id, keras_model_run_id):
             # Evaluate the best model with testing data.
             print(model.evaluate(validation_dataset))
             model.predict(validation_dataset.take(200).batch(1), keras_model_run)
+            self.update_state(state="SUCCESS")
     except Exception:
         logger.error(
             "Failure while executing the autokeras model: " + traceback.format_exc()
         )
         self.update_state(state="FAILED")
-    stop_event.set()
-    self.update_state(state="SUCCESS")
+    finally:
+        stop_event.set()
