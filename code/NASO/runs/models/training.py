@@ -276,7 +276,7 @@ class Run(SafeDeleteModel):
 
     energy_measurements = models.TextField()
 
-    memory_usage = models.FloatField()
+    memory_usage = models.FloatField(default=0)
 
     class Meta:
         abstract = True
