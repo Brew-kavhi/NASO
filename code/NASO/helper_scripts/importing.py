@@ -159,6 +159,14 @@ def build_argument(argument, required_argument, arguments):
                 arguments[argument["name"]] = argument["value"]
         else:
             arguments[argument["name"]] = ast.literal_eval(argument["value"])
+            if not isinstance(
+                arguments[argument["name"]],
+                ast.literal_eval(required_argument["dtype"]),
+            ):
+                logger.error(
+                    f"Potential error importing {argument['name']}, beacuse of type "
+                    + f"{required_argument['dtype']}"
+                )
     except ValueError as exc:
         logger.error(
             f"Fehler: Parameter {argument['name']} muss fur {required_argument['dtype']} als Zahl gegeben sein: {exc}"
