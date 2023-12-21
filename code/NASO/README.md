@@ -6,7 +6,14 @@ NAS stands for neural architecture search and optimization. It offers an easy wa
 This codebase provides a django webapp to easily configure and run neural networks in tensorflow/keras. You have mutliple options, namely solo runs or autokeras search, which searches for a suited network architecture on its own. Furthermore, the results (the metrics) are displayed in nice graphs to simplify and speed up research processes. Of course, this data can be downloaded and the graphs can be adjusted to your requirements. In addition to that, the system is extendable through plugins. This feature however is not fully implemented yet and needs further adjustments to allow for more integrations.
 
 # Installation
-You need poetry installed.
+For this project we have several system dependencies, like poetry and GPU toolkit. This chapter is a collection (might be incomplete though as of writing time, 21.12.2023) of system dependencies I know about.
+NOte that for python packages we use poetry which allows for easy managemenet of your virtual environment. It collects all the necessary packages in a pyroject.toml file, which is the modern standard for packaging pyhon libraries or applications
+
+## System dependencies
+In order to make full use of the gpu you need to install some nvidia-libraries:
+```apt install nvidia-cuda-toolkti```
+On some systems (student workstations at university) it might already be installed and therefor can be loaded with the command ```module load cuda```
+Furthermore, you need poetry installed.
 ```apt install poetry```
 Poetry handles the virtual environnment, and makes it easy to administrate it.
 
