@@ -30,12 +30,17 @@ class Command(BaseCommand):
         arguments = []
         for param_name, param in constructor_parameters:
             if not param_name == "self" and not param_name == "kwargs":
-                if param.default is not inspect.Parameter.empty:
+                if (
+                    param.default is not inspect.Parameter.empty
+                    or param.annotation is not inspect.Parameter.empty
+                ):
                     arguments.append(
                         {
                             "name": param_name,
-                            "default": param.default,
-                            "dtype": type(param.default).__name__,
+                            "default": param.default
+                            if param.default is not inspect.Parameter.empty
+                            else "",
+                            "dtype": self.get_argument_type(param),
                         }
                     )
                 else:
@@ -43,6 +48,16 @@ class Command(BaseCommand):
                         {"name": param_name, "default": "", "dtype": "unknown"}
                     )
         return arguments
+
+    def get_argument_type(self, parameter):
+        if parameter.annotation is inspect.Parameter.empty:
+            return type(parameter.default).__name__
+        param_type = type(parameter.annotation).__name__
+        if param_type == "type":
+            # this parwmeter is of a standard type:
+            return parameter.annotation.__name__
+        # else it is some kind of typing.Union or typing.Optional
+        return str(parameter.annotation)
 
     def handle(self, *args, **options):
         # create all the objects here
