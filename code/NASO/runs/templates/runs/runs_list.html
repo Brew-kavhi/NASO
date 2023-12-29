@@ -222,7 +222,8 @@
                                 <button class="button is-danger ml-2 delete-btn"
                                         data-target="#confirmDeleteModal"
                                         data-action="{% url 'runs:delete' network_training.id %}"
-                                        data-item-id="{{ network_training.id }}">
+                                        data-item-id="{{ network_training.id }}"
+                                        data-item-name="{{ network_training.network_config.name }}">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
@@ -325,7 +326,8 @@
                                 <button class="button is-danger ml-2 delete-btn"
                                         data-target="#confirmDeleteModal"
                                         data-action="{% url 'runs:autokeras:delete' keras_run.id %}"
-                                        data-item-id="{{ keras_run.id }}">
+                                        data-item-id="{{ keras_run.id }}"
+                                        data-item-name="{{ keras_run.model.project_name }}">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>

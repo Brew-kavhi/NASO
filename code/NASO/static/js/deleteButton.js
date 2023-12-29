@@ -5,6 +5,8 @@ $(document).ready(function() {
         $($(this).data('target')).addClass('is-active');
         var itemID = $(this).data('item-id');
         $('#itemToDeleteID').text(itemID);
+        var itemName = $(this).data('item-name');
+        $('#itemToDeleteName').text(itemName);
         $('#delete_action_url').val($(this).data('action'));
     });
 
