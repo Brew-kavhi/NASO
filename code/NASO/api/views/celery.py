@@ -122,7 +122,7 @@ def get_workers_information():
 
         # Process the information to fit your template structure
         workers_info = []
-        if not active_tasks:
+        if not active_tasks or not stats:
             return []
         for worker, tasks in active_tasks.items():
             if not stats[worker]:
