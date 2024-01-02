@@ -563,13 +563,15 @@
     function dictToArray(dict, key, xAxisMetric='epochs') {
         let array = [];
         for (let i in dict) {
-            var label = '';
-            if (xAxisMetric == 'epochs') {
-                label = i.toString();
-            } else {
-                label = dict[i].metrics[xAxisMetric].toString();
+            if ('current' in dict[i]) {
+                var label = '';
+                if (xAxisMetric == 'epochs') {
+                    label = i.toString();
+                } else {
+                    label = dict[i].metrics[xAxisMetric].toString();
+                }
+                array.push({y:dict[i].metrics[key], x: label});
             }
-            array.push({y:dict[i].metrics[key], x: label});
         }
         return array;
     }

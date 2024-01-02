@@ -50,9 +50,9 @@
         });
 
 
-        function loadDataInGraph(prependix = 'chart', trainigId, data) {
+        function loadDataInGraph(prependix = 'chart', trainingId, data) {
             // first get canvas:
-            var canvas = document.getElementById(prependix + trainigId.toString()).getContext('2d');
+            var canvas = document.getElementById(prependix + trainingId.toString()).getContext('2d');
             // then get data:
             var chartData = data.filter((point) => {
                     return 'current' in point
@@ -66,6 +66,16 @@
                     }
                     return metrics;
                 });
+            var tagContainer = document.getElementById('tags_'+trainingId);
+            var lastMetric = data.filter((point) => {
+                return 'current' in point
+            }).slice(-1)[0].metrics;
+            Object.entries(lastMetric).forEach((metric) => {
+                if (!metric[0].includes('val') && !metric[0].includes('energy') && !metric[0].includes('time')) {
+                    console.log(metric);
+                    tagContainer.innerHTML = '<span class="my-1 mx-1 is-info is-light tag">' + metric[0] + ': ' + metric[1] + '</span>' + tagContainer.innerHTML;
+                }
+            });
 
             // next create chart:
             var chart = new Chart(canvas, {
@@ -196,9 +206,7 @@
                                 <div class='d-flex flex-wrap'>
                                     <span class="mx-1 my-1 tag is-warning is-light">{{ network_training.dataset.name }}</span>
                                     {% for metric in network_training.final_metrics.metrics %}
-                                        {% for attr_name in metric.metrics %}
-                                            <span class="mx-1 my-1 tag is-info is-light">{{ attr_name }}: {% get_attribute_tag metric.metrics attr_name %}</span>
-                                        {% endfor %}
+                                        <div id='tags_{{ network_training.id }}' class='d-flex flex-wrap'></div>
                                         {% if 'time' in metric %}
                                             <span class="my-1 mx-1 tag is-primary is-light">time: {% get_attribute_tag metric 'time' %}</span>
                                         {% endif %}
