@@ -77,7 +77,7 @@ def run_autokeras(self, run_id):
             self.update_state(state="FAILED")
         finally:
             stop_event.set()
-            tf.reset_default_graph()
+            tf.compat.v1.reset_default_graph()
 
 
 @shared_task(bind=True)
@@ -141,4 +141,4 @@ def run_autokeras_trial(self, run_id, trial_id, keras_model_run_id):
         self.update_state(state="FAILED")
     finally:
         stop_event.set()
-        tf.reset_default_graph()
+        tf.compat.v1.reset_default_graph()

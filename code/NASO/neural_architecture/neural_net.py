@@ -59,7 +59,7 @@ def run_neural_net(self, training_id):
         self.update_state(state="FAILED")
     finally:
         stop_event.set()
-        tf.reset_default_graph()
+        tf.compat.v1.reset_default_graph()
 
 
 class NeuralNetwork:
