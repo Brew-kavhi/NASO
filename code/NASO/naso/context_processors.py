@@ -41,25 +41,27 @@ def get_comparison_runs(request):
     """
     comparison = request.session["comparison"]
     runs = {}
-    for run_id in comparison:
-        if comparison[run_id] == "tensorflow":
-            # fet tyhe tesnrofwlo run_id
+    for comparison_id in comparison:
+        run_id = comparison_id
+        if ":" in comparison_id:
+            run_id = comparison_id.split(":")[1]
+        if comparison[comparison_id] == "tensorflow":
             run = NetworkTraining.objects.filter(pk=run_id).first()
             if run:
-                runs[run.id] = {
-                    "link": reverse_lazy("runs:details", kwargs={"pk": run_id}),
+                runs[comparison_id] = {
+                    "link": reverse_lazy("runs:details", kwargs={"pk": run.id}),
                     "model": run,
                 }
-        elif comparison[run_id] == "autokeras":
+        elif comparison[comparison_id] == "autokeras":
             run = AutoKerasRun.objects.filter(pk=run_id).first()
             if run:
-                runs[run.id] = {
+                runs[comparison_id] = {
                     "link": reverse_lazy(
-                        "runs:autokeras:details", kwargs={"pk": run_id}
+                        "runs:autokeras:details", kwargs={"pk": run.id}
                     ),
                     "model": run,
                 }
-        elif comparison[run_id] == "autokeras_trial":
+        elif comparison[comparison_id] == "autokeras_trial":
             if "_" not in run_id:
                 continue
             [autokeras_run, trial_id] = run_id.split("_")

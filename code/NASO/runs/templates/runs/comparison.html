@@ -35,7 +35,7 @@
                             </select>
                             <button onclick="removeComparisonFromView(this)"
                                     class="bg-danger button mx-2 p-3"
-                                    data-id="{{ run.comparison_id }}"
+                                    data-id="{{ run.run_type }}:{{ run.comparison_id }}"
                                     data-tooltip='Aus Vergleich ausschliesen'>
                                 <i class="fa fa-times-circle"></i>
                             </button>
@@ -78,7 +78,8 @@
     <script>
         const COMPARISONS = {
             {% for run in runs %}'{{ run.comparison_id }}': {
-                "run_type": '{{ run.run_type }}'
+                "run_type": '{{ run.run_type }}',
+                "run_id": '{{ run.id }}'
             },{% endfor %}
         };
         let xLabels = [];
@@ -134,7 +135,7 @@
                 });
                 COMPARISONS[run]['canvas'] = graphChart;
                 if (COMPARISONS[run].run_type === 'tensorflow') {
-                    fetch(tensorflowMetricAPI.replace(0, run)).then(function(response) {
+                    fetch(tensorflowMetricAPI.replace(0, COMPARISONS[run].run_id)).then(function(response) {
                         response.json().then(function(data) {
                             run_metrics = data;
                             let metrics = [];
@@ -150,7 +151,7 @@
                     });
                 }
                 else if (COMPARISONS[run].run_type === 'autokeras') {
-                    fetch(autokerasMetricAPI.replace(0, run)).then(function(response) {
+                    fetch(autokerasMetricAPI.replace(0, COMPARISONS[run].run_id)).then(function(response) {
                         response.json().then(function(data) {
                             run_metrics = data;
                             let metrics = [];

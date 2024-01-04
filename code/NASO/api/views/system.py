@@ -20,7 +20,6 @@ class UpdateSessionView(APIView):
             delete_flag = serializer.validated_data["delete"]
             run_type = serializer.validated_data["run_type"]
 
-            # Update session
             if not request.session[comparison_key]:
                 request.session[comparison_key] = {}
             if not delete_flag:
@@ -33,7 +32,6 @@ class UpdateSessionView(APIView):
                         request.session[comparison_key].pop(str(value))
             request.session.save()
 
-            print(request.session["comparison"])
             return Response(
                 {"success": True, "session": request.session[comparison_key]},
                 status=status.HTTP_200_OK,

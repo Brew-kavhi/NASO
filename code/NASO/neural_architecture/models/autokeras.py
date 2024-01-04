@@ -540,6 +540,22 @@ class AutoKerasRun(Run):
     def __str__(self):
         return self.model.project_name
 
+    def get_trial_metric(self, trial_id):
+        model_size = 0
+        measured_energy = []
+        for metric in self.metrics.all():
+            if "trial_id" not in metric.metrics[0]:
+                continue
+            if metric.metrics[0]["trial_id"] == trial_id:
+                model_size = metric.metrics[0]["metrics"]["model_size"]
+                if "energy_consumption" not in metric.metrics[0]["metrics"]:
+                    continue
+                measured_energy.append(
+                    metric.metrics[0]["metrics"]["energy_consumption"]
+                )
+        avg_energy = sum(measured_energy) / len(measured_energy)
+        return {"model_size": model_size, "average_energy": avg_energy}
+
     def get_energy_consumption(self):
         energy = 0
         for metric in self.metrics.all():

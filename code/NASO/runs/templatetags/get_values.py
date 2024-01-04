@@ -19,3 +19,9 @@ def get_metric(obj, attr_name):
         return obj.get(attr_name)
     except AttributeError:
         return None
+
+
+@register.filter
+def addstr(arg1, arg2):
+    """concatenate arg1 & arg2"""
+    return str(arg1) + str(arg2)

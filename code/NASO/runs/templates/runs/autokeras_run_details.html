@@ -3,19 +3,21 @@
 {% load get_values %}
 {% block content %}
     <div class="container justify-content-end py-3 d-flex">
-        {% if run.id in COMPARISON %}
-            <div class='button is-success border'>
-                <i class='fa fa-check mr-3'></i>
-                Bereits im Vergleich
-            </div>
-        {% else %}
-            <button data-id='{{ run.id }}'
-                    data-name='{{ run.model.project_name }}'
-                    data-runtype='autokeras'
-                    data-link='{% url 'runs:autokeras:details' run.id %}'
-                    class='button'
-                    onclick='addRunToComparison(this)'>Vergleichen</button>
-        {% endif %}
+        {% with "autokeras:"|addstr:run.id as run_id %}
+            {% if run_id in COMPARISON %}
+                <div class='button is-success border'>
+                    <i class='fa fa-check mr-3'></i>
+                    Bereits im Vergleich
+                </div>
+            {% else %}
+                <button data-id='autokeras:{{ run.id }}'
+                        data-name='{{ run.model.project_name }}'
+                        data-runtype='autokeras'
+                        data-link='{% url 'runs:autokeras:details' run.id %}'
+                        class='button'
+                        onclick='addRunToComparison(this)'>Vergleichen</button>
+            {% endif %}
+        {% endwith %}
     </div>
     <div class="container pb-1">
         <div class="card d-none" id='training_progress'>

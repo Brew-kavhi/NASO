@@ -205,7 +205,7 @@
             var selectedRunIDs = [];
             selectedRuns.forEach((input) => {
                 [x, runType, id] = input.id.split("_");
-                selectedRunIDs.push(id);
+                selectedRunIDs.push(activeTab + ":" + id);
             });
             if (selectedRunIDs.length > 0) {
                 var updateUrl = "{% url 'api:system:update_session' %}";        
@@ -223,7 +223,7 @@
                         'Authorization': `Token ${token}`,
                     },
                     success: function(data) {
-                        toastr.success("Datensatzx geloscht", 'INFO');
+                        toastr.success("Vergleich hinzugefugt", 'INFO');
                         var container = $('#comparison_container');
                         container.empty();
                         Object.entries(data['session']).forEach((element) => {
@@ -231,16 +231,20 @@
                             if (element[1] === 'autokeras') {
                                 collapsePrefix = 'autokeras_collapse';
                             }
-                            var linkElements = $('#' + collapsePrefix + element[0] + ' a');
+                            let run_id = element[0];
+                            if (run_id.includes(':')) {
+                                run_id = run_id.split(":")[1];
+                            }
+                            var linkElements = $('#' + collapsePrefix + run_id + ' a');
                             if (linkElements.length > 0) {
                                 var link = linkElements[0].href;
-                                var name = $('button[data-target="#' + collapsePrefix + element[0] + '"]')[0].innerText;
+                                var name = $('button[data-target="#' + collapsePrefix + run_id + '"]')[0].innerText;
                                 addRunToComparisonView(element[0], name, element[1], link);
                             }
                         });
                     },
                     error: function() {
-                        toastr.error("Datensatz konnte nicht geloscht werden", 'FEHLER');
+                        toastr.error("Daten konnten dem Vergleich leider nicht hinzugefugt werden", 'FEHLER');
                     }
                 });
             }
