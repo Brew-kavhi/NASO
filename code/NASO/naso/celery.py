@@ -1,11 +1,10 @@
 import os
 import time
 
+from celery.result import AsyncResult
 from decouple import config
 
 from celery import Celery
-from celery.result import AsyncResult
-
 
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",

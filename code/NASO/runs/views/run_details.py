@@ -6,8 +6,8 @@ from django.views.generic.base import TemplateView, View
 from naso.celery import get_celery_task_state
 from naso.models.page import PageSetup
 from neural_architecture.models.autokeras import AutoKerasRun
+from runs.forms.update_runs import UpdateAutokerasRun, UpdateNetworkTrainingRun
 from runs.models.training import NetworkTraining
-from runs.forms.update_runs import UpdateNetworkTrainingRun, UpdateAutokerasRun
 
 
 class TrainingProgress(View):

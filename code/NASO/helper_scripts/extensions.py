@@ -1,8 +1,9 @@
-from runs.models.training import TrainingMetric
-from helper_scripts.power_management import get_power_usage
 import asyncio
+
 from loguru import logger
-from runs.models.training import Run
+
+from helper_scripts.power_management import get_power_usage
+from runs.models.training import Run, TrainingMetric
 
 
 def start_async_measuring(stop_event, run: Run, database_lock):

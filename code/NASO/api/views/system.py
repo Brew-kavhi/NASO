@@ -1,6 +1,45 @@
 from django.http import JsonResponse
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
+from api.serializers.session import UpdateSessionSerializer
 from system.templatetags.log_filters import colorize_log
+
+
+class UpdateSessionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = UpdateSessionSerializer(data=request.data)
+
+        if serializer.is_valid():
+            comparison_key = serializer.validated_data["comparison"]
+            values_list = serializer.validated_data["values"]
+            delete_flag = serializer.validated_data["delete"]
+            run_type = serializer.validated_data["run_type"]
+
+            if not request.session[comparison_key]:
+                request.session[comparison_key] = {}
+            if not delete_flag:
+                for value in values_list:
+                    if str(value) not in request.session[comparison_key]:
+                        request.session[comparison_key][str(value)] = run_type
+            else:
+                for value in values_list:
+                    if str(value) in request.session[comparison_key]:
+                        request.session[comparison_key].pop(str(value))
+            request.session.save()
+
+            return Response(
+                {"success": True, "session": request.session[comparison_key]},
+                status=status.HTTP_200_OK,
+            )
+        return Response(
+            {"success": False, "error": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
 
 def get_logs(request):

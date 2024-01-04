@@ -2,6 +2,23 @@
 {% load crispy_forms_tags %}
 {% load get_values %}
 {% block content %}
+    <div class="container justify-content-end py-3 d-flex">
+        {% with "autokeras:"|addstr:run.id as run_id %}
+            {% if run_id in COMPARISON %}
+                <div class='button is-success border'>
+                    <i class='fa fa-check mr-3'></i>
+                    Bereits im Vergleich
+                </div>
+            {% else %}
+                <button data-id='autokeras:{{ run.id }}'
+                        data-name='{{ run.model.project_name }}'
+                        data-runtype='autokeras'
+                        data-link='{% url 'runs:autokeras:details' run.id %}'
+                        class='button'
+                        onclick='addRunToComparison(this)'>Vergleichen</button>
+            {% endif %}
+        {% endwith %}
+    </div>
     <div class="container pb-1">
         <div class="card d-none" id='training_progress'>
             <div class="card-header justify-content-between">
@@ -513,6 +530,7 @@
         let run_metrics = {};
         let trialOverviewChart = null;
         let allEpochs = [];
+        const COMPARISONS = [{% for id, model in COMPARISON.items %}'{{ id }}',{% endfor %}]
         document.addEventListener("DOMContentLoaded", () => {
             let canvas = document.getElementById("canvas_trial_overview").getContext('2d');
             trialOverviewChart = new Chart(canvas, {
@@ -859,6 +877,11 @@
             $("#canvas_configure_" + trial_id).append('<a href="{% url 'api:autokeras:all_metrics' run.id %}' + trial_id + '/download" class="my-2 col-8 btn btn-primary">Download CSV</a>');
             let trialLink = "{% url 'runs:autokeras:trial' run.id 'naso.trial_id' %}".replace('naso.trial_id', trial_id);
             $('#canvas_configure_' + trial_id).append('<br><a href="' + trialLink + '" class="btn btn-primary col-8 my-2">Rerun</a> ');
+            if (COMPARISONS.includes("{{ run.id }}_" + trial_id)) {
+                $('#canvas_configure_' + trial_id).append('<br><div class="button is-success col-8 my-2"><i class="fa fa-check mr-3"></i>Im Vergleich</div> ');
+            } else {
+                $('#canvas_configure_' + trial_id).append('<br><button onclick="addRunToComparison(this)" data-link="" data-name="Trial ' + trial_id + ' von {{ run.model.project_name }}" data-runtype="autokeras_trial" data-id="{{ run.id }}_' + trial_id + '" class="btn btn-primary col-8 my-2">Vergleichen</button> ');
+            }
 
             let maxMetrics = getMaxValuesPerTrial(trial_data);
             for (let metric in maxMetrics) {

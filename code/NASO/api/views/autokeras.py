@@ -2,12 +2,11 @@ import csv
 import json
 
 from django.http import HttpResponse, JsonResponse
-
-from neural_architecture.models.autokeras import AutoKerasRun
-
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+
+from neural_architecture.models.autokeras import AutoKerasRun
 
 
 @api_view(["POST"])
@@ -34,7 +33,7 @@ def rate_run(request, pk):
     return Response({"success": True})
 
 
-def get_metrics(request, pk, trial_id):
+def get_metrics(pk, trial_id):
     """
     This view returns the metrics for a specific trial of the run.
 
@@ -65,6 +64,10 @@ def get_metrics(request, pk, trial_id):
     return epochal_metrics
 
 
+def get_metrics_json(request, pk, trial_id):
+    return JsonResponse(get_metrics(pk, trial_id), safe=True)
+
+
 def download_metrics(request, pk, trial_id):
     """
     This view offers a downloadable CSV file containiong the metrics for a specific trial of the run.
@@ -77,7 +80,7 @@ def download_metrics(request, pk, trial_id):
     Returns:
         response: CSV file containing the metrics for a specific trial of the run.
     """
-    json_data = get_metrics(request, pk, trial_id)
+    json_data = get_metrics(pk, trial_id)
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = 'attachment; filename="data_' + trial_id + '.csv"'
 

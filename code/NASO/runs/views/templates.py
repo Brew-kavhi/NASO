@@ -1,13 +1,14 @@
-import json
 import abc
-from django.views.generic.base import TemplateView
+import json
+
 from django.contrib import messages
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
+from django.views.generic.base import TemplateView
 
 from naso.models.page import PageSetup
-from neural_architecture.models.architecture import NetworkLayerType, NetworkLayer
-from neural_architecture.models.autokeras import AutoKerasNodeType, AutoKerasNode
+from neural_architecture.models.architecture import NetworkLayer, NetworkLayerType
+from neural_architecture.models.autokeras import AutoKerasNode, AutoKerasNodeType
 from neural_architecture.models.templates import (
     AutoKerasNetworkTemplate,
     KerasNetworkTemplate,
