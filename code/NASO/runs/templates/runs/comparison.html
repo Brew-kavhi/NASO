@@ -1,0 +1,299 @@
+{% extends 'base.html' %}
+{% block content %}
+    <div class="axis-selection d-flex container justify-content-center">
+        <div class='w-25'>
+            <label>X-Axis</label>
+            <select class="form-control" id="graph_xaxis" onchange="graphX(this)">
+                <option value="epochs">epochs</option>
+            </select>
+        </div>
+        <div class="mx-5 w-25">
+            <label>Y-Axis</label>
+            <select class="form-control" id="graph_yaxis" onchange="graphY(this)"></select>
+        </div>
+    </div>
+    <div class="d-flex m-5 w-auto" style=" overflow-x: auto; ">
+        <div class='d-flex'>
+            {% for run in runs %}
+                <div class='card  m-4'
+                     id='{{ run.comparison_id }}'
+                     style='width:max-content;
+                            min-width:20vw;
+                            max-width: 50vw'>
+                    <div class='card-header d-flex justify-content-between align-items-center'>
+                        <strong>{{ run.name }}</strong>
+                        <div class='d-flex align-items-center'>
+                            <span class='tag is-light mx-2 is-info'>{{ run.run_type }}</span>
+                            <select class='star-rating mx-2'
+                                    data-type='{{ run.run_type }}'
+                                    data-id="{{ run.id }}">
+                                <option value="0"></option>
+                                {% for i in "12345"|make_list %}
+                                    <option value='{{ i }}'
+                                            {% if run.rating == forloop.counter %}selected{% endif %}></option>
+                                {% endfor %}
+                            </select>
+                            <button onclick="removeComparisonFromView(this)"
+                                    class="bg-danger button mx-2 p-3"
+                                    data-id="{{ run.comparison_id }}"
+                                    data-tooltip='Aus Vergleich ausschliesen'>
+                                <i class="fa fa-times-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class='card-body'>
+                        <div>
+                            <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
+                                <p class='my-2 text-bold'>Device</p>
+                                <p>{{ run.device }}</p>
+                            </div>
+                            <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
+                                <p class='my-2 text-bold'>Size</p>
+                                <p>{{ run.size }}</p>
+                            </div>
+                            <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
+                                <p class='my-2 text-bold'>Memory usage</p>
+                                <p>{{ run.memory_usage }}</p>
+                            </div>
+                            <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
+                                <p class='my-2 text-bold'>Average energy consumption</p>
+                                <p>{{ run.energy_consumption }}</p>
+                            </div>
+                        </div>
+                        <div id='graph_container_{{ run.run_type }}_{{ run.comparison_id }}'>
+                            <h5 class='mt-4 text-center'>Graph</h5>
+                            <canvas class='h-100 w-100'
+                                    style="min-height: 40vh;
+                                           max-height:60vh"
+                                    id='canvas_{{ run.run_type }}_{{ run.comparison_id }}'
+                                    width="400"
+                                    height="400"></canvas>
+                        </div>
+                    </div>
+                    <div class='card-footer has-background-white-ter'>{{ run.description }}</div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <script>
+        const COMPARISONS = {
+            {% for run in runs %}'{{ run.comparison_id }}': {
+                "run_type": '{{ run.run_type }}'
+            },{% endfor %}
+        };
+        let xLabels = [];
+        let yLabels = [];
+
+        const tensorflowMetricAPI = "{% url 'api:tensorflow:get_metrics_for_run' 0 %}";
+        const autokerasMetricAPI = "{% url 'api:autokeras:get_metrics_for_run' 0 %}";
+        const autokerasTrialMetricAPI = "{% url 'api:autokeras:get_metrics' 0 '-1'%}";
+
+        document.addEventListener("DOMContentLoaded", () => {
+            for (const run of Object.keys(COMPARISONS)) {
+                let canvas = document.getElementById("canvas_" + COMPARISONS[run].run_type + "_" + run).getContext('2d');
+                let graphChart = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: []
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                type: 'linear',
+                                position: 'bottom',
+                                title: {
+                                    display: true,
+                                    text: 'Epochs' // Set the dynamic X-axis title
+                                }
+                            },
+                            y: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: 'Loss' // Set the dynamic Y-axis title
+                                }
+                            }
+                        },
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            colors: {
+                                forceOverride: true
+                            },
+                            tooltip: {
+                                enabled: true,
+                                position: 'nearest',
+                            }
+                        }
+                    }
+                });
+                COMPARISONS[run]['canvas'] = graphChart;
+                if (COMPARISONS[run].run_type === 'tensorflow') {
+                    fetch(tensorflowMetricAPI.replace(0, run)).then(function(response) {
+                        response.json().then(function(data) {
+                            run_metrics = data;
+                            let metrics = [];
+                            for (metric in run_metrics[0].metrics) {
+                                metrics.push(metric);
+                                generateOption(metric, metric, $('#graph_xaxis'), xLabels);
+                                generateOption(metric, metric, $('#graph_yaxis'), yLabels);
+                            }
+                            COMPARISONS[run]['metrics'] = data;
+                            build_graph(run_metrics, graphChart);
+
+                        });
+                    });
+                }
+                else if (COMPARISONS[run].run_type === 'autokeras') {
+                    fetch(autokerasMetricAPI.replace(0, run)).then(function(response) {
+                        response.json().then(function(data) {
+                            run_metrics = data;
+                            let metrics = [];
+                            for (metric in run_metrics[0].metrics) {
+                                metrics.push(metric);
+                                generateOption(metric, metric, $('#graph_xaxis'), xLabels);
+                                generateOption(metric, metric, $('#graph_yaxis'), yLabels);
+                            }
+                            COMPARISONS[run]['metrics'] = data;
+                            build_graph(run_metrics, graphChart);
+
+                        });
+                    });
+                }
+                else if (COMPARISONS[run].run_type === 'autokeras_trial') {
+                    [runID, trialID] = run.split('_');
+                    fetch(autokerasTrialMetricAPI.replace(0, runID).replace('-1',trialID)).then(function(response) {
+                        response.json().then(function(data) {
+                            run_metrics = data;
+                        console.log(data);
+                            let metrics = [];
+                            for (metric in run_metrics[0].metrics) {
+                                metrics.push(metric);
+                                generateOption(metric, metric, $('#graph_xaxis'), xLabels);
+                                generateOption(metric, metric, $('#graph_yaxis'), yLabels);
+                            }
+                            COMPARISONS[run]['metrics'] = data;
+                            build_graph(run_metrics, graphChart);
+
+                        });
+                    });
+                }
+            }
+        });
+
+
+        function generateOption(value, text, parent, existingLabels) {
+            if (!existingLabels.includes(value)) {
+                let optionY = document.createElement('option');
+                optionY.value = value;
+                optionY.text = text;
+                parent.append(optionY);
+                existingLabels.push(value);
+            }
+        }
+
+        function build_graph(run_metrics, graphChart) {
+
+            var data = [];
+            var labels = [];
+
+            let yaxis = $('#graph_yaxis').val();
+            let xaxis = $('#graph_xaxis').val();
+
+            function updateChart() {
+                graphChart.data.labels = [];
+                graphChart.data.datasets = [{
+                    data: dictToArray(run_metrics, yaxis, xaxis)
+                }];
+                graphChart.update();
+            }
+
+            for (let epoch in run_metrics) {
+                data.push(run_metrics[epoch].metrics[yaxis]);
+                labels.push(epoch);
+            }
+
+            if (labels.length > graphChart.data.labels.length) {
+                allEpochs = labels;
+                graphChart.data.labels = labels;
+            }
+            updateChart();
+
+        }
+
+        function dictToArray(dict, key, xAxisMetric = 'epochs') {
+            let array = [];
+            for (let i in dict) {
+                if ('current' in dict[i]) {
+                    var label = '';
+                    if (xAxisMetric == 'epochs') {
+                        label = i.toString();
+                    } else {
+                        label = dict[i].metrics[xAxisMetric].toString();
+                    }
+                    array.push({
+                        y: dict[i].metrics[key],
+                        x: label
+                    });
+                }
+                else if ('loss' in dict[i]) {
+                    var label = '';
+                    if (xAxisMetric == 'epochs') {
+                        label = i.toString();
+                    } else {
+                        label = dict[i][xAxisMetric].toString();
+                    }
+                    array.push({
+                        y: dict[i][key],
+                        x: label
+                    });
+
+                }
+            }
+            return array;
+        }
+
+        function graphX(event) {
+            let xaxis = $('#graph_xaxis').val();
+            let yaxis = $('#graph_yaxis').val();
+            for (const runID in COMPARISONS) {
+                chart = COMPARISONS[runID]['canvas'];
+                if ('metrics' in COMPARISONS[runID]) {
+                    chart.data.datasets.forEach(function(dataset) {
+                        dataset.data = dictToArray(COMPARISONS[runID]['metrics'], yaxis, xaxis);
+                    });
+
+                    chart.options.scales.x.title.text = xaxis;
+                    chart.update();
+                }
+            }
+        }
+
+        function graphY(event) {
+            let yaxis = $('#graph_yaxis').val();
+            for (const runID in COMPARISONS) {
+                chart = COMPARISONS[runID]['canvas'];
+                if ('metrics' in COMPARISONS[runID]) {
+                    chart.data.datasets.forEach(function(dataset) {
+                        dataset.data = dictToArray(COMPARISONS[runID]['metrics'], yaxis, $('#graph_xaxis').val());
+                    });
+
+                    chart.options.scales.y.title.text = yaxis;
+                    chart.update();
+                }
+            }
+        }
+
+        function removeComparisonFromView(element) {
+            // remove the card from teh view
+            $('#' + element.dataset.id).remove();
+            COMPARISONS[element.dataset.id] = {};
+            removeComparison(element);
+        }
+    </script>
+{% endblock %}

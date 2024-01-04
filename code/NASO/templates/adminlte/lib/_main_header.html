@@ -56,19 +56,21 @@
             </div>
             <ul class="nav navbar-nav">
                 <a class="nav-link" data-toggle="dropdown" href="#">Vergleich</a>
-                <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right"
-                     id='comparison_container'>
-                    {% for id, model in COMPARISON.items %}
-                        <div id='comparison_{{ id }}_{% if model.model.network_config %}tensorflow{% else %}autokeras{% endif %}'
-                             class='border-bottom p-3 d-flex align-items-center justify-content-between'>
-                            <a href="{{ model.link }}" class='pr-3'>{{ model.model }}</a>
-                            <button onclick='removeComparison(this)'
-                                    class="bg-danger button"
-                                    data-id='{{ id }}'>
-                                <i class='fa fa-trash'></i>
-                            </button>
-                        </div>
-                    {% endfor %}
+                <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+                    <div id='comparison_container'>
+                        {% for id, model in COMPARISON.items %}
+                            <div id='comparison_{{ id }}_{% if model.model.network_config %}tensorflow{% else %}autokeras{% endif %}'
+                                 class='border-bottom p-3 d-flex align-items-center justify-content-between'>
+                                <a href="{{ model.link }}" class='pr-3'>{{ model.model }}</a>
+                                <button onclick='removeComparison(this)'
+                                        class="bg-danger button"
+                                        data-id='{{ id }}'>
+                                    <i class='fa fa-trash'></i>
+                                </button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <a class="d-block my-2 text-center" href="{% url 'runs:comparison' %}">Zur Ubersicht</a>
                 </div>
             </ul>
         </ul>
@@ -113,24 +115,24 @@
         const apiURL = '/api/celery/restart_worker/';
         async function restart_worker(element) {
             const response = await fetch(apiURL + element.getAttribute('name'), {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Token ${token}`,
-                    },
-                });
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${token}`,
+                },
+            });
         }
-       
+
         function removeComparison(element) {
             console.log(element.dataset.id);
-            var updateUrl = "{% url 'api:system:update_session' %}";        
+            var updateUrl = "{% url 'api:system:update_session' %}";
             $.ajax({
                 type: 'POST',
                 url: updateUrl,
                 contentType: 'application/json',
                 data: JSON.stringify({
-                    'comparison':'comparison',
-                    'delete':true,
+                    'comparison': 'comparison',
+                    'delete': true,
                     'run_type': 'any',
                     'values': [element.dataset.id]
                 }),
@@ -149,30 +151,30 @@
         function addRunToComparison(element) {
             var runType = element.dataset.runtype;
             var values = [element.dataset.id];
-            var updateUrl = "{% url 'api:system:update_session' %}";        
-                $.ajax({
-                    type: 'POST',
-                    url: updateUrl,
-                    contentType: 'application/json',
-                    data: JSON.stringify({
-                        'comparison':'comparison',
-                        'delete':false,
-                        'run_type': runType,
-                        'values': values
-                    }),
-                    headers: {
-                        'Authorization': `Token ${token}`,
-                    },
-                    success: function(data) {
-                        toastr.success("Vergleich hinzugefugt", 'INFO');
-                        addRunToComparisonView(element.dataset.id, element.dataset.name, element.dataset.run_type, element.dataset.link);
-                        element.innerHTML = '<i class="fa fa-check mr-3"></i>Im Vergleich';
-                        element.classList.add('is-success');
-                    },
-                    error: function() {
-                        toastr.error("Vergleich konnte nicht hinzugefugt werden", 'FEHLER');
-                    }
-                });
+            var updateUrl = "{% url 'api:system:update_session' %}";
+            $.ajax({
+                type: 'POST',
+                url: updateUrl,
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    'comparison': 'comparison',
+                    'delete': false,
+                    'run_type': runType,
+                    'values': values
+                }),
+                headers: {
+                    'Authorization': `Token ${token}`,
+                },
+                success: function(data) {
+                    toastr.success("Vergleich hinzugefugt", 'INFO');
+                    addRunToComparisonView(element.dataset.id, element.dataset.name, element.dataset.run_type, element.dataset.link);
+                    element.innerHTML = '<i class="fa fa-check mr-3"></i>Im Vergleich';
+                    element.classList.add('is-success');
+                },
+                error: function() {
+                    toastr.error("Vergleich konnte nicht hinzugefugt werden", 'FEHLER');
+                }
+            });
         };
     </script>
 {% endblock nav_bar %}

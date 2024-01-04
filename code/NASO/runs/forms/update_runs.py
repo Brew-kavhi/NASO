@@ -1,8 +1,9 @@
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Field, Layout, Row, Column, Submit
+from crispy_forms.layout import Column, Field, Layout, Row, Submit
 from django import forms
-from runs.models.training import NetworkTraining
+
 from neural_architecture.models.autokeras import AutoKerasRun
+from runs.models.training import NetworkTraining
 
 
 class UpdateRun(forms.ModelForm):

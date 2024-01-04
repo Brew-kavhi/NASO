@@ -1,9 +1,10 @@
 from decouple import config
-from django.urls import reverse_lazy
 from django.conf import settings
+from django.urls import reverse_lazy
+
 from api.views.celery import get_workers_information
-from runs.models.training import NetworkTraining
 from neural_architecture.models.autokeras import AutoKerasRun
+from runs.models.training import NetworkTraining
 
 
 def get_celery_workers(request):

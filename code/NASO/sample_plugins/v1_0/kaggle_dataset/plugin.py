@@ -3,9 +3,9 @@ import os
 import zipfile
 
 import kaggle
+import numpy as np
 import pandas as pd
 import tensorflow as tf
-import numpy as np
 from sklearn.preprocessing import StandardScaler
 
 from neural_architecture.models.dataset import DatasetLoader

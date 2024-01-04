@@ -1,10 +1,11 @@
-import tensorflow as tf
 import threading
-from helper_scripts.extensions import start_async_measuring
-from loguru import logger
 import traceback
 
+import tensorflow as tf
+from loguru import logger
+
 from celery import shared_task
+from helper_scripts.extensions import start_async_measuring
 from neural_architecture.models.architecture import NetworkConfiguration
 from neural_architecture.NetworkCallbacks.base_callback import BaseCallback
 from neural_architecture.NetworkCallbacks.evaluation_base_callback import (

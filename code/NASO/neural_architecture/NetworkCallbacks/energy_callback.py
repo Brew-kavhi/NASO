@@ -1,8 +1,8 @@
 import subprocess
-from helper_scripts.power_management import get_power_usage
 
 import tensorflow as tf
 
+from helper_scripts.power_management import get_power_usage
 from neural_architecture.models.autokeras import AutoKerasRun
 
 

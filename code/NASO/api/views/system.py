@@ -1,11 +1,11 @@
 from django.http import JsonResponse
-
-from system.templatetags.log_filters import colorize_log
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import status
-from api.serializers.session import UpdateSessionSerializer
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from api.serializers.session import UpdateSessionSerializer
+from system.templatetags.log_filters import colorize_log
 
 
 class UpdateSessionView(APIView):
@@ -38,11 +38,10 @@ class UpdateSessionView(APIView):
                 {"success": True, "session": request.session[comparison_key]},
                 status=status.HTTP_200_OK,
             )
-        else:
-            return Response(
-                {"success": False, "error": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        return Response(
+            {"success": False, "error": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
 
 def get_logs(request):

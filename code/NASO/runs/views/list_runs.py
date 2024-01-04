@@ -3,8 +3,8 @@ import shutil
 
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.views.generic.base import TemplateView
 from django.urls import reverse_lazy
+from django.views.generic.base import TemplateView
 
 from naso.models.page import PageSetup
 from neural_architecture.models.autokeras import AutoKerasRun
