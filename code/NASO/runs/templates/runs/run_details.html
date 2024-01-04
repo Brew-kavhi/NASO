@@ -3,6 +3,21 @@
 {% load crispy_forms_tags %}
 {% load static %}
 {% block content %}
+    <div class="container justify-content-end py-3 d-flex">
+        {% if run.id in COMPARISON %}
+            <div class='button is-success'>
+                <i class='fa fa-check'></i>
+                Bereits im Vergleich
+            </div>
+        {% else %}
+            <button data-id='{{ run.id }}'
+                    data-name='{{ run.network_config.name }}'
+                    data-runtype='tensorflow'
+                    data-link='{% url 'runs:details' run.id %}'
+                    class='button'
+                    onclick='addRunToComparison(this)'>Vergleichen</button>
+        {% endif %}
+    </div>
     <!-- get a progressbar if this run is currently training -->
     <div class="container pb-1">
         <div class="card d-none" id='training_progress'>
