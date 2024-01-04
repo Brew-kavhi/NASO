@@ -537,6 +537,9 @@ class AutoKerasRun(Run):
         related_name="autokeras_prediction_metrics",
     )
 
+    def __str__(self):
+        return self.model.project_name
+
     def get_energy_consumption(self):
         energy = 0
         for metric in self.metrics.all():

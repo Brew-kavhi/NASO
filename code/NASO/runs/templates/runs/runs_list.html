@@ -47,6 +47,26 @@
                         loadDataInGraph('autokeras_chart', kerasRun, data);
                     });
             });
+            document.getElementById('toggleSelectionButton').addEventListener('click', function () {
+                var button = document.getElementById('toggleSelectionButton');
+                document.querySelectorAll('input[type="checkbox"]').forEach((el)=>el.classList.toggle('d-none'));
+                document.getElementById('actions_dropdown').classList.toggle('d-none');
+                document.getElementById('selectAllButton').classList.toggle('d-none');
+
+                if (button.innerHTML == 'Auswahl') {
+                    button.innerHTML = 'Fertig';
+                } else {
+                    button.innerHTML = 'Auswahl';
+                } 
+            });  
+            document.getElementById('selectAllButton').addEventListener('click', function () {
+                var activeTab = getActiveTab();
+                var checkboxs = document.querySelectorAll('input[type="checkbox"][name="' + activeTab + '_checkbox"]');
+        
+                checkboxs.forEach(function(checkbox) {
+                    checkbox.checked = true;
+                });
+            });
         });
 
 
@@ -67,15 +87,16 @@
                     return metrics;
                 });
             var tagContainer = document.getElementById('tags_'+trainingId);
+            if (tagContainer) {
             var lastMetric = data.filter((point) => {
                 return 'current' in point
             }).slice(-1)[0].metrics;
             Object.entries(lastMetric).forEach((metric) => {
                 if (!metric[0].includes('val') && !metric[0].includes('energy') && !metric[0].includes('time')) {
-                    console.log(metric);
                     tagContainer.innerHTML = '<span class="my-1 mx-1 is-info is-light tag">' + metric[0] + ': ' + metric[1] + '</span>' + tagContainer.innerHTML;
                 }
             });
+            }
 
             // next create chart:
             var chart = new Chart(canvas, {
@@ -139,12 +160,92 @@
                     $('#' + containerID + ' .accordion').hide();
                     $('#' + containerID + ' .accordion').filter(function() {
                         var rating = parseInt($(this).data('rating'));
-                        console.log(selectedRating);
                         return rating >= selectedRating;
                     }).show();
                 }
             });
         }
+
+        function getActiveTab() {
+            var autokerasTab = $('#autokeras')[0];
+            if (autokerasTab.style.display === 'none') {
+                return 'tensorflow';
+            } else {
+                return 'autokeras';
+            }
+        }
+
+        function deleteSelectedRuns() {
+            var activeTab = getActiveTab();
+            var selectedRuns = document.querySelectorAll('input[type="checkbox"][name="' + activeTab + '_checkbox"]:checked');
+            if (confirm("Wollen Sie ie Daten wirklich loschen?")) {
+                selectedRuns.forEach((input) => {
+                    [x, runType, id] = input.id.split("_");
+                
+                    var deleteURL = "{% url 'runs:delete' 0 %}";        
+                    $.ajax({
+                        type: 'GET',
+                        url: deleteURL.replace(0,id),
+                        success: function(data) {
+                            $('#accordion'+data['id']).remove();
+                            toastr.success("Datensatzx geloscht", 'INFO');
+                        },
+                        error: function() {
+                            // Handle error
+                            toastr.error("Datensatz konnte nicht geloscht werden", 'FEHLER');
+                        }
+                    });
+                });
+            }
+        }
+
+        function addRunToComparison() {
+            var activeTab = getActiveTab();
+            var selectedRuns = document.querySelectorAll('input[type="checkbox"][name="' + activeTab + '_checkbox"]:checked');
+            var selectedRunIDs = [];
+            selectedRuns.forEach((input) => {
+                [x, runType, id] = input.id.split("_");
+                selectedRunIDs.push(id);
+            });
+            if (selectedRunIDs.length > 0) {
+                var updateUrl = "{% url 'api:system:update_session' %}";        
+                $.ajax({
+                    type: 'POST',
+                    url: updateUrl,
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        'comparison':'comparison',
+                        'delete':false,
+                        'run_type': activeTab,
+                        'values': selectedRunIDs
+                    }),
+                    headers: {
+                        'Authorization': `Token ${token}`,
+                    },
+                    success: function(data) {
+                        toastr.success("Datensatzx geloscht", 'INFO');
+                        var container = $('#comparison_container');
+                        container.empty();
+                        Object.entries(data['session']).forEach((element) => {
+                            var collapsePrefix = 'collapse';
+                            if (element[1] === 'autokeras') {
+                                collapsePrefix = 'autokeras_collapse';
+                            }
+                            var linkElements = $('#' + collapsePrefix + element[0] + ' a');
+                            if (linkElements.length > 0) {
+                                var link = linkElements[0].href;
+                                var name = $('button[data-target="#' + collapsePrefix + element[0] + '"]')[0].innerText;
+                                addRunToComparisonView(element[0], name, element[1], link);
+                            }
+                        });
+                    },
+                    error: function() {
+                        toastr.error("Datensatz konnte nicht geloscht werden", 'FEHLER');
+                    }
+                });
+            }
+        }
+
     </script>
     <div class="tabs is-centered is-toggle is-toggle-round">
         <ul>
@@ -155,6 +256,31 @@
                 <a>Autokeras</a>
             </li>
         </ul>
+    </div>
+    <div class='d-flex justify-content-end container'>
+        <button type="button"
+                class='border-info button is-info is-light mx-2'
+                id="toggleSelectionButton">Auswahl</button>
+        <button type="button"
+                class='border-info button is-info is-light mx-2 d-none'
+                id="selectAllButton">Alles auswahlen</button>
+        <div class="dropdown d-none is-hoverable" id='actions_dropdown'>
+            <div class="dropdown-trigger">
+                <button class="button" aria-haspopup="true" aria-controls="dropdown-menu">
+                    <span>Aktionen</span>
+                    <span class="icon is-small">
+                        <i class="fas fa-angle-down" aria-hidden="true"></i>
+                    </span>
+                </button>
+            </div>
+            <div class="dropdown-menu" id="dropdown-menu" role="menu">
+                <div class="dropdown-content">
+                    <div onclick='deleteSelectedRuns()' class="dropdown-item">Loschen</div>
+                    <hr class="dropdown-divider">
+                    <div onclick='addRunToComparison()' class="dropdown-item">Vergleichen</div>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="container content-tab" id="tensorflow">
         <div class="align-items-center row mb-3">
@@ -193,6 +319,10 @@
                         <div class="card-header d-flex justify-content-between is-align-items-center"
                              id="heading{{ network_training.id }}">
                             <h2 class="mb-0">
+                                <input name='tensorflow_checkbox'
+                                       type='checkbox'
+                                       class='d-none'
+                                       id='checked_tensorflow_{{ network_training.id }}'>
                                 <button class="btn"
                                         type="button"
                                         data-toggle="collapse"
@@ -282,7 +412,9 @@
             {% endfor %}
         </div>
     </div>
-    <div class="container content-tab" id='autokeras' style="display:none">
+    <div class="container content-tab mt-3"
+         id='autokeras'
+         style="display:none">
         <div class="container" id="runs_list_autokeras">
             {% for keras_run in autokeras_runs %}
                 <div class="accordion"
@@ -294,6 +426,10 @@
                         <div class="card-header d-flex justify-content-between is-align-items-center"
                              id="heading{{ keras_run.id }}">
                             <h2 class="mb-0">
+                                <input name='autokeras_checkbox'
+                                       type='checkbox'
+                                       class='d-none'
+                                       id='checked_autokeras_{{ keras_run.id }}'>
                                 <button class="btn"
                                         type="button"
                                         data-toggle="collapse"
