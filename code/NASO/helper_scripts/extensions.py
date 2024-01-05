@@ -1,4 +1,7 @@
 import asyncio
+import numpy as np
+from tensorflow_model_optimization.python.core.sparsity.keras import pruning_wrapper
+from tensorflow.keras import backend as K
 
 from loguru import logger
 
@@ -156,8 +159,27 @@ def custom_hypermodel_build(original_build_fn, run):
             model = run.model.build_pruning_model(model)
             model.loss = loss
             model.optimizer = optimizer
+            model.compile(optimizer, loss)
 
             return model
         raise Exception("No build function provided")
 
     return build_fn
+
+
+def calculate_sparsity(model):
+    params = []
+    prunable_layers = pruning_wrapper.collect_prunable_layers(model)
+    for layer in prunable_layers:
+        for _, mask, threshold in layer.pruning_vars:
+            params.append(mask)
+
+    params.append(model.optimizer.iterations)
+
+    values = K.batch_get_value(params)
+    del values[-1]
+    del params[-1]
+
+    sparsity_values = [1 - np.mean(mask_value) for mask_value in values[::2]]
+    # Return the average sparsity across all prunable layers
+    return np.mean(sparsity_values)

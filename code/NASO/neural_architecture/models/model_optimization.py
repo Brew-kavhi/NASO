@@ -5,6 +5,9 @@ from loguru import logger
 
 from helper_scripts.importing import get_object
 from neural_architecture.models.types import BaseType, TypeInstance
+from tensorflow_model_optimization.python.core.sparsity.keras.prune_registry import (
+    PruneRegistry,
+)
 
 
 class PruningMethodTypes(BaseType):
@@ -234,9 +237,13 @@ class PrunableNetwork(models.Model):
 
 class EnsurePrunableModelPolicy(tfmot.sparsity.keras.PruningPolicy):
     def allow_pruning(self, layer):
-        return isinstance(layer, tfmot.sparsity.keras.PrunableLayer) or hasattr(
-            layer, "get_prunable_weights"
+        registry = PruneRegistry()
+        allowance = (
+            isinstance(layer, tfmot.sparsity.keras.PrunableLayer)
+            or hasattr(layer, "get_prunable_weights")
+            or registry.supports(layer)
         )
+        return allowance
 
     def ensure_model_supports_pruning(self, model):
         """Checks that the model contains only supported layers.

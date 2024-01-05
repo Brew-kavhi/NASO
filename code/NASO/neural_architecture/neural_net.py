@@ -174,8 +174,8 @@ class NeuralNetwork:
         callbacks = self.training_config.fit_parameters.get_callbacks(
             self.training_config
         ) + (
-            [self.celery_callback]
-            + self.training_config.network_config.get_pruning_callbacks()
+            self.training_config.network_config.get_pruning_callbacks()
+            + [self.celery_callback]
         )
 
         self.model.fit(

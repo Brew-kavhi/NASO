@@ -1,4 +1,5 @@
 import math
+from helper_scripts.extensions import calculate_sparsity
 
 import tensorflow as tf
 
@@ -89,6 +90,7 @@ class BaseCallback(tf.keras.callbacks.Callback):
         logs["execution_time"] = elapsed_time
         logs["total_time"] = self.timer.get_total_time()
 
+        logs["sparsity"] = calculate_sparsity(self.model)
         metrics = {}
         for key in logs:
             if not math.isnan(logs[key]):
