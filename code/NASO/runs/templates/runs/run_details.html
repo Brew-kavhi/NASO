@@ -2,6 +2,7 @@
 {% load get_values %}
 {% load crispy_forms_tags %}
 {% load static %}
+{% load  humanize %}
 {% block content %}
     <div class="container justify-content-end py-3 d-flex">
         {% with "tensorflow:"|addstr:run.id as run_id %}
@@ -75,11 +76,11 @@
                                 </p>
                                 <p>
                                     <span class='has-text-weight-bold'>Size:</span>
-                                    {{ run.network_config.size }}
+                                    {{ run.network_config.size|intcomma }}
                                 </p>
                                 <p>
                                     <span class='has-text-weight-bold'>Memory:</span>
-                                    {{ run.memory_usage }}
+                                    {{ run.memory_usage|intcomma }}
                                 </p>
                             </div>
                             <div class="col-6">
@@ -97,7 +98,7 @@
                                 </p>
                                 <p>
                                     <span class='has-text-weight-bold'>Avg. Power draw:</span>
-                                    {{ run.get_average_energy_consumption }} W
+                                    {{ run.get_average_energy_consumption|floatformat:2 }} W
                                 </p>
                             </div>
                         </div>

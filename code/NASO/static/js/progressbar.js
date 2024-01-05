@@ -43,7 +43,7 @@ function setProgress(state, details, idAppendix) {
             $('#training-tags-'+idAppendix).empty();
             console.log(details);
             $('#training-tags-'+idAppendix).append(
-                '<div class="tag is-light is-info ">Curent loss: ' + details.metrics.loss + '</div>'
+                '<div class="tag is-light is-info ">Curent loss: ' + details.metrics.loss.toFixed(4) + '</div>'
             );
         }
 

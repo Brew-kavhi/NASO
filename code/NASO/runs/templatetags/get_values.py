@@ -6,7 +6,10 @@ register = template.Library()
 @register.simple_tag
 def get_attribute_tag(obj, attr_name):
     try:
-        return obj.get(attr_name)
+        value = obj.get(attr_name)
+        if str(value).replace(".", "").isnumeric():
+            return "{:10.4f}".format(value)
+        return value
     except AttributeError:
         return None
 

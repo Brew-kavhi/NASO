@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 {% load get_values %}
+{% load humanize %}
 {% block content %}
     <div class="container justify-content-end py-3 d-flex">
         {% with "autokeras:"|addstr:run.id as run_id %}
@@ -69,7 +70,7 @@
                                 </p>
                                 <p>
                                     <span class='has-text-weight-bold'>Max Size:</span>
-                                    {{ run.model.max_model_size }}
+                                    {{ run.model.max_model_size|intcomma }}
                                 </p>
                                 <p>
                                     <span class='has-text-weight-bold'>Objective:</span>
@@ -83,11 +84,11 @@
                                 {% endif %}
                                 <p>
                                     <span class='has-text-weight-bold'>Avg. Powerdraw:</span>
-                                    {{ run.get_average_energy_consumption }} W
+                                    {{ run.get_average_energy_consumption|floatformat:2 }} W
                                 </p>
                                 <p>
                                     <span class='has-text-weight-bold'>Memory:</span>
-                                    {{ run.memory_usage }}
+                                    {{ run.memory_usage|intcomma }}
                                 </p>
                             </div>
                             <div class="col-6">
@@ -109,7 +110,7 @@
                                 </p>
                                 <p>
                                     <span class='has-text-weight-bold'>Energy:</span>
-                                    {{ run.get_energy_consumption }} kWH
+                                    {{ run.get_energy_consumption|floatformat:2 }} kWH
                                 </p>
                             </div>
                         </div>
