@@ -39,6 +39,8 @@ def get_comparison_runs(request):
     """
     This function returns all runs that currently selected for comparison
     """
+    if "comparison" not in request.session:
+        return {"COMPARISON": []}
     comparison = request.session["comparison"]
     runs = {}
     for comparison_id in comparison:
