@@ -1,4 +1,5 @@
 import os
+import zipfile
 
 import tensorflow as tf
 from django.db import models
@@ -160,9 +161,22 @@ class NetworkConfiguration(PrunableNetwork, BuildModelFromGraph):
             export_model = self.get_export_model(model)
 
             export_model.save(file_path, include_optimizer=True)
+
+            with zipfile.ZipFile(
+                f"keras_models/tensorflow/{self.name}_{self.id}.zip",
+                "w",
+                compression=zipfile.ZIP_DEFLATED,
+            ) as f:
+                f.write(file_path)
+
             self.model_file = file_path
             self.save()
             logger.success(f"Saved model to {self.name}_{self.id}.h5")
+
+        def get_gzipped_model_size(self) -> int:
+            if self.saved:
+                return os.path.get_size(self.model_file.replace(".h5", ".zip"))
+            return -1
 
 
 class ActivationFunction(TypeInstance):
