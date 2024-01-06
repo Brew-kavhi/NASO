@@ -1,4 +1,5 @@
 import threading
+import time
 import traceback
 
 import tensorflow as tf
@@ -220,7 +221,7 @@ class NeuralNetwork:
             callbacks=self.training_config.evaluation_parameters.get_callbacks(
                 self.training_config
             )
-            + [EvaluationBaseCallback(self.training_config)],
+            # + [EvaluationBaseCallback(self.training_config)],
         )
         logger.info("evaluation of the network done...")
 
@@ -252,8 +253,12 @@ class NeuralNetwork:
         Raises:
             None.
         """
+        # sleep for one second to cool donw the gpu
+        # energy measurement returns the average over the last second, so make sure the training does not affect this metric
+        time.sleep(1)
         batch_size = 1
-        return self.model.predict(
+        predict_model = self.training_config.network_config.get_export_model(self.model)
+        return predict_model.predict(
             dataset,
             batch_size,
             verbose=2,
