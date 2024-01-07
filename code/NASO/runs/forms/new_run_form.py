@@ -1,6 +1,8 @@
 from crispy_forms.layout import HTML, Column, Field, Layout, Row, Submit
 from django import forms
 from django.urls import reverse_lazy
+from os import listdir
+from os.path import isfile, join
 
 from neural_architecture.models.autokeras import AutoKerasNodeType, AutoKerasTunerType
 from neural_architecture.models.templates import (
@@ -55,6 +57,11 @@ class NewRunForm(BaseRunWithCallback, PrunableForm):
     save_model = forms.BooleanField(required=False, initial=False, label="Save model")
     fine_tune_saved_model = forms.BooleanField(
         required=False, initial=False, label="Load saved model from disk"
+    )
+    load_model = forms.ChoiceField(
+        required=False,
+        widget=forms.Select(attrs={"class": "select2 w-100"}),
+        label="Model auswählen",
     )
 
     def __init__(self, *args, **kwargs):
@@ -153,10 +160,11 @@ class NewRunForm(BaseRunWithCallback, PrunableForm):
             self.gpu_field(),
             self.get_pruning_fields(),
             Row(
-                Column(Field("save_model")),
+                Column(Field("save_model"), css_class="col-2"),
                 Column(
-                    Field("fine_tune_saved_model"), css_class="d-none", id="fine_tune"
+                    Field("fine_tune_saved_model"), css_class="col-3", id="fine_tune"
                 ),
+                Column(Field("load_model"), css_class="d-none col-7", id="load_model"),
             ),
             Submit("customer-general-edit", "Training starten"),
         )
@@ -169,6 +177,7 @@ class NewRunForm(BaseRunWithCallback, PrunableForm):
 
         self.fields["optimizer"].widget.choices = self.get_optimizer_choices()
         self.fields["layers"].widget.choices = self.get_layer_choices()
+        self.fields["load_model"].widget.choices = self.get_saved_models()
 
     def rerun_saved_model(self):
         """
@@ -181,6 +190,15 @@ class NewRunForm(BaseRunWithCallback, PrunableForm):
 
     def load_optimizer_config(self, arguments):
         self.extra_context["optimizer_config"] = arguments
+
+    def get_saved_models(self):
+        models_path = "keras_models/tensorflow"
+        models = [
+            (join(models_path, f), f)
+            for f in listdir(models_path)
+            if isfile(join(models_path, f)) and f.endswith(".h5")
+        ]
+        return models
 
     def get_layer_choices(self):
         layer_choices = []

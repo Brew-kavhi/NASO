@@ -330,9 +330,7 @@ class NewRun(TemplateView):
                             old_training.fit_parameters.epochs
                         )
                         fit_parameters.save()
-                        network_config.model_file = (
-                            old_training.network_config.model_file
-                        )
+                        network_config.model_file = form.cleaned_data["load_model"]
 
                 if form.cleaned_data["enable_pruning"]:
                     (

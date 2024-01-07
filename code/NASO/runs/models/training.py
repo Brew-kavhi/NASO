@@ -278,6 +278,8 @@ class Run(SafeDeleteModel):
 
     memory_usage = models.FloatField(default=0)
 
+    size_on_disk = models.IntegerField(default=0)
+
     class Meta:
         abstract = True
 
