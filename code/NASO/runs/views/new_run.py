@@ -36,6 +36,7 @@ from runs.models.training import (
     NetworkHyperparameters,
     NetworkTraining,
     Optimizer,
+    TrainingMetric,
 )
 
 
@@ -376,11 +377,30 @@ class NewRun(TemplateView):
 
                 training.save()
 
+                if network_config.load_model:
+                    # copy all the existing metrics to this training as well
+                    # but first get id of run from model:
+                    id = network_config.model_file[
+                        network_config.model_file.rfind("_") + 1 :
+                    ].split(".h5")[0]
+                    source_queryset = TrainingMetric.objects.filter(
+                        neural_network__id=id
+                    )
+
+                    for source_instance in source_queryset:
+                        new_instance = TrainingMetric.objects.create(
+                            neural_network=training,
+                            epoch=source_instance.epoch,
+                            metrics=source_instance.metrics,
+                        )
+                        new_instance.save()
+
                 run_neural_net.delay(training.id)
                 messages.add_message(
                     request, messages.SUCCESS, "Training wurde gestartet."
                 )
                 return redirect("dashboard:index")
+        print(form.errors)
         return redirect(request.path)
 
 

@@ -177,7 +177,7 @@ class NewRunForm(BaseRunWithCallback, PrunableForm):
 
         self.fields["optimizer"].widget.choices = self.get_optimizer_choices()
         self.fields["layers"].widget.choices = self.get_layer_choices()
-        self.fields["load_model"].widget.choices = self.get_saved_models()
+        self.fields["load_model"].choices = self.get_saved_models()
 
     def rerun_saved_model(self):
         """
