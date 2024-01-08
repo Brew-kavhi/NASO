@@ -1,4 +1,6 @@
 from django.views.generic.base import TemplateView
+from django.urls import reverse_lazy
+from api.views.autokeras import get_trial_details
 
 from naso.models.page import PageSetup
 from neural_architecture.models.autokeras import AutoKerasRun
@@ -30,7 +32,33 @@ class ComparisonView(TemplateView):
                     "size": run.network_config.size,
                     "memory_usage": run.memory_usage,
                     "energy_consumption": run.get_average_energy_consumption,
+                    "link": reverse_lazy("runs:details", kwargs={"pk": run_id}),
+                    "pruning_method": run.network_config.pruning_method,
+                    "pruning_schedule": run.network_config.pruning_schedule,
+                    "pruning_policy": run.network_config.pruning_policy,
+                    "optimizer": run.hyper_parameters.optimizer,
                 }
+                model["optimizer"].additional_arguments = get_arguments_as_dict(
+                    run.hyper_parameters.optimizer.additional_arguments
+                )
+                if run.network_config.pruning_method:
+                    model[
+                        "pruning_method"
+                    ].additional_arguments = get_arguments_as_dict(
+                        run.network_config.pruning_method.additional_arguments
+                    )
+                if run.network_config.pruning_schedule:
+                    model[
+                        "pruning_schedule"
+                    ].additional_arguments = get_arguments_as_dict(
+                        run.network_config.pruning_schedule.additional_arguments
+                    )
+                if run.network_config.pruning_policy:
+                    model[
+                        "pruning_policy"
+                    ].additional_arguments = get_arguments_as_dict(
+                        run.network_config.pruning_policy.additional_arguments
+                    )
             elif comparison_runs[comparison_id] == "autokeras":
                 run = AutoKerasRun.objects.filter(pk=run_id).first()
                 if not run:
@@ -41,7 +69,31 @@ class ComparisonView(TemplateView):
                     "size": "-",
                     "memory_usage": run.memory_usage,
                     "energy_consumption": run.get_average_energy_consumption,
+                    "link": reverse_lazy(
+                        "runs:autokeras:details", kwargs={"pk": run_id}
+                    ),
+                    "pruning_method": run.model.pruning_method,
+                    "pruning_schedule": run.model.pruning_schedule,
+                    "pruning_policy": run.model.pruning_policy,
                 }
+                if run.model.pruning_method:
+                    model[
+                        "pruning_method"
+                    ].additional_arguments = get_arguments_as_dict(
+                        run.model.pruning_method.additional_arguments
+                    )
+                if run.model.pruning_schedule:
+                    model[
+                        "pruning_schedule"
+                    ].additional_arguments = get_arguments_as_dict(
+                        run.model.pruning_schedule.additional_arguments
+                    )
+                if run.model.pruning_policy:
+                    model[
+                        "pruning_policy"
+                    ].additional_arguments = get_arguments_as_dict(
+                        run.model.pruning_policy.additional_arguments
+                    )
             elif comparison_runs[comparison_id] == "autokeras_trial":
                 [autokeras_id, trial_id] = comparison_id.split("_")
                 run = AutoKerasRun.objects.filter(pk=autokeras_id).first()
@@ -52,6 +104,32 @@ class ComparisonView(TemplateView):
                 model["size"] = trial_metrics["model_size"]
                 model["energy_consumption"] = trial_metrics["average_energy"]
                 model["id"] = comparison_id
+                model["link"] = reverse_lazy(
+                    "runs:autokeras:trial",
+                    kwargs={"run_id": run.id, "trial_id": trial_id},
+                )
+                model["pruning_method"] = run.model.pruning_method
+                model["pruning_schedule"] = run.model.pruning_schedule
+                model["pruning_policy"] = run.model.pruning_policy
+                if run.model.pruning_method:
+                    model[
+                        "pruning_method"
+                    ].additional_arguments = get_arguments_as_dict(
+                        run.model.pruning_method.additional_arguments
+                    )
+                if run.model.pruning_schedule:
+                    model[
+                        "pruning_schedule"
+                    ].additional_arguments = get_arguments_as_dict(
+                        run.model.pruning_schedule.additional_arguments
+                    )
+                if run.model.pruning_policy:
+                    model[
+                        "pruning_policy"
+                    ].additional_arguments = get_arguments_as_dict(
+                        run.model.pruning_policy.additional_arguments
+                    )
+                model["hyperparameters"] = get_trial_details(run, trial_id)
             model["rating"] = run.rate
             model["device"] = run.gpu
             model["description"] = run.description
@@ -60,3 +138,10 @@ class ComparisonView(TemplateView):
             runs.append(model)
         self.context["runs"] = runs
         return self.render_to_response(self.context)
+
+
+def get_arguments_as_dict(arguments):
+    argument_dict = {}
+    for argument in arguments:
+        argument_dict[argument["name"]] = argument["value"]
+    return argument_dict
