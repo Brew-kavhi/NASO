@@ -32,6 +32,9 @@ class AutoKerasCallback(tf.keras.callbacks.Callback):
         self.run = run
         self.timer = Timer()
 
+    def on_train_begin(self, logs=None):
+        self.timer.start()
+
     def on_train_end(self, logs=None):
         """
         Callback method called at the end of training.
@@ -44,6 +47,7 @@ class AutoKerasCallback(tf.keras.callbacks.Callback):
         for key in logs:
             if not math.isnan(logs[key]):
                 metrics[key] = logs[key]
+        self.timer.stop()
 
         metric = TrainingMetric(
             epoch=0,
