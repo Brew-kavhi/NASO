@@ -273,10 +273,13 @@ class Run(SafeDeleteModel):
     )
 
     gpu = models.CharField(max_length=20, default="/gpu:0")
+    compute_device = models.CharField(max_length=20, default="")
 
     energy_measurements = models.TextField()
 
     memory_usage = models.FloatField(default=0)
+
+    size_on_disk = models.IntegerField(default=0)
 
     class Meta:
         abstract = True

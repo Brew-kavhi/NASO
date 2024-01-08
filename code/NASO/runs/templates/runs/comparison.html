@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load get_values %}
 {% load humanize %}
 {% block content %}
     <div class="axis-selection d-flex container justify-content-center">
@@ -22,7 +23,7 @@
                             min-width:20vw;
                             max-width: 50vw'>
                     <div class='card-header d-flex justify-content-between align-items-center'>
-                        <strong>{{ run.name }}</strong>
+                        <a href='{{ run.link }}' class='text-bold'>{{ run.name }}</a>
                         <div class='d-flex align-items-center'>
                             <span class='tag is-light mx-2 is-info'>{{ run.run_type }}</span>
                             <select class='star-rating mx-2'
@@ -57,9 +58,53 @@
                                 <p>{{ run.memory_usage|intcomma }} Byte</p>
                             </div>
                             <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
+                                <p class='my-2 text-bold'>Size on disk</p>
+                                <p>{{ run.size_on_disk|intcomma }} Bytes</p>
+                            </div>
+                            <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
                                 <p class='my-2 text-bold'>Average energy consumption</p>
                                 <p>{{ run.energy_consumption|floatformat:2 }} W</p>
                             </div>
+                            <!-- Pruning properties -->
+                            {% if run.pruning_method %}
+                                <div class='align-items-center border-bottom d-flex justify-content-between has-tooltip-multiline px-3'
+                                     data-tooltip='{{ run.pruning_method.additional_arguments }}'>
+                                    <p class='my-2 text-bold'>Pruning method</p>
+                                    <p>{{ run.pruning_method.instance_type }}</p>
+                                </div>
+                                <div class='align-items-center border-bottom d-flex justify-content-between has-tooltip-multiline px-3'
+                                     data-tooltip='{{ run.pruning_schedule.additional_arguments }}'>
+                                    <p class='my-2 text-bold'>Pruning schedule</p>
+                                    <p>{{ run.pruning_schedule.instance_type }}</p>
+                                </div>
+                                <div class='align-items-center border-bottom d-flex justify-content-between has-tooltip-multiline px-3'
+                                     data-tooltip='{{ run.pruning_policy.additional_arguments }}'>
+                                    <p class='my-2 text-bold'>Pruning policy</p>
+                                    <p>{{ run.pruning_policy.instance_type }}</p>
+                                </div>
+                            {% else %}
+                                <div class='align-items-center border-bottom d-flex justify-content-between has-tooltip-multiline px-3'>
+                                    <p class='my-2 text-bold text-center w-100'>No pruning</p>
+                                </div>
+                            {% endif %}
+                            {% if run.optimizer %}
+                                <div class='align-items-center border-bottom d-flex justify-content-between has-tooltip-multiline px-3'
+                                     data-tooltip='{{ run.optimizer.additional_arguments }}'>
+                                    <p class='my-2 text-bold'>Optimizer</p>
+                                    <p>{{ run.optimizer.instance_type }}</p>
+                                </div>
+                            {% endif %}
+                            {% if run.hyperparameters %}
+                                <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
+                                    <div class="d-flex flex-wrap">
+                                        {% for item in run.hyperparameters %}
+                                            <div class="col-4">
+                                                <strong>{{ item }}</strong>: {% get_attribute_tag hp item %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
                         </div>
                         <div id='graph_container_{{ run.run_type }}_{{ run.comparison_id }}'>
                             <h5 class='mt-4 text-center'>Graph</h5>

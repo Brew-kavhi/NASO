@@ -14,3 +14,6 @@
     background-color: rgba(100, 148, 237, 0.5);
 
 }
+.has-tooltip-multiline:before {
+    font-size:15px !important;
+}

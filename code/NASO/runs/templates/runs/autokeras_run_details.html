@@ -90,6 +90,10 @@
                                     <span class='has-text-weight-bold'>Memory:</span>
                                     {{ run.memory_usage|intcomma }}
                                 </p>
+                                <p>
+                                    <span class='has-text-weight-bold'>Size on disk:</span>
+                                    {{ run.size_on_disk|intcomma }} Bytes
+                                </p>
                             </div>
                             <div class="col-6">
                                 <p>
@@ -106,7 +110,11 @@
                                 </p>
                                 <p>
                                     <span class='has-text-weight-bold'>Device:</span>
-                                    {{ run.gpu }}
+                                    {% if run.compute_device %}
+                                        {{ run.compute_device }}
+                                    {% else %}
+                                        {{ run.gpu }}
+                                    {% endif %}
                                 </p>
                                 <p>
                                     <span class='has-text-weight-bold'>Energy:</span>

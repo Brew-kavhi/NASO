@@ -36,6 +36,7 @@ from runs.models.training import (
     NetworkHyperparameters,
     NetworkTraining,
     Optimizer,
+    TrainingMetric,
 )
 
 
@@ -330,9 +331,7 @@ class NewRun(TemplateView):
                             old_training.fit_parameters.epochs
                         )
                         fit_parameters.save()
-                        network_config.model_file = (
-                            old_training.network_config.model_file
-                        )
+                        network_config.model_file = form.cleaned_data["load_model"]
 
                 if form.cleaned_data["enable_pruning"]:
                     (
@@ -377,6 +376,24 @@ class NewRun(TemplateView):
                 training.description = form.cleaned_data["description"]
 
                 training.save()
+
+                if network_config.load_model:
+                    # copy all the existing metrics to this training as well
+                    # but first get id of run from model:
+                    id = network_config.model_file[
+                        network_config.model_file.rfind("_") + 1 :
+                    ].split(".h5")[0]
+                    source_queryset = TrainingMetric.objects.filter(
+                        neural_network__id=id
+                    )
+
+                    for source_instance in source_queryset:
+                        new_instance = TrainingMetric.objects.create(
+                            neural_network=training,
+                            epoch=source_instance.epoch,
+                            metrics=source_instance.metrics,
+                        )
+                        new_instance.save()
 
                 run_neural_net.delay(training.id)
                 messages.add_message(

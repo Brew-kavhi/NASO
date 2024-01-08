@@ -17,6 +17,10 @@ $(document).ready(function() {
         $.ajax({
             type: 'GET',
             url: deleteURL,
+            contentType: 'application/json',
+            headers: {
+                        'Authorization': `Token ${token}`,
+            },
             success: function(data) {
                 // Handle success, e.g., show a message or reload the page
                 $('#accordion'+data['id']).remove();

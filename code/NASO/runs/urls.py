@@ -5,6 +5,7 @@ from runs.views.comparison import ComparisonView
 from runs.views.list_runs import ListRuns, delete_run
 from runs.views.new_run import NewRun
 from runs.views.run_details import RunDetails, TrainingProgress
+from runs.views.softdelete import DeletedRuns
 
 urlpatterns = [
     path("", ListRuns.as_view(), name="list"),
@@ -18,6 +19,7 @@ urlpatterns = [
     path("delete/<int:pk>/", delete_run, name="delete"),
     path("get_dataset/<int:pk>", get_datasets, name="get_dataset"),
     path("comparison/", ComparisonView.as_view(), name="comparison"),
+    path("deletedruns/", DeletedRuns.as_view(), name="deleted_runs"),
     path(
         "autokeras/",
         include(("runs.autokeras_urls", "autokeras"), namespace="autokeras"),

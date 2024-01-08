@@ -39,6 +39,26 @@ class BaseCallback(tf.keras.callbacks.Callback):
         self.epochs = epochs
         self.run = run
         self.gpu_consumption = "NaN"
+        try:
+            device = self.get_physical_device(run.gpu)
+            if device:
+                run.compute_device = self.get_compute_device_name(device)
+            run.save()
+        except ValueError:
+            print("not available")
+
+    def get_physical_device(self, device_name):
+        all_devices = tf.config.list_physical_devices()
+        for device in all_devices:
+            if device.name.split("physical_device:")[1] == device_name:
+                return device
+        return None
+
+    def get_compute_device_name(self, device):
+        details = tf.config.experimental.get_device_details(device)
+        if "device_name" in details:
+            return details["device_name"]
+        return ""
 
     def get_total_time(self):
         """
