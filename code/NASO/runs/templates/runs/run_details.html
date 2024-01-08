@@ -94,7 +94,11 @@
                                 </p>
                                 <p>
                                     <span class='has-text-weight-bold'>Device:</span>
-                                    {{ run.gpu }}
+                                    {% if run.compute_device %}
+                                        {{ run.compute_device }}
+                                    {% else %}
+                                        {{ run.gpu }}
+                                    {% endif %}
                                 </p>
                                 <p>
                                     <span class='has-text-weight-bold'>Avg. Power draw:</span>

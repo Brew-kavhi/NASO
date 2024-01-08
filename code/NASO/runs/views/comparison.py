@@ -131,7 +131,7 @@ class ComparisonView(TemplateView):
                     )
                 model["hyperparameters"] = get_trial_details(run, trial_id)
             model["rating"] = run.rate
-            model["device"] = run.gpu
+            model["device"] = run.compute_device
             model["description"] = run.description
             model["run_type"] = comparison_runs[comparison_id]
             model["comparison_id"] = comparison_id
