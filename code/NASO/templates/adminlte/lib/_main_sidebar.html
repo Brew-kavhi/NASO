@@ -46,6 +46,12 @@
                     <i class="nav-icon me-3 fa fa-flask"></i> <span class="ml-3">Alle Experimente</span>
                 </a>
             </li>
+            <hr class="my-1 bg-secondary">
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'runs:deleted_runs' %}">
+                    <i class="nav-icon me-3 fa fa-flask"></i> <span class="ml-3">Gelöscht</span>
+                </a>
+            </li>
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'runs:comparison' %}">
                     <i class="nav-icon me-3 fa fa-flask"></i> <span class="ml-3">Vergleichen</span>

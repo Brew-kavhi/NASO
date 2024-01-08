@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+{% load get_values %}
+{% block content %}
+    <script>
+        const UNDELETE_URL = "{% url 'api:tensorflow:undelete_run' 0 %}";
+        const HARDDELETE_URL = "{% url 'api:tensorflow:delete_run' 0 %}";
+
+        document.addEventListener("DOMContentLoaded", () => {
+            // for each tensorflowtraining in tensorflowTrainings, fetch the data from the api and display the graph:
+            document.getElementById('toggleSelectionButton').addEventListener('click', function () {
+                var button = document.getElementById('toggleSelectionButton');
+                document.querySelectorAll('input[type="checkbox"]').forEach((el)=>el.classList.toggle('d-none'));
+                document.getElementById('actions_dropdown').classList.toggle('d-none');
+                document.getElementById('selectAllButton').classList.toggle('d-none');
+
+                if (button.innerHTML == 'Auswahl') {
+                    button.innerHTML = 'Fertig';
+                } else {
+                    button.innerHTML = 'Auswahl';
+                } 
+            });  
+            document.getElementById('selectAllButton').addEventListener('click', function () {
+                var activeTab = getActiveTab();
+                var checkboxs = document.querySelectorAll('input[type="checkbox"][name="' + activeTab + '_checkbox"]');
+        
+                checkboxs.forEach(function(checkbox) {
+                    checkbox.checked = true;
+                });
+            });
+        });
+
+        function getActiveTab() {
+            var autokerasTab = $('#autokeras')[0];
+            if (autokerasTab.style.display === 'none') {
+                return 'tensorflow';
+            } else {
+                return 'autokeras';
+            }
+        }
+
+        function undelete(element) {
+                fetch(UNDELETE_URL.replace("0", element.dataset.id).replace('tensorflow', element.dataset.runtype), {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Token ${token}`,
+                    },
+                }).then(function(response) {
+
+                const data = response.json();
+        
+                if (response.ok) {
+                    console.log('Rate updated successfully:', data.success);
+                    toastr.success("Erfolgreich wiecer hergestellt", 'INFO');
+                    removeAccordion(element.dataset.id);
+
+                } else {
+                    console.error('Error updating rate:', data.error);
+                }
+                });
+        
+        }
+
+        function harddelete(element) {
+                fetch(HARDDELETE_URL.replace("0", element.dataset.id).replace('tensorflow', element.dataset.runtype), {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Token ${token}`,
+                    },
+                }).then(function(response) {
+
+                const data = response.json();
+        
+                if (response.ok) {
+                    console.log('Rate updated successfully:', data.success);
+                    toastr.success("Erfolgreich endgültig gelöscht", 'INFO');
+                    removeAccordion(element.dataset.id);
+
+                } else {
+                    console.error('Error updating rate:', data.error);
+                }
+                });
+        }
+
+        function removeAccordion(id) {
+            $('#accordion' + id).remove();
+        }
+
+        function deleteSelectedRuns() {
+            var activeTab = getActiveTab();
+            var selectedRuns = document.querySelectorAll('input[type="checkbox"][name="' + activeTab + '_checkbox"]:checked');
+            if (confirm("Wollen Sie ie Daten wirklich loschen?")) {
+                selectedRuns.forEach((input) => {
+                    [x, runType, id] = input.id.split("_");
+                    harddelete({'dataset':{'id':id, 'runtype': runType}});
+                });
+            }
+        }
+        
+        function restoreSelectedRuns() {
+            var activeTab = getActiveTab();
+            var selectedRuns = document.querySelectorAll('input[type="checkbox"][name="' + activeTab + '_checkbox"]:checked');
+            selectedRuns.forEach((input) => {
+                [x, runType, id] = input.id.split("_");
+                undelete({'dataset':{'id':id, 'runtype': runType}});
+            });
+        }
+    </script>
+    <div class="tabs is-centered is-toggle is-toggle-round">
+        <ul>
+            <li class="tab is-active" onclick="openTab(event,'tensorflow')">
+                <a>Tensorflow</a>
+            </li>
+            <li class="tab" onclick="openTab(event,'autokeras')">
+                <a>Autokeras</a>
+            </li>
+        </ul>
+    </div>
+    <div class='d-flex justify-content-end container my-3'>
+        <button type="button"
+                class='border-info button is-info is-light mx-2'
+                id="toggleSelectionButton">Auswahl</button>
+        <button type="button"
+                class='border-info button is-info is-light mx-2 d-none'
+                id="selectAllButton">Alles auswahlen</button>
+        <div class="dropdown d-none is-hoverable" id='actions_dropdown'>
+            <div class="dropdown-trigger">
+                <button class="button" aria-haspopup="true" aria-controls="dropdown-menu">
+                    <span>Aktionen</span>
+                    <span class="icon is-small">
+                        <i class="fas fa-angle-down" aria-hidden="true"></i>
+                    </span>
+                </button>
+            </div>
+            <div class="dropdown-menu" id="dropdown-menu" role="menu">
+                <div class="dropdown-content">
+                    <div onclick='deleteSelectedRuns()' class="dropdown-item">Löschen</div>
+                    <hr class="dropdown-divider">
+                    <div onclick='restoreSelectedRuns()' class="dropdown-item">Wiederherstellen</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container content-tab" id="tensorflow">
+        <div class="container" id="runs_list">
+            {% for network_training in network_training_data %}
+                <div id="accordion{{ network_training.id }}"
+                     data-app-version='{{ network_training.naso_app_version }}'
+                     data-optimizer='{{ network_training.hyper_parameters.optimizer.instance_type.name }}'
+                     data-time="{% get_metric network_training.final_metrics.metrics 'time' %}"
+                     data-rating="{{ network_training.rate }}">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between is-align-items-center"
+                             id="heading{{ network_training.id }}">
+                            <h2 class="mb-0">
+                                <input name='tensorflow_checkbox'
+                                       type='checkbox'
+                                       class='d-none'
+                                       id='checked_tensorflow_{{ network_training.id }}'>
+                                <button class="btn" type="button">{{ network_training.network_config.name }}</button>
+                            </h2>
+                            <div class='d-flex is-align-items-center'>
+                                <div class='d-flex flex-wrap'>
+                                    <span class="mx-1 my-1 tag is-warning is-light">{{ network_training.dataset.name }}</span>
+                                    {% for metric in network_training.final_metrics.metrics %}
+                                        <div id='tags_{{ network_training.id }}' class='d-flex flex-wrap'></div>
+                                        {% if 'time' in metric %}
+                                            <span class="my-1 mx-1 tag is-primary is-light">time: {% get_attribute_tag metric 'time' %}</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <button class="button is-success ml-2 "
+                                        data-tooltip='Wiederherstellen'
+                                        onclick='undelete(this)'
+                                        data-runtype="tensorflow"
+                                        data-id="{{ network_training.id }}"
+                                        data-item-name="{{ network_training.network_config.name }}">
+                                    <i class="fas fa-redo"></i>
+                                </button>
+                                <button class="button is-danger ml-2 delete-btn"
+                                        data-tooltip='Endgültig löschen? Dies kann nicht rückgängig gemacht werden?'
+                                        data-item-id="{{ network_training.id }}"
+                                        data-target='#confirmDeleteModal'
+                                        data-runtype="tensorflow"
+                                        data-action='{% url 'api:tensorflow:delete_run' network_training.id %}'
+                                        data-item-name="{{ network_training.network_config.name }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="container content-tab mt-3"
+         id='autokeras'
+         style="display:none">
+        <div class="container" id="runs_list_autokeras">
+            {% for keras_run in autokeras_runs %}
+                <div class="accordion"
+                     id="accordion{{ keras_run.id }}"
+                     data-app-version='{{ keras_run.naso_app_version }}'
+                     data-rating="{{ keras_run.rate }}"
+                     data-tuner='{{ keras_run.model.tuner.tuner_type.name }}'>
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between is-align-items-center"
+                             id="heading{{ keras_run.id }}">
+                            <h2 class="mb-0">
+                                <input name='autokeras_checkbox'
+                                       type='checkbox'
+                                       class='d-none'
+                                       id='checked_autokeras_{{ keras_run.id }}'>
+                                <button class="btn" type="button">{{ keras_run.model.project_name }}</button>
+                            </h2>
+                            <div class='d-flex is-align-items-center'>
+                                <div class='d-flex flex-wrap'>
+                                    <span class="mx-1 my-1 tag is-warning is-light">{{ keras_run.dataset.name }}</span>
+                                    {% for metric in keras_run.metrics.last.metrics %}
+                                        {% if 'final_metric' in metric %}
+                                            {% for attr_name in metric.metrics %}
+                                                <span class="mx-1 my-1 tag is-info is-light">{{ attr_name }}: {% get_attribute_tag metric.metrics attr_name %}</span>
+                                            {% endfor %}
+                                            {% if 'time' in metric %}
+                                                <span class="mx-1 my-1 tag is-primary is-light">time: {% get_attribute_tag metric 'time' %}</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <button class="button is-success ml-2 "
+                                        data-id="{{ keras_run.id }}"
+                                        onclick='undelete(this)'
+                                        data-tooltip="Wieerherstellen"
+                                        data-runtype="autokeras"
+                                        data-item-name="{{ keras_run.model.project_name }}">
+                                    <i class="fas fa-redo"></i>
+                                </button>
+                                <button class="button is-danger ml-2"
+                                        onclick='harddelete(this)'
+                                        data-id="{{ keras_run.id }}"
+                                        data-runtype="autokeras"
+                                        data-tooltip='Endgültig löschen? Dies kann nicht rückgängig gemacht werden'
+                                        data-item-name="{{ keras_run.model.project_name }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% include 'components/delete_modal.html' %}
+    {{ block.super }}
+{% endblock content %}
