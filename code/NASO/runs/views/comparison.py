@@ -133,6 +133,7 @@ class ComparisonView(TemplateView):
             model["rating"] = run.rate
             model["device"] = run.compute_device
             model["description"] = run.description
+            model["size_on_disk"] = run.size_on_disk
             model["run_type"] = comparison_runs[comparison_id]
             model["comparison_id"] = comparison_id
             runs.append(model)

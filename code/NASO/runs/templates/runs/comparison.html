@@ -58,6 +58,10 @@
                                 <p>{{ run.memory_usage|intcomma }} Byte</p>
                             </div>
                             <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
+                                <p class='my-2 text-bold'>Size on disk</p>
+                                <p>{{ run.size_on_disk|intcomma }} Bytes</p>
+                            </div>
+                            <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
                                 <p class='my-2 text-bold'>Average energy consumption</p>
                                 <p>{{ run.energy_consumption|floatformat:2 }} W</p>
                             </div>
