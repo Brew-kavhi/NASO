@@ -10,7 +10,7 @@ from runs.models.training import NetworkTraining
 class DeletedRuns(TemplateView):
     template_name = "runs/deleted_runs.html"
     page = PageSetup(
-        title="Vergleich", description="Metriken zwischen Laufen vergleichen"
+        title="Gelöschte Element", description="Endgültig löschen oder Wiederherstellen"
     )
     context = {"page": page.get_context()}
 
@@ -18,22 +18,14 @@ class DeletedRuns(TemplateView):
         training_runs = reversed(
             NetworkTraining.objects.deleted_only().only(
                 "id",
-                "hyper_parameters__optimizer__instance_type",
-                "hyper_parameters__loss__instance_type",
                 "network_config__name",
-                "fit_parameters__epochs",
-                "fit_parameters__batch_size",
             )
         )
         autokeras_runs = reversed(
             AutoKerasRun.objects.deleted_only().only(
                 "id",
-                "model__tuner__tuner_type",
                 "model__project_name",
                 "metrics",
-                "model__max_trials",
-                "model__max_model_size",
-                "model__objective",
             )
         )
         self.page.actions = []

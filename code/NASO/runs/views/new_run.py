@@ -400,7 +400,6 @@ class NewRun(TemplateView):
                     request, messages.SUCCESS, "Training wurde gestartet."
                 )
                 return redirect("dashboard:index")
-        print(form.errors)
         return redirect(request.path)
 
 
