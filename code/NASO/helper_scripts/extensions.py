@@ -156,7 +156,7 @@ def custom_hypermodel_build(original_build_fn, run):
             loss = model.loss
             optimizer = model.optimizer
 
-            model = run.model.build_pruning_model(model)
+            model = run.model.build_pruning_model(model, include_last_layer=False)
             model.loss = loss
             model.optimizer = optimizer
             model.compile(optimizer, loss)

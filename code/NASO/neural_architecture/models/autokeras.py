@@ -496,7 +496,7 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         if not self.auto_model:
             raise ValueError("Model has not been built yet.")
         batch_size = 1
-        return self.get_export_model(self.auto_model).predict(
+        return self.get_export_model(self.auto_model.export_model()).predict(
             dataset,
             batch_size,
             verbose=2,
