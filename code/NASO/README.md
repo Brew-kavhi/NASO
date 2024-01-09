@@ -55,6 +55,8 @@ Furthermore, there needs to be a celery worker running. You can starte one with 
 The concurrency parameter ensures that only one task is executed at a time, because otherwise it could lead to weird behaviour.
 If you want to daemonize it, so it starts one every reboot, you can find  more information about it in the celery folder of this project. Now if this server is running on a remote machine that is behind another network, like it is the case with the workstations at IPVS, we need to enable port forwarding. this is done with the following command, to be executedon your home desktop: 
 ```ssh -L <local_port>:<remote-machine>:<django-port> <username>@ipvslogin.informatik.uni-stuttgart.de```
+This forwards the local port to the port of the remote machine. Now you also need to make the local system listen to incoming request and forward them to this adress. I therefor use this command:
+```socat TCP-LISTEN:<open-local-port>,fork TCP:localhost:<local-port>```
 # Documentation
 Add this. We use networkX as the tool to create graphs that describe the networks and search space.
 
