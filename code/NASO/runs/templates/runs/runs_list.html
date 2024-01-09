@@ -25,6 +25,8 @@
         var ascending = true; // Flag to track sorting direction
         var tensorflowUrl = '{% url "api:tensorflow:get_metrics_for_run" 0 %}';
         var autokerasUrl = '{% url "api:autokeras:get_metrics_for_run" 0 %}';
+        var tensorflowdeleteURL = "{% url 'runs:delete' 0 %}";        
+        var autokerasdeleteURL = "{% url 'runs:autokeras:delete' 0 %}";        
         var tensorflowTrainings = [{% for network_training_id in network_training_ids %} {{ network_training_id }}, {% endfor %}];
         var kerasRuns = [{% for keras_run_id in autokeras_run_ids %} {{ keras_run_id }}, {% endfor %}];
         document.addEventListener("DOMContentLoaded", () => {
@@ -181,8 +183,14 @@
             if (confirm("Wollen Sie ie Daten wirklich loschen?")) {
                 selectedRuns.forEach((input) => {
                     [x, runType, id] = input.id.split("_");
-                
-                    var deleteURL = "{% url 'runs:delete' 0 %}";        
+                    var deleteURL  = '';
+                    if (activeTab === 'tensorflow') {
+                        deleteURL = tensorflowdeleteURL;
+                    }
+                    else {
+                        deleteURL = autokerasdeleteURL;
+                    }
+
                     $.ajax({
                         type: 'GET',
                         url: deleteURL.replace(0,id),
