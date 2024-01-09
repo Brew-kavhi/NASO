@@ -2,6 +2,7 @@ import tensorflow_model_optimization as tfmot
 from django.core.exceptions import ValidationError
 from django.db import models
 from loguru import logger
+import autokeras as ak
 
 from helper_scripts.importing import get_object
 from neural_architecture.models.types import BaseType, TypeInstance
@@ -168,7 +169,7 @@ class PrunableNetwork(models.Model):
     class Meta:
         abstract = True
 
-    def build_pruning_model(self, model):
+    def build_pruning_model(self, model, include_last_layer=True):
         """
         Builds a pruning model based on the specified pruning method, schedule, and policy.
 
@@ -196,7 +197,9 @@ class PrunableNetwork(models.Model):
                     self.pruning_policy.instance_type.required_arguments,
                 )
             else:
-                args["pruning_policy"] = EnsurePrunableModelPolicy()
+                args["pruning_policy"] = EnsurePrunableModelPolicy(
+                    model, include_last_layer
+                )
 
             logger.info("Built pruning model")
             return self.pruning_method.get_pruned_model(**args)
@@ -236,14 +239,17 @@ class PrunableNetwork(models.Model):
 
 
 class EnsurePrunableModelPolicy(tfmot.sparsity.keras.PruningPolicy):
+    _model = None
+    _include_last_layer = True
+
+    def __init__(self, model, include_last_layer=True):
+        self._model = model
+        self._include_last_layer = include_last_layer
+
     def allow_pruning(self, layer):
-        registry = PruneRegistry()
-        allowance = (
-            isinstance(layer, tfmot.sparsity.keras.PrunableLayer)
-            or hasattr(layer, "get_prunable_weights")
-            or registry.supports(layer)
-        )
-        return allowance
+        if not self._include_last_layer and layer == self._model.layers[-1]:
+            return False
+        return allow_pruning(layer)
 
     def ensure_model_supports_pruning(self, model):
         """Checks that the model contains only supported layers.
@@ -255,3 +261,16 @@ class EnsurePrunableModelPolicy(tfmot.sparsity.keras.PruningPolicy):
         ValueError: if the keras model doesn't support pruning policy, i.e. keras
             model contains an unsupported layer.
         """
+
+
+def allow_pruning(layer):
+    # if layer si autokeas head always return false
+    if isinstance(layer, ak.Head):
+        return False
+    registry = PruneRegistry()
+    allowance = (
+        isinstance(layer, tfmot.sparsity.keras.PrunableLayer)
+        or hasattr(layer, "get_prunable_weights")
+        or registry.supports(layer)
+    )
+    return allowance
