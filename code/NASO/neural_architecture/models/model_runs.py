@@ -95,7 +95,7 @@ class KerasModel(PrunableNetwork):
             "optimizer": self.model.optimizer,
             "metrics": self.model.metrics,
         }
-        self.model = self.build_pruning_model(self.model)
+        self.model = self.build_pruning_model(self.model, False)
         self.model.compile(**compile_args)
 
     def save_model(self):
@@ -131,7 +131,7 @@ class KerasModel(PrunableNetwork):
         if not os.path.exists(self.model_file):
             raise ValueError(f"model {self.model_file} does not exist")
         model = load_model(self.model_file)
-        return self.build_pruning_model(model)
+        return model
 
     def fit(self, *args, **kwargs):
         """
@@ -151,6 +151,15 @@ class KerasModel(PrunableNetwork):
         """
         if not self.model:
             self.model = self.load_model()
+            compile_args = {
+                "loss": self.model.loss,
+                "optimizer": self.model.optimizer,
+                "metrics": self.model.metrics,
+            }
+            self.model = self.build_pruning_model(self.model, False)
+            self.model.compile(**compile_args)
+        self.model.summary()
+
         if "epochs" not in kwargs:
             kwargs["epochs"] = self.fit_parameters.epochs
         if "callbacks" not in kwargs:

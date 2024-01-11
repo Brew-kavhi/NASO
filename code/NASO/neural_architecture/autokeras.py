@@ -104,7 +104,9 @@ def run_autokeras_trial(self, run_id, trial_id, keras_model_run_id):
     )
     model = keras_model_run.model
 
-    log_callback = BaseCallback(self, keras_model_run, epochs=run.fit_parameters.epochs)
+    log_callback = BaseCallback(
+        self, keras_model_run, epochs=keras_model_run.model.fit_parameters.epochs
+    )
 
     stop_event = threading.Event()
     database_lock = threading.Lock()
@@ -131,7 +133,6 @@ def run_autokeras_trial(self, run_id, trial_id, keras_model_run_id):
             )
 
             # Evaluate the best model with testing data.
-            print(model.evaluate(validation_dataset))
             model.predict(validation_dataset.take(200).batch(1), keras_model_run)
             self.update_state(state="SUCCESS")
     except Exception:
