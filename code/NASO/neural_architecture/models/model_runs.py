@@ -182,6 +182,14 @@ class KerasModel(PrunableNetwork):
         """
         if not self.model:
             self.model = self.load_model()
+            compile_args = {
+                "loss": self.model.loss,
+                "optimizer": self.model.optimizer,
+                "metrics": self.model.metrics,
+            }
+            self.model = self.build_pruning_model(self.model, False)
+            self.model.compile(**compile_args)
+        self.model.summary()
         return self.model.evaluate(*args, **kwargs)
 
     def predict(self, dataset, run: "KerasModelRun"):
@@ -198,6 +206,14 @@ class KerasModel(PrunableNetwork):
         """
         if not self.model:
             self.model = self.load_model()
+            compile_args = {
+                "loss": self.model.loss,
+                "optimizer": self.model.optimizer,
+                "metrics": self.model.metrics,
+            }
+            self.model = self.build_pruning_model(self.model, False)
+            self.model.compile(**compile_args)
+        self.model.summary()
         batch_size = 1
         return self.model.predict(
             dataset,
