@@ -132,7 +132,7 @@ def build_argument(argument, required_argument, arguments):
             if is_int(argument["value"]):
                 arguments[argument["name"]] = int(argument["value"])
             else:
-                arguments[argument["name"]] = float(argument["value"])
+                arguments[argument["name"]] = ast.literal_eval(argument["value"])
 
         elif required_argument["dtype"] == "float":
             arguments[argument["name"]] = float(argument["value"])
