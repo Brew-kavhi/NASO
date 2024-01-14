@@ -26,39 +26,6 @@ class Command(BaseCommand):
 
     help = "Loads all predefined activation functions, optimizers, loss function and so on in the database"
 
-    def build_arguments(self, constructor_parameters):
-        arguments = []
-        for param_name, param in constructor_parameters:
-            if not param_name == "self" and not param_name == "kwargs":
-                if (
-                    param.default is not inspect.Parameter.empty
-                    or param.annotation is not inspect.Parameter.empty
-                ):
-                    arguments.append(
-                        {
-                            "name": param_name,
-                            "default": param.default
-                            if param.default is not inspect.Parameter.empty
-                            else "",
-                            "dtype": self.get_argument_type(param),
-                        }
-                    )
-                else:
-                    arguments.append(
-                        {"name": param_name, "default": "", "dtype": "unknown"}
-                    )
-        return arguments
-
-    def get_argument_type(self, parameter):
-        if parameter.annotation is inspect.Parameter.empty:
-            return type(parameter.default).__name__
-        param_type = type(parameter.annotation).__name__
-        if param_type == "type":
-            # this parwmeter is of a standard type:
-            return parameter.annotation.__name__
-        # else it is some kind of typing.Union or typing.Optional
-        return str(parameter.annotation)
-
     def handle(self, *args, **options):
         # create all the objects here
         # for example the RegisteredActivationFunctions: tanh, ...
@@ -128,7 +95,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"Importing {module_name}"))
         for class_name, class_obj in classes:
             constructor = inspect.signature(class_obj.__init__)
-            arguments = self.build_arguments(constructor.parameters.items())
+            arguments = build_arguments(constructor.parameters.items())
             try:
                 type_instance, _ = type_class.objects.get_or_create(
                     module_name=module_name,
@@ -270,3 +237,38 @@ def load_pruning_utilities():
         name="PruneForLatencyOnXNNPack",
         required_arguments=[],
     )
+
+
+def build_arguments(constructor_parameters):
+    arguments = []
+    for param_name, param in constructor_parameters:
+        if not param_name == "self" and not param_name == "kwargs":
+            if (
+                param.default is not inspect.Parameter.empty
+                or param.annotation is not inspect.Parameter.empty
+            ):
+                arguments.append(
+                    {
+                        "name": param_name,
+                        "default": param.default
+                        if param.default is not inspect.Parameter.empty
+                        else "",
+                        "dtype": get_argument_type(param),
+                    }
+                )
+            else:
+                arguments.append(
+                    {"name": param_name, "default": "", "dtype": "unknown"}
+                )
+    return arguments
+
+
+def get_argument_type(parameter):
+    if parameter.annotation is inspect.Parameter.empty:
+        return type(parameter.default).__name__
+    param_type = type(parameter.annotation).__name__
+    if param_type == "type":
+        # this parwmeter is of a standard type:
+        return parameter.annotation.__name__
+    # else it is some kind of typing.Union or typing.Optional
+    return str(parameter.annotation)
