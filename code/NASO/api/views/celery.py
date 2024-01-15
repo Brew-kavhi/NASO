@@ -61,7 +61,7 @@ def is_run_executing(request):
     active_tasks = i.active()
 
     if not active_tasks:
-        return []
+        return Response({"success": False})
     for _, tasks in active_tasks.items():
         for task in tasks:
             print(task)
