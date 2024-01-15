@@ -20,7 +20,7 @@ class UpdateSessionView(APIView):
             delete_flag = serializer.validated_data["delete"]
             run_type = serializer.validated_data["run_type"]
 
-            if not request.session[comparison_key]:
+            if comparison_key not in request.session:
                 request.session[comparison_key] = {}
             if not delete_flag:
                 for value in values_list:
