@@ -2,140 +2,384 @@
 {% load get_values %}
 {% load humanize %}
 {% block content %}
-    <div class="axis-selection d-flex container justify-content-center">
-        <div class='w-25'>
-            <label>X-Axis</label>
-            <select class="form-control" id="graph_xaxis" onchange="graphX(this)">
-                <option value="epochs">epochs</option>
-            </select>
+    <style>
+    #gallery-container {
+      position: relative;
+    }
+
+    .gallery-card {
+      display: none;
+      width: 100%;
+      color:black;
+    }
+
+    .gallery-card.active {
+      display: block;
+    }
+
+    #canvas {
+      /* Style your canvas here */
+      background-color: #f0f0f0;
+      padding: 20px;
+      border: 1px solid #ccc;
+    }
+    </style>
+    <div class="tabs is-centered is-toggle is-toggle-round">
+        <ul>
+            <li class="tab is-active" onclick="openTab(event,'detail')">
+                <a>Details</a>
+            </li>
+            <li class="tab" onclick="openTab(event,'all-in-one')">
+                <a>All-in-one</a>
+            </li>
+        </ul>
+    </div>
+    <div class='content-tab' id='detail'>
+        <div class="axis-selection d-flex container justify-content-center">
+            <div class='w-25'>
+                <label>X-Axis</label>
+                <select class="form-control" id="graph_xaxis" onchange="graphX(this)">
+                    <option value="epochs">epochs</option>
+                </select>
+            </div>
+            <div class="mx-5 w-25">
+                <label>Y-Axis</label>
+                <select class="form-control" id="graph_yaxis" onchange="graphY(this)"></select>
+            </div>
         </div>
-        <div class="mx-5 w-25">
-            <label>Y-Axis</label>
-            <select class="form-control" id="graph_yaxis" onchange="graphY(this)"></select>
+        <div class="d-flex m-5 w-auto" style=" overflow-x: auto; ">
+            <div class='d-flex'>
+                {% for run in runs %}
+                    <div class='card  m-4'
+                         id='{{ run.comparison_id }}'
+                         style='width:max-content;
+                                min-width:20vw;
+                                max-width: 50vw'>
+                        <div class='card-header d-flex justify-content-between align-items-center'>
+                            <a href='{{ run.link }}' class='text-bold'>{{ run.name }}</a>
+                            <div class='d-flex align-items-center'>
+                                <span class='tag is-light mx-2 is-info'>{{ run.run_type }}</span>
+                                <select class='star-rating mx-2'
+                                        data-type='{{ run.run_type }}'
+                                        data-id="{{ run.id }}">
+                                    <option value="0"></option>
+                                    {% for i in "12345"|make_list %}
+                                        <option value='{{ i }}'
+                                                {% if run.rating == forloop.counter %}selected{% endif %}></option>
+                                    {% endfor %}
+                                </select>
+                                <button onclick="removeComparisonFromView(this)"
+                                        class="bg-danger button mx-2 p-3"
+                                        data-id="{{ run.run_type }}:{{ run.comparison_id }}"
+                                        data-tooltip='Aus Vergleich ausschliesen'>
+                                    <i class="fa fa-times-circle"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class='card-body'>
+                            <div>
+                                <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
+                                    <p class='my-2 text-bold'>Device</p>
+                                    <p>{{ run.device }}</p>
+                                </div>
+                                <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
+                                    <p class='my-2 text-bold'>Size</p>
+                                    <p>{{ run.size|intcomma }} Parameters</p>
+                                </div>
+                                <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
+                                    <p class='my-2 text-bold'>Memory usage</p>
+                                    <p>{{ run.memory_usage|intcomma }} Byte</p>
+                                </div>
+                                <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
+                                    <p class='my-2 text-bold'>Size on disk</p>
+                                    <p>{{ run.size_on_disk|intcomma }} Bytes</p>
+                                </div>
+                                <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
+                                    <p class='my-2 text-bold'>Average energy consumption</p>
+                                    <p>{{ run.energy_consumption|floatformat:2 }} W</p>
+                                </div>
+                                <!-- Pruning properties -->
+                                {% if run.pruning_method %}
+                                    <div class='align-items-center border-bottom d-flex justify-content-between has-tooltip-multiline px-3'
+                                         data-tooltip='{{ run.pruning_method.additional_arguments }}'>
+                                        <p class='my-2 text-bold'>Pruning method</p>
+                                        <p>{{ run.pruning_method.instance_type }}</p>
+                                    </div>
+                                    <div class='align-items-center border-bottom d-flex justify-content-between has-tooltip-multiline px-3'
+                                         data-tooltip='{{ run.pruning_schedule.additional_arguments }}'>
+                                        <p class='my-2 text-bold'>Pruning schedule</p>
+                                        <p>{{ run.pruning_schedule.instance_type }}</p>
+                                    </div>
+                                    <div class='align-items-center border-bottom d-flex justify-content-between has-tooltip-multiline px-3'
+                                         data-tooltip='{{ run.pruning_policy.additional_arguments }}'>
+                                        <p class='my-2 text-bold'>Pruning policy</p>
+                                        <p>{{ run.pruning_policy.instance_type }}</p>
+                                    </div>
+                                {% else %}
+                                    <div class='align-items-center border-bottom d-flex justify-content-between has-tooltip-multiline px-3'>
+                                        <p class='my-2 text-bold text-center w-100'>No pruning</p>
+                                    </div>
+                                {% endif %}
+                                {% if run.optimizer %}
+                                    <div class='align-items-center border-bottom d-flex justify-content-between has-tooltip-multiline px-3'
+                                         data-tooltip='{{ run.optimizer.additional_arguments }}'>
+                                        <p class='my-2 text-bold'>Optimizer</p>
+                                        <p>{{ run.optimizer.instance_type }}</p>
+                                    </div>
+                                {% endif %}
+                                {% if run.hyperparameters %}
+                                    <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
+                                        <div class="d-flex flex-wrap">
+                                            {% for item in run.hyperparameters %}
+                                                <div class="col-4">
+                                                    <strong>{{ item }}</strong>: {% get_attribute_tag hp item %}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div id='graph_container_{{ run.run_type }}_{{ run.comparison_id }}'>
+                                <h5 class='mt-4 text-center'>Graph</h5>
+                                <canvas class='h-100 w-100'
+                                        style="min-height: 40vh;
+                                               max-height:60vh"
+                                        id='canvas_{{ run.run_type }}_{{ run.comparison_id }}'
+                                        width="400"
+                                        height="400"></canvas>
+                            </div>
+                        </div>
+                        <div class='card-footer has-background-white-ter'>{{ run.description }}</div>
+                    </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
-    <div class="d-flex m-5 w-auto" style=" overflow-x: auto; ">
-        <div class='d-flex'>
-            {% for run in runs %}
-                <div class='card  m-4'
-                     id='{{ run.comparison_id }}'
-                     style='width:max-content;
-                            min-width:20vw;
-                            max-width: 50vw'>
-                    <div class='card-header d-flex justify-content-between align-items-center'>
-                        <a href='{{ run.link }}' class='text-bold'>{{ run.name }}</a>
-                        <div class='d-flex align-items-center'>
-                            <span class='tag is-light mx-2 is-info'>{{ run.run_type }}</span>
-                            <select class='star-rating mx-2'
-                                    data-type='{{ run.run_type }}'
-                                    data-id="{{ run.id }}">
-                                <option value="0"></option>
-                                {% for i in "12345"|make_list %}
-                                    <option value='{{ i }}'
-                                            {% if run.rating == forloop.counter %}selected{% endif %}></option>
-                                {% endfor %}
-                            </select>
-                            <button onclick="removeComparisonFromView(this)"
-                                    class="bg-danger button mx-2 p-3"
-                                    data-id="{{ run.run_type }}:{{ run.comparison_id }}"
-                                    data-tooltip='Aus Vergleich ausschliesen'>
-                                <i class="fa fa-times-circle"></i>
-                            </button>
+    <div class='content-tab' id='all-in-one' style="display:none">
+        <div class="axis-selection d-flex container justify-content-center">
+            <div class='w-25'>
+                <label>X-Axis</label>
+                <select class="form-control"
+                        id="graph_xaxis_all_plot"
+                        onchange="allGraphX(this)">
+                    <option value="epochs">epochs</option>
+                </select>
+            </div>
+            <div class="mx-5 w-25">
+                <label>Y-Axis</label>
+                <select class="form-control"
+                        id="graph_yaxis_all_plot"
+                        onchange="allGraphY(this)"></select>
+            </div>
+        </div>
+        <div class="d-flex mt-5 w-auto" style=" overflow-x: auto; ">
+            <div class='d-flex justify-content-center w-100'>
+                <button class='button rounded-circle mx-0 my-auto'
+                        style='width:50px;
+                               height:50px'
+                        onclick="prevCard()">
+                    <i class='fa fa-arrow-left'></i>
+                </button>
+                {% for run in runs %}
+                    <div class='card  mx-4 my-0 gallery-card'
+                         id='{{ run.comparison_id }}_overview'
+                         style='width:max-content;
+                                min-width:20vw;
+                                max-width: 50vw'>
+                        <div class='card-header d-flex justify-content-between align-items-center'>
+                            <a href='{{ run.link }}' class='text-bold'>{{ run.name }}</a>
+                            <div class='d-flex align-items-center'>
+                                <span class='tag is-light mx-2 is-info'>{{ run.run_type }}</span>
+                                <select class='star-rating mx-2'
+                                        data-type='{{ run.run_type }}'
+                                        data-id="{{ run.id }}">
+                                    <option value="0"></option>
+                                    {% for i in "12345"|make_list %}
+                                        <option value='{{ i }}'
+                                                {% if run.rating == forloop.counter %}selected{% endif %}></option>
+                                    {% endfor %}
+                                </select>
+                                <button onclick="removeComparisonFromView(this)"
+                                        class="bg-danger button mx-2 p-3"
+                                        data-id="{{ run.run_type }}:{{ run.comparison_id }}"
+                                        data-tooltip='Aus Vergleich ausschliesen'>
+                                    <i class="fa fa-times-circle"></i>
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    <div class='card-body'>
-                        <div>
-                            <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
-                                <p class='my-2 text-bold'>Device</p>
-                                <p>{{ run.device }}</p>
-                            </div>
-                            <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
-                                <p class='my-2 text-bold'>Size</p>
-                                <p>{{ run.size|intcomma }} Parameters</p>
-                            </div>
-                            <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
-                                <p class='my-2 text-bold'>Memory usage</p>
-                                <p>{{ run.memory_usage|intcomma }} Byte</p>
-                            </div>
-                            <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
-                                <p class='my-2 text-bold'>Size on disk</p>
-                                <p>{{ run.size_on_disk|intcomma }} Bytes</p>
-                            </div>
-                            <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
-                                <p class='my-2 text-bold'>Average energy consumption</p>
-                                <p>{{ run.energy_consumption|floatformat:2 }} W</p>
-                            </div>
-                            <!-- Pruning properties -->
-                            {% if run.pruning_method %}
-                                <div class='align-items-center border-bottom d-flex justify-content-between has-tooltip-multiline px-3'
-                                     data-tooltip='{{ run.pruning_method.additional_arguments }}'>
-                                    <p class='my-2 text-bold'>Pruning method</p>
-                                    <p>{{ run.pruning_method.instance_type }}</p>
-                                </div>
-                                <div class='align-items-center border-bottom d-flex justify-content-between has-tooltip-multiline px-3'
-                                     data-tooltip='{{ run.pruning_schedule.additional_arguments }}'>
-                                    <p class='my-2 text-bold'>Pruning schedule</p>
-                                    <p>{{ run.pruning_schedule.instance_type }}</p>
-                                </div>
-                                <div class='align-items-center border-bottom d-flex justify-content-between has-tooltip-multiline px-3'
-                                     data-tooltip='{{ run.pruning_policy.additional_arguments }}'>
-                                    <p class='my-2 text-bold'>Pruning policy</p>
-                                    <p>{{ run.pruning_policy.instance_type }}</p>
-                                </div>
-                            {% else %}
-                                <div class='align-items-center border-bottom d-flex justify-content-between has-tooltip-multiline px-3'>
-                                    <p class='my-2 text-bold text-center w-100'>No pruning</p>
-                                </div>
-                            {% endif %}
-                            {% if run.optimizer %}
-                                <div class='align-items-center border-bottom d-flex justify-content-between has-tooltip-multiline px-3'
-                                     data-tooltip='{{ run.optimizer.additional_arguments }}'>
-                                    <p class='my-2 text-bold'>Optimizer</p>
-                                    <p>{{ run.optimizer.instance_type }}</p>
-                                </div>
-                            {% endif %}
-                            {% if run.hyperparameters %}
+                        <div class='card-body'>
+                            <div>
                                 <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
-                                    <div class="d-flex flex-wrap">
-                                        {% for item in run.hyperparameters %}
-                                            <div class="col-4">
-                                                <strong>{{ item }}</strong>: {% get_attribute_tag hp item %}
-                                            </div>
-                                        {% endfor %}
-                                    </div>
+                                    <p class='my-2 text-bold'>Device</p>
+                                    <p>{{ run.device }}</p>
                                 </div>
-                            {% endif %}
+                                <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
+                                    <p class='my-2 text-bold'>Size</p>
+                                    <p>{{ run.size|intcomma }} Parameters</p>
+                                </div>
+                                <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
+                                    <p class='my-2 text-bold'>Memory usage</p>
+                                    <p>{{ run.memory_usage|intcomma }} Byte</p>
+                                </div>
+                                <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
+                                    <p class='my-2 text-bold'>Size on disk</p>
+                                    <p>{{ run.size_on_disk|intcomma }} Bytes</p>
+                                </div>
+                                <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
+                                    <p class='my-2 text-bold'>Average energy consumption</p>
+                                    <p>{{ run.energy_consumption|floatformat:2 }} W</p>
+                                </div>
+                                <!-- Pruning properties -->
+                                {% if run.pruning_method %}
+                                    <div class='align-items-center border-bottom d-flex justify-content-between has-tooltip-multiline px-3'
+                                         data-tooltip='{{ run.pruning_method.additional_arguments }}'>
+                                        <p class='my-2 text-bold'>Pruning method</p>
+                                        <p>{{ run.pruning_method.instance_type }}</p>
+                                    </div>
+                                    <div class='align-items-center border-bottom d-flex justify-content-between has-tooltip-multiline px-3'
+                                         data-tooltip='{{ run.pruning_schedule.additional_arguments }}'>
+                                        <p class='my-2 text-bold'>Pruning schedule</p>
+                                        <p>{{ run.pruning_schedule.instance_type }}</p>
+                                    </div>
+                                    <div class='align-items-center border-bottom d-flex justify-content-between has-tooltip-multiline px-3'
+                                         data-tooltip='{{ run.pruning_policy.additional_arguments }}'>
+                                        <p class='my-2 text-bold'>Pruning policy</p>
+                                        <p>{{ run.pruning_policy.instance_type }}</p>
+                                    </div>
+                                {% else %}
+                                    <div class='align-items-center border-bottom d-flex justify-content-between has-tooltip-multiline px-3'>
+                                        <p class='my-2 text-bold text-center w-100'>No pruning</p>
+                                    </div>
+                                {% endif %}
+                                {% if run.optimizer %}
+                                    <div class='align-items-center border-bottom d-flex justify-content-between has-tooltip-multiline px-3'
+                                         data-tooltip='{{ run.optimizer.additional_arguments }}'>
+                                        <p class='my-2 text-bold'>Optimizer</p>
+                                        <p>{{ run.optimizer.instance_type }}</p>
+                                    </div>
+                                {% endif %}
+                                {% if run.hyperparameters %}
+                                    <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
+                                        <div class="d-flex flex-wrap">
+                                            {% for item in run.hyperparameters %}
+                                                <div class="col-4">
+                                                    <strong>{{ item }}</strong>: {% get_attribute_tag hp item %}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
-                        <div id='graph_container_{{ run.run_type }}_{{ run.comparison_id }}'>
-                            <h5 class='mt-4 text-center'>Graph</h5>
-                            <canvas class='h-100 w-100'
-                                    style="min-height: 40vh;
-                                           max-height:60vh"
-                                    id='canvas_{{ run.run_type }}_{{ run.comparison_id }}'
-                                    width="400"
-                                    height="400"></canvas>
-                        </div>
+                        <div class='card-footer has-background-white-ter'>{{ run.description }}</div>
                     </div>
-                    <div class='card-footer has-background-white-ter'>{{ run.description }}</div>
-                </div>
-            {% endfor %}
+                {% endfor %}
+                <button class='button rounded-circle mx-0 my-auto'
+                        style='width:50px;
+                               height:50px'
+                        onclick="nextCard()">
+                    <i class='fa fa-arrow-right'></i>
+                </button>
+            </div>
+        </div>
+        <div id="all_plot" class='d-flex justify-content-center mx-6 px-6 mb-5'>
+            <canvas class='h-100 w-100 shadow has-background-white-ter p-5 mx-5'
+                    style="min-height: 60vh;
+                           max-height:60vh"
+                    id='canvas_all_plot'
+                    width="400"
+                    height="400"></canvas>
         </div>
     </div>
     <script>
         const COMPARISONS = {
             {% for run in runs %}'{{ run.comparison_id }}': {
                 "run_type": '{{ run.run_type }}',
-                "run_id": '{{ run.id }}'
+                "run_id": '{{ run.id }}',
+                "name": '{{ run.name }}'
             },{% endfor %}
         };
+        let allMetrics = {};
         let xLabels = [];
         let yLabels = [];
+        let yLabelsAllPlot = [];
+        let xLabelsAllPlot = [];
 
         const tensorflowMetricAPI = "{% url 'api:tensorflow:get_metrics_for_run' 0 %}";
         const autokerasMetricAPI = "{% url 'api:autokeras:get_metrics_for_run' 0 %}";
         const autokerasTrialMetricAPI = "{% url 'api:autokeras:get_metrics' 0 '-1'%}";
+        let currentCardIndex = 0;
+        let cards = [];
+        let allPlots = undefined;
+
+            function showCard(index) {
+              cards.forEach((card, i) => {
+                card.classList.toggle('active', i === index);
+              });
+            }
+
+            function nextCard() {
+              currentCardIndex = (currentCardIndex + 1) % cards.length;
+              showCard(currentCardIndex);
+            }
+
+            function prevCard() {
+              currentCardIndex = (currentCardIndex - 1 + cards.length) % cards.length;
+              showCard(currentCardIndex);
+            }
 
         document.addEventListener("DOMContentLoaded", () => {
+            cards = document.querySelectorAll('.gallery-card');
+            showCard(0);
+
+            let allCanvas = document.getElementById("canvas_all_plot").getContext('2d');
+                allPlots = new Chart(allCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: []
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                type: 'linear',
+                                position: 'bottom',
+                                title: {
+                                    display: true,
+                                    text: 'Epochs' // Set the dynamic X-axis title
+                                }
+                            },
+                            y: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: 'Loss' // Set the dynamic Y-axis title
+                                }
+                            }
+                        },
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            colors: {
+                                forceOverride: true
+                            },
+                            tooltip: {
+                                enabled: true,
+                                position: 'nearest',
+                            },
+                            legend: {
+                                position: 'top',
+                                onClick: selectDataset
+                            }
+                        }
+                    }
+                });
+            
+            var index = 0;
             for (const run of Object.keys(COMPARISONS)) {
                 let canvas = document.getElementById("canvas_" + COMPARISONS[run].run_type + "_" + run).getContext('2d');
                 let graphChart = new Chart(canvas, {
@@ -189,10 +433,14 @@
                                 metrics.push(metric);
                                 generateOption(metric, metric, $('#graph_xaxis'), xLabels);
                                 generateOption(metric, metric, $('#graph_yaxis'), yLabels);
+                                generateOption(metric, metric, $('#graph_yaxis_all_plot'), yLabelsAllPlot);
+                                generateOption(metric, metric, $('#graph_xaxis_all_plot'), xLabelsAllPlot);
                             }
                             COMPARISONS[run]['metrics'] = data;
                             build_graph(run_metrics, graphChart);
-
+                            let index = Object.keys(COMPARISONS).indexOf(run);
+                            allMetrics[index] = data;
+                            addDatasetToPlot(data, allPlots, COMPARISONS[run].name, index);
                         });
                     });
                 }
@@ -205,10 +453,14 @@
                                 metrics.push(metric);
                                 generateOption(metric, metric, $('#graph_xaxis'), xLabels);
                                 generateOption(metric, metric, $('#graph_yaxis'), yLabels);
+                                generateOption(metric, metric, $('#graph_yaxis_all_plot'), yLabelsAllPlot);
+                                generateOption(metric, metric, $('#graph_xaxis_all_plot'), xLabelsAllPlot);
                             }
                             COMPARISONS[run]['metrics'] = data;
                             build_graph(run_metrics, graphChart);
-
+                            let index = Object.keys(COMPARISONS).indexOf(run);
+                            allMetrics[index] = data;
+                            addDatasetToPlot(data, allPlots, COMPARISONS[run].name, index);
                         });
                     });
                 }
@@ -223,16 +475,26 @@
                                 metrics.push(metric);
                                 generateOption(metric, metric, $('#graph_xaxis'), xLabels);
                                 generateOption(metric, metric, $('#graph_yaxis'), yLabels);
+                                generateOption(metric, metric, $('#graph_yaxis_all_plot'), yLabelsAllPlot);
+                                generateOption(metric, metric, $('#graph_xaxis_all_plot'), xLabelsAllPlot);
                             }
                             COMPARISONS[run]['metrics'] = data;
                             build_graph(run_metrics, graphChart);
-
+                            let index = Object.keys(COMPARISONS).indexOf(run);
+                            allMetrics[index] = data;
+                            addDatasetToPlot(data, allPlots, COMPARISONS[run].name, index);
                         });
                     });
                 }
             }
         });
 
+
+        const selectDataset = function (e, legendItem, legend) {
+            const index = legendItem.datasetIndex;
+            showCard(allPlots.data.datasets[index].cardIndex);
+            console.log(allPlots.data.datasets[index].cardIndex);
+        };
 
         function generateOption(value, text, parent, existingLabels) {
             if (!existingLabels.includes(value)) {
@@ -244,8 +506,25 @@
             }
         }
 
-        function build_graph(run_metrics, graphChart) {
+        function addDatasetToPlot(data, canvas, name, index) {
+            var labels = [];
+            let yaxis = $('#graph_yaxis_all_plot').val();
+            let xaxis = $('#graph_xaxis_all_plot').val();
+            canvas.data.datasets.push({cardIndex: index,label: name, data:dictToArray(data, yaxis, xaxis)});
+            canvas.update();
+            console.log(canvas.data);
 
+            for (let epoch in data) {
+                labels.push(epoch);
+            }
+
+            if (labels.length > canvas.data.labels.length) {
+                canvas.data.labels = labels;
+                canvas.update();
+            }
+        }
+
+        function build_graph(run_metrics, graphChart) {
             var data = [];
             var labels = [];
 
@@ -303,6 +582,27 @@
                 }
             }
             return array;
+        }
+
+        function allGraphX(event) {
+            let xaxis = $('#graph_xaxis_all_plot').val();
+            let yaxis = $('#graph_yaxis_all_plot').val();
+            allPlots.data.datasets.forEach(function(dataset) {
+                dataset.data = dictToArray(allMetrics[dataset.cardIndex], yaxis, xaxis);
+            });
+            allPlots.options.scales.x.title.text = xaxis;
+            allPlots.update();
+        }
+
+        function allGraphY(event) {
+            console.log('hello');
+            console.log(allPlots.data);
+            let yaxis = $('#graph_yaxis_all_plot').val();
+            allPlots.data.datasets.forEach(function(dataset) {
+                dataset.data = dictToArray(allMetrics[dataset.cardIndex], yaxis, $('#graph_xaxis_all_plot').val());
+            });
+            allPlots.options.scales.y.title.text = yaxis;
+            allPlots.update();
         }
 
         function graphX(event) {
