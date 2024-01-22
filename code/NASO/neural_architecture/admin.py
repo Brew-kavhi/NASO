@@ -6,6 +6,7 @@ from neural_architecture.models.autokeras import (
     AutoKerasModel,
     AutoKerasNodeType,
     AutoKerasRun,
+    AutoKerasNode,
     AutoKerasTunerType,
 )
 from neural_architecture.models.dataset import DatasetLoader
@@ -26,6 +27,7 @@ admin.site.register(LossType)
 admin.site.register(MetricType)
 admin.site.register(NetworkLayerType)
 admin.site.register(AutoKerasNodeType)
+admin.site.register(AutoKerasNode)
 admin.site.register(CallbackType)
 admin.site.register(AutoKerasRun)
 admin.site.register(AutoKerasNetworkTemplate)

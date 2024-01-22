@@ -55,6 +55,9 @@ class AutoKerasNode(TypeInstance):
     name = models.CharField(max_length=50)
     node_type = models.ForeignKey(AutoKerasNodeType, on_delete=models.deletion.CASCADE)
 
+    def __str__(self):
+        return self.name
+
 
 class AutoKerasTunerType(BaseType):
     """
