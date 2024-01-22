@@ -120,3 +120,10 @@ This can be done using tensorflows ```model.count_params``` function. This is ac
 - [ ] Ensure the corectb model is choosen when running a trial from autokeras an pruning is applied corectly.
 - [ ] For a autoekras trial run, also make sure the memory usage and model_size is measured correctly
 
+# Update from 22,01,24
+## Workflow 
+Here i shirtoy want to presen the worflow of the experiments. Frist we need to find a base experiment. Building upon that we run a pruning run with this base model with different prunning rates from 10 to 60% in steps of 10. And the best one is then run again with different hardware paramters, as i guess this can also make a difference. So this is theso called manual approach. But we will also habve an automatic approach with autokeras. This is done by doing just the baisc autokers optimixation with bayes optimization and different objectives to see in which case the objective makes a difference. If we have this then we choose the best run and do pruning with it. 
+Workflow:
+|Manual Base | manual pruning | autokeras | autokeras pruning
+|--------|------|------|----
+|Tensorflow base run | pruning of top odf the base run with different sparsities | autokeras run wioth differnt objectives and bayesian optimizers | then pruning of best autokeras run.
