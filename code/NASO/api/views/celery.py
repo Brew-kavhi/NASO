@@ -137,24 +137,39 @@ def get_workers_information():
                     continue
                 if "run_id" in task_details:
                     if "autokeras" in task_details and task_details["autokeras"]:
-                        run = AutoKerasRun.objects.get(id=task_details["run_id"])
-                        task["name"] = run.model.project_name
-                        task["link"] = reverse_lazy(
-                            "runs:autokeras:details", kwargs={"pk": run.id}
-                        )
+                        run = AutoKerasRun.objects.filter(id=task_details["run_id"])
+                        if run.exists():
+                            run = run.first()
+                            task["name"] = run.model.project_name
+                            task["link"] = reverse_lazy(
+                                "runs:autokeras:details", kwargs={"pk": run.id}
+                            )
+                        else:
+                            task["name"] = "Undefined"
+                            task["link"] = ""
                     elif (
                         "autokeras_trial" in task_details
                         and task_details["autokeras_trial"]
                     ):
-                        run = KerasModelRun.objects.get(id=task_details["run_id"])
-                        task["name"] = run.model.name
-                        task["link"] = reverse_lazy("runs:list")
+                        run = KerasModelRun.objects.filter(id=task_details["run_id"])
+                        if run.exists():
+                            run = run.first()
+                            task["name"] = run.model.name
+                            task["link"] = reverse_lazy("runs:list")
+                        else:
+                            task["link"] = ""
+                            task["name"] = "Undefined"
                     else:
-                        run = NetworkTraining.objects.get(id=task_details["run_id"])
-                        task["name"] = run.network_config.name
-                        task["link"] = reverse_lazy(
-                            "runs:details", kwargs={"pk": run.id}
-                        )
+                        run = NetworkTraining.objects.filter(id=task_details["run_id"])
+                        if run.exists():
+                            run = run.first()
+                            task["name"] = run.network_config.name
+                            task["link"] = reverse_lazy(
+                                "runs:details", kwargs={"pk": run.id}
+                            )
+                        else:
+                            task["link"] = ""
+                            task["name"] = "Undefined"
                 else:
                     task["link"] = ""
                 if "gpu" in task_details:
