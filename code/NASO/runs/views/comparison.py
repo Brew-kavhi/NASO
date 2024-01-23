@@ -15,7 +15,10 @@ class ComparisonView(TemplateView):
     context = {"page": page.get_context()}
 
     def get(self, request):
-        comparison_runs = request.session["comparison"]
+        if "comparison" in request.session:
+            comparison_runs = request.session["comparison"]
+        else:
+            comparison_runs = []
         runs = []
         for comparison_id in comparison_runs:
             run_id = comparison_id
