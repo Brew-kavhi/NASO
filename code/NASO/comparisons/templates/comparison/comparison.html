@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load get_values %}
+{% load crispy_forms_tags %}
 {% load humanize %}
 {% block content %}
     <style>
@@ -291,6 +292,9 @@
                     height="400"></canvas>
         </div>
     </div>
+    {% if session %}
+        <div class='container my-3'>{% crispy session %}</div>
+    {% endif %}
     <script>
         const COMPARISONS = {
             {% for run in runs %}'{{ run.comparison_id }}': {
