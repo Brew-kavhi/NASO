@@ -25,6 +25,10 @@ urlpatterns = [
         "settings/plugins/", include(("plugins.urls", "plugins"), namespace="plugins")
     ),
     path("runs/", include(("runs.urls", "runs"), namespace="runs")),
+    path(
+        "comparison/",
+        include(("comparisons.urls", "comparions"), namespace="comparisons"),
+    ),
     path("system/", include(("system.urls", "system"), namespace="system")),
     path("api/", include(("api.urls", "api"), namespace="api")),
 ]

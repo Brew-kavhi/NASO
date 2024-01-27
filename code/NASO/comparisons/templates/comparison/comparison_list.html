@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block content %}
+    <div class='container'>
+        {% for comparison in comparisons %}
+            <div class='card my-3' id='accordion{{ comparison.id }}'>
+                <div class='card-header align-items-center justify-content-between'>
+                    <a href="{% url 'comparisons:details' comparison.id %}" class='text-lg'>{{ comparison.name }}</a>
+                    <button class="button is-danger ml-2 delete-btn"
+                            data-target="#confirmDeleteModal"
+                            data-action="{% url 'comparisons:delete' comparison.id %}"
+                            data-item-id="{{ comparison.id }}"
+                            data-item-name="{{ comparison.name }}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class='card-body'>{{ comparison.description }}</div>
+            </div>
+        {% endfor %}
+    </div>
+    {% include 'components/delete_modal.html' %}
+{% endblock content %}
