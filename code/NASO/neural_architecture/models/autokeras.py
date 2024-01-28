@@ -278,13 +278,11 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         )
         trial_model = self.loaded_model.tuner._try_build(hyper_parameters)
         weights_path = self.get_trial_checkpoint_path(trial_id)
-        trial_model.load_weights(weights_path)
         trial_model.compile(
             optimizer=trial_model.optimizer,
             loss=trial_model.loss,
             metrics=self.get_metrics(),
         )
-        print(trial_model.summary())
         return trial_model
 
     def save_trial_as_model(
@@ -375,6 +373,7 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         ) = self.loaded_model.tuner._prepare_model_build(
             trial.hyperparameters, x=dataset, validation_data=validation_data
         )
+        self.loaded_model.tuner.hypermodel.set_fit_args(0)
         return (pipeline, trial.hyperparameters, trial_data, validation_data)
 
     def get_trial(self, trial_id):

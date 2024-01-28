@@ -192,6 +192,7 @@ class TrialView(TemplateView):
             training.hyper_parameters = hyper_parameters
 
             network_config = build_network_config(name, model)
+            network_config.save_model = True
             if form.cleaned_data["enable_pruning"]:
                 (
                     method_arguments,
