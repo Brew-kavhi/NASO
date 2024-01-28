@@ -410,6 +410,10 @@
                                                 <span class='has-text-weight-bold'>NASO Version:</span>
                                                 {{ network_training.naso_app_version }}
                                             </p>
+                                            <p>
+                                                <span class='has-text-weight-bold'>Parametercount:</span>
+                                                {{ network_training.network_config.size }}
+                                            </p>
                                         </div>
                                         <div>
                                             <a href="{% url 'runs:details' network_training.id %}"
