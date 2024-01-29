@@ -1,6 +1,6 @@
-from django.views.generic.base import TemplateView
 import safedelete
 from django.urls import reverse_lazy
+from django.views.generic.base import TemplateView
 
 from naso.models.page import PageSetup
 from neural_architecture.models.autokeras import AutoKerasRun

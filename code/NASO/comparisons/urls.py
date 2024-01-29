@@ -1,7 +1,7 @@
 from django.urls import include, path
 
+from comparisons.views.details import ComparisonDetailView, SessionComparisonView
 from comparisons.views.list import ComparisonListView, delete_comparison
-from comparisons.views.details import SessionComparisonView, ComparisonDetailView
 
 urlpatterns = [
     path("", ComparisonListView.as_view(), name="list"),

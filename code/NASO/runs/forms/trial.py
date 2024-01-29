@@ -1,4 +1,4 @@
-from crispy_forms.layout import HTML, Field, Column, Row, Layout, Submit
+from crispy_forms.layout import HTML, Column, Field, Layout, Row, Submit
 from django import forms
 
 from runs.forms.base import BaseRunWithCallback, PrunableForm

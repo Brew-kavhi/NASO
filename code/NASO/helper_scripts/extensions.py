@@ -1,9 +1,9 @@
 import asyncio
-import numpy as np
-from tensorflow_model_optimization.python.core.sparsity.keras import pruning_wrapper
-from tensorflow.keras import backend as K
 
+import numpy as np
 from loguru import logger
+from tensorflow.keras import backend as K
+from tensorflow_model_optimization.python.core.sparsity.keras import pruning_wrapper
 
 from helper_scripts.power_management import get_power_usage
 from runs.models.training import Run, TrainingMetric

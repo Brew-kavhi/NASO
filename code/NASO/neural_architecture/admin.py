@@ -4,9 +4,9 @@ from django.contrib import admin
 from neural_architecture.models.architecture import NetworkConfiguration
 from neural_architecture.models.autokeras import (
     AutoKerasModel,
+    AutoKerasNode,
     AutoKerasNodeType,
     AutoKerasRun,
-    AutoKerasNode,
     AutoKerasTunerType,
 )
 from neural_architecture.models.dataset import DatasetLoader

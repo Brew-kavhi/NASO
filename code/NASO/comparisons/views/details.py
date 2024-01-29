@@ -1,8 +1,8 @@
 from django.views.generic.base import TemplateView
-from comparisons.forms.create import SaveSession
 
-from naso.models.page import PageSetup
+from comparisons.forms.create import SaveSession
 from comparisons.models.comparison import Comparison, get_comparison_details
+from naso.models.page import PageSetup
 
 
 class ComparisonDetailView(TemplateView):

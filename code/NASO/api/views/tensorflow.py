@@ -3,8 +3,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from runs.views.softdelete import harddelete_run, undelete_run
 from runs.models.training import NetworkTraining
+from runs.views.softdelete import harddelete_run, undelete_run
 
 
 @api_view(["POST"])

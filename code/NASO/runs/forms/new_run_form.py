@@ -1,8 +1,9 @@
+from os import listdir
+from os.path import isfile, join
+
 from crispy_forms.layout import HTML, Column, Field, Layout, Row, Submit
 from django import forms
 from django.urls import reverse_lazy
-from os import listdir
-from os.path import isfile, join
 
 from neural_architecture.models.autokeras import AutoKerasNodeType, AutoKerasTunerType
 from neural_architecture.models.templates import (

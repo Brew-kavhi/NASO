@@ -1,8 +1,9 @@
 from django.db import models
+from django.urls import reverse_lazy
+
+from api.views.autokeras import get_trial_details
 from neural_architecture.models.autokeras import AutoKerasRun
 from runs.models.training import NetworkTraining
-from django.urls import reverse_lazy
-from api.views.autokeras import get_trial_details
 
 
 class Comparison(models.Model):

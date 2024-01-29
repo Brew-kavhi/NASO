@@ -1,9 +1,9 @@
-from django.views.generic.base import TemplateView
-from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.views.generic.base import TemplateView
 
-from naso.models.page import PageSetup
 from comparisons.models.comparison import Comparison
+from naso.models.page import PageSetup
 
 
 class ComparisonListView(TemplateView):

@@ -1,14 +1,14 @@
+import autokeras as ak
 import tensorflow_model_optimization as tfmot
 from django.core.exceptions import ValidationError
 from django.db import models
 from loguru import logger
-import autokeras as ak
-
-from helper_scripts.importing import get_object
-from neural_architecture.models.types import BaseType, TypeInstance
 from tensorflow_model_optimization.python.core.sparsity.keras.prune_registry import (
     PruneRegistry,
 )
+
+from helper_scripts.importing import get_object
+from neural_architecture.models.types import BaseType, TypeInstance
 
 
 class PruningMethodTypes(BaseType):
