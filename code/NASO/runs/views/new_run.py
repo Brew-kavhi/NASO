@@ -5,7 +5,6 @@ from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic.base import TemplateView
-
 from naso.models.page import PageSetup
 from neural_architecture.autokeras import run_autokeras
 from neural_architecture.models.architecture import NetworkConfiguration, NetworkLayer
@@ -293,16 +292,23 @@ class NewRun(TemplateView):
                 training = NetworkTraining()
                 training.hyper_parameters = hyper_parameters
 
-                eval_parameters, _ = EvaluationParameters.objects.get_or_create(
+                eval_parameters = EvaluationParameters.objects.filter(
                     steps=form.cleaned_data["steps_per_execution"],
                     batch_size=form.cleaned_data["batch_size"],
                 )
-                eval_parameters.save()
+                if eval_parameters.exists():
+                    eval_parameters = eval_parameters.first()
+                else:
+                    eval_parameters = EvaluationParameters.objects.create(
+                        steps=form.cleaned_data["steps_per_execution"],
+                        batch_size=form.cleaned_data["batch_size"],
+                    )
+                    eval_parameters.save()
                 eval_parameters.callbacks.set(
                     build_callbacks(form.cleaned_data, callbacks_arguments)
                 )
 
-                fit_parameters, _ = FitParameters.objects.get_or_create(
+                fit_parameters = FitParameters.objects.create(
                     epochs=form.cleaned_data["epochs"],
                     batch_size=form.cleaned_data["batch_size"],
                     shuffle=form.cleaned_data["shuffle"],
