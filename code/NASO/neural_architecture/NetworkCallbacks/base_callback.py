@@ -1,8 +1,10 @@
 import math
-from helper_scripts.extensions import calculate_sparsity
+import time
 
+import django
 import tensorflow as tf
 
+from helper_scripts.extensions import calculate_sparsity
 from helper_scripts.timer import Timer
 from neural_architecture.models.autokeras import AutoKerasRun
 from neural_architecture.models.model_runs import KerasModelRun
@@ -130,7 +132,12 @@ class BaseCallback(tf.keras.callbacks.Callback):
                     },
                 ],
             )
-            metric.save()
+            # TODO the possiblity of a databse locked error occurs here. So wait  a milliseconds and try again
+            try:
+                metric.save()
+            except django.db.utils.OperationalError:
+                time.sleep(0.5)
+                metric.save()
         elif isinstance(self.run, KerasModelRun):
             metric = TrainingMetric(
                 epoch=epoch,
