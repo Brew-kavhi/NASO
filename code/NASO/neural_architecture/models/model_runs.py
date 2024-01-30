@@ -1,4 +1,6 @@
 import os
+import numpy as np
+import tensorflow.keras.backend as K
 from typing import Any
 
 from django.db import models
@@ -88,7 +90,7 @@ class KerasModel(PrunableNetwork):
 
         # now save the model and set the model_file attribute:
         self.model.save(self.model_file, overwrite=True)
-        self.size = self.model.count_params()
+        self.size = int(np.sum([K.count_params(w) for w in model.trainable_weights]))
         self.save()
         compile_args = {
             "loss": self.model.loss,

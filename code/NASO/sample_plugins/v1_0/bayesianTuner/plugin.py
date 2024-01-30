@@ -1,4 +1,6 @@
 # from django.db import transaction
+import numpy as np
+import tensorflow.keras.backend as K
 from autokeras import tuners
 
 from neural_architecture.models.autokeras import AutoKerasTunerType
@@ -118,7 +120,10 @@ class BaysianOptimizationTrial(tuners.BayesianOptimization):
 
     def on_epoch_end(self, trial, model, epoch, logs=None):
         print("epoch ended")
-        logs["model_size"] = model.count_params()
+        logs["model_size"] = int(
+            np.sum([K.count_params(w) for w in model.trainable_weights])
+        )
+
         print(logs)
         super().on_epoch_end(trial, model, epoch, logs)
 

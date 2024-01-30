@@ -4,6 +4,7 @@ import numpy as np
 from loguru import logger
 from tensorflow.keras import backend as K
 from tensorflow_model_optimization.python.core.sparsity.keras import pruning_wrapper
+import tensorflow.keras.backend as K
 
 from helper_scripts.power_management import get_power_usage
 from runs.models.training import Run, TrainingMetric
@@ -40,7 +41,9 @@ def custom_on_epoch_end_decorator(original_on_epoch_end, run):
 
     def on_epoch_end(self, trial, model, epoch, logs=None):
         if "model_size" not in logs:
-            logs["model_size"] = model.count_params()
+            logs["model_size"] = int(
+                np.sum([K.count_params(w) for w in model.trainable_weights])
+            )
 
         if "metrics" not in logs:
             logs["metrics"] = 0
@@ -90,7 +93,9 @@ def custom_on_epoch_begin_decorator(original_on_epoch_begin):
 
     def on_epoch_begin(self, trial, model, epoch, logs=None):
         if "model_size" not in logs:
-            logs["model_size"] = model.count_params()
+            logs["model_size"] = int(
+                np.sum([K.count_params(w) for w in model.trainable_weights])
+            )
         if "trial_id" not in logs:
             logs["trial_id"] = trial.trial_id
 

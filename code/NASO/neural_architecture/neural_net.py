@@ -1,9 +1,11 @@
 import threading
 import time
 import traceback
+import numpy as np
 
 import tensorflow as tf
 from loguru import logger
+import tensorflow.keras.backend as K
 
 from celery import shared_task
 from helper_scripts.extensions import start_async_measuring
@@ -134,7 +136,7 @@ class NeuralNetwork:
         model.compile(**self.training_config.hyper_parameters.get_as_dict())
         logger.success("Model is initiated.")
         model.summary()
-        config.size = model.count_params()
+        config.size = int(np.sum([K.count_params(w) for w in model.trainable_weights]))
         config.save()
 
         self.model = model
