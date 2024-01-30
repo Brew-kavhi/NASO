@@ -190,3 +190,5 @@ def get_workers_information():
         return workers_info
     except BrokenPipeError:
         return []
+    except TimeoutError:
+        return []
