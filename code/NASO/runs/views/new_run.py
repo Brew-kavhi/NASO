@@ -328,16 +328,22 @@ class NewRun(TemplateView):
                 )
 
                 if "rerun" in request.GET:
-                    old_training = NetworkTraining.objects.get(
-                        pk=request.GET.get("rerun")
-                    )
                     if form.cleaned_data["fine_tune_saved_model"]:
                         network_config.load_model = True
-                        fit_parameters.initial_epoch = (
-                            old_training.fit_parameters.epochs
-                        )
-                        fit_parameters.save()
                         network_config.model_file = form.cleaned_data["load_model"]
+                        id = network_config.model_file[
+                            network_config.model_file.rfind("_") + 1 :
+                        ].split(".h5")[0]
+                        try:
+                            old_training = NetworkTraining.objects.filter(
+                                network_config__id=id
+                            ).first()
+                            fit_parameters.initial_epoch = (
+                                old_training.fit_parameters.epochs
+                            )
+                            fit_parameters.save()
+                        except:
+                            logger.info("Model could not be loaded")
 
                 if form.cleaned_data["enable_pruning"]:
                     (
@@ -390,9 +396,8 @@ class NewRun(TemplateView):
                         network_config.model_file.rfind("_") + 1 :
                     ].split(".h5")[0]
                     source_queryset = TrainingMetric.objects.filter(
-                        neural_network__id=id
+                        neural_network__network_config__id=id
                     )
-
                     for source_instance in source_queryset:
                         new_instance = TrainingMetric.objects.create(
                             neural_network=training,
