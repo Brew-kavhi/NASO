@@ -439,10 +439,43 @@
                                 enabled: true,
                                 position: 'nearest',
                             },
+                            zoom: {
+                                enabled: true,
+                                mode: 'y',
+                                zoom: {
+                                    wheel: {
+                                        enabled: true
+                                    },
+                                    pinch: {
+                                        enabled: true
+                                    },
+                                    drag: {
+                                        enabled: true,
+                                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                        borderColor: 'rgb(255, 99, 132)',
+                                        borderWidth: 1,
+                                        modifierKey: 'ctrl'
+                                    },
+                                },
+                                pan:{
+                                    enabled: true,
+                                    mode: 'xy'
+                                },
+                            },
                             legend: {
                                 position: 'top',
-                                onClick: selectDataset
-                            }
+                                //onClick: selectDataset
+                                onClick: function (event, legendItem) {
+                                    var index = legendItem.datasetIndex;
+                                    var chart = this.chart;
+                                    var meta = chart.getDatasetMeta(index);
+
+                                    // Toggle visibility of the dataset
+                                    meta.hidden = meta.hidden === null ? !chart.data.datasets[index].hidden : null;
+                                    chart.update();
+                                    selectDataset(event, legendItem);
+                                }
+                            },
                         }
                     }
                 });

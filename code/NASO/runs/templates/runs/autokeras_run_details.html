@@ -576,6 +576,29 @@
                         colors: {
                             forceOverride: true
                         },
+                            zoom: {
+                                enabled: true,
+                                mode: 'y',
+                                zoom: {
+                                    wheel: {
+                                        enabled: true
+                                    },
+                                    pinch: {
+                                        enabled: true
+                                    },
+                                    drag: {
+                                        enabled: true,
+                                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                        borderColor: 'rgb(255, 99, 132)',
+                                        borderWidth: 1,
+                                        modifierKey: 'ctrl'
+                                    },
+                                },
+                                pan:{
+                                    enabled: true,
+                                    mode: 'xy'
+                                },
+                            },
                         tooltip: {
                             enabled: false,
                             position: 'nearest',
