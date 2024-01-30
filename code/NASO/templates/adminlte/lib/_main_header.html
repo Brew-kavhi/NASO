@@ -72,6 +72,9 @@
                     </div>
                     <a class="d-block my-2 text-center"
                        href="{% url 'comparisons:session' %}">Zur Ubersicht</a>
+                    <div class='d-flex my-3 justify-content-center'>
+                        <button onclick='clearSession()' class='button is-danger'>Zurücksetzen</button>
+                    </div>
                 </div>
             </ul>
         </ul>
@@ -113,6 +116,17 @@
         </ul>
     </ul>
     <script>
+        async function clearSession() {
+            const response = await fetch('{% url 'api:comparisons:clear_session' %}', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${token}`,
+                },
+            });
+            console.log(response);
+        }
+
         const apiURL = '/api/celery/restart_worker/';
         async function restart_worker(element) {
             const response = await fetch(apiURL + element.getAttribute('name'), {
