@@ -106,12 +106,14 @@ def get_arguments_as_dict(additional_arguments, required_arguments):
             and argument["value"] != ""
         ):
             # check for dtype:
-            arguments[argument["name"]] = argument["value"]
+            if is_int(argument["value"]):
+                arguments[argument["name"]] = int(argument["value"])
+            else:
+                arguments[argument["name"]] = argument["value"]
             for required_arg in required_arguments:
                 if argument["name"] == required_arg["name"]:
                     build_argument(argument, required_arg, arguments)
                     continue
-
     return arguments
 
 
@@ -156,9 +158,12 @@ def build_argument(argument, required_argument, arguments):
             elif argument["value"].lower() == "false":
                 arguments[argument["name"]] = False
             else:
-                arguments[argument["name"]] = argument["value"]
+                arguments[argument["name"]] = ast.literal_eval(argument["value"])
         else:
-            arguments[argument["name"]] = ast.literal_eval(argument["value"])
+            if isinstance(argument["value"], str):
+                arguments[argument["name"]] = ast.literal_eval(argument["value"])
+            else:
+                arguments[argument["name"]] = argument["value"]
             if not isinstance(
                 arguments[argument["name"]],
                 ast.literal_eval(required_argument["dtype"]),
@@ -187,4 +192,6 @@ def is_int(string):
         int(string)
         return True
     except ValueError:
+        return False
+    except TypeError:
         return False
