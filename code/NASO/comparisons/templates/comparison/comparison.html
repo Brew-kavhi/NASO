@@ -292,6 +292,15 @@
                     height="400"></canvas>
         </div>
     </div>
+    <div id="bar_chart"
+         class='mb-auto pb-4 d-flex justify-content-center mx-6 px-6 mb-5'>
+        <canvas class='h-100 w-100 shadow has-background-white-ter p-5 mx-5'
+                style="min-height: 60vh;
+                       max-height:60vh"
+                id='canvas_bar_chart'
+                width="400"
+                height="400"></canvas>
+    </div>
     {% if session %}
         <div class='container my-3'>{% crispy session %}</div>
     {% endif %}
@@ -300,7 +309,10 @@
             {% for run in runs %}'{{ run.comparison_id }}': {
                 "run_type": '{{ run.run_type }}',
                 "run_id": '{{ run.id }}',
-                "name": '{{ run.name }}'
+                "name": '{{ run.name }}',
+                "model_size":'{{run.size}}',
+                "size_on_disk": {{run.size_on_disk}},
+                "memory_usage": {{ run.memory_usage }}
             },{% endfor %}
         };
         let allMetrics = {};
@@ -335,6 +347,58 @@
         document.addEventListener("DOMContentLoaded", () => {
             cards = document.querySelectorAll('.gallery-card');
             showCard(0);
+
+            var keys = Object.keys(COMPARISONS);
+            var labels = keys.map(function(key) {
+                return COMPARISONS[key]['name'];
+            });
+            var datasets = [];
+
+            for (var barName in COMPARISONS[keys[0]]) {
+                if (barName === 'run_type' || barName === 'run_id' || barName === 'name') {
+                    continue;
+                }
+                var data = keys.map(function (label) {
+                    return COMPARISONS[label][barName];
+                });
+
+                datasets.push({
+                    label: barName,
+                    data: data
+                });
+            }
+
+            var ctx = document.getElementById('canvas_bar_chart').getContext('2d');
+            var myBarChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    scales: {
+                        x: {
+                            stacked: true
+                        },
+                        y: {
+                            stacked: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            onClick: function (event, legendItem) {
+                                var index = legendItem.datasetIndex;
+                                var chart = this.chart;
+                                var meta = chart.getDatasetMeta(index);
+
+                                // Toggle visibility of the dataset
+                                meta.hidden = meta.hidden === null ? !chart.data.datasets[index].hidden : null;
+                                chart.update();
+                            }
+                        }
+                    }
+                }
+            });
 
             let allCanvas = document.getElementById("canvas_all_plot").getContext('2d');
                 allPlots = new Chart(allCanvas, {
