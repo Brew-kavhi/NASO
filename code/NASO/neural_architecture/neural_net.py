@@ -106,6 +106,7 @@ class NeuralNetwork:
 
         self.train()
         self.validate()
+        config.size_on_disk = config.network_config.get_gzipped_model_size()
 
     def build_model_from_config(self, config: NetworkConfiguration = None) -> None:
         """
