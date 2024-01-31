@@ -53,9 +53,12 @@ def run_autokeras(self, run_id):
                     args=(stop_event, run, database_lock),
                     daemon=True,
                 ).start()
-                run.memory_usage = tf.config.experimental.get_memory_info(run.gpu)[
-                    "current"
-                ]
+                if run.gpu.startswith("GPU"):
+                    run.memory_usage = tf.config.experimental.get_memory_info(run.gpu)[
+                        "current"
+                    ]
+                else:
+                    run.memory_usage = -1
                 run.save()
                 autokeras_model.fit(
                     train_dataset,
@@ -120,9 +123,12 @@ def run_autokeras_trial(self, run_id, trial_id, keras_model_run_id):
                 args=(stop_event, run, database_lock),
                 daemon=True,
             ).start()
-            run.memory_usage = tf.config.experimental.get_memory_info(run.gpu)[
-                "current"
-            ]
+            if run.gpu.startswith("GPU"):
+                run.memory_usage = tf.config.experimental.get_memory_info(run.gpu)[
+                    "current"
+                ]
+            else:
+                run.memory_usage = -1
             run.save()
             model.fit(
                 train_dataset,
