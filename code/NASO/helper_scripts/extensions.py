@@ -185,6 +185,8 @@ def calculate_sparsity(model):
     del values[-1]
     del params[-1]
 
-    sparsity_values = [1 - np.mean(mask_value) for mask_value in values[::2]]
-    # Return the average sparsity across all prunable layers
-    return np.mean(sparsity_values)
+    if len(values[::2]) > 0:
+        sparsity_values = [1 - np.mean(mask_value) for mask_value in values[::2]]
+        # Return the average sparsity across all prunable layers
+        return np.mean(sparsity_values)
+    return 0
