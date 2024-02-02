@@ -560,9 +560,27 @@ class AutoKerasRun(Run):
         avg_energy = sum(measured_energy) / len(measured_energy)
         return {"model_size": model_size, "average_energy": avg_energy}
 
+    def get_energy_measurements(self):
+        if self.energy_measurements == "":
+            return [
+                metric.metrics[0]["metrics"]["energy_consumption"]
+                for metric in self.metrics.all()
+                if "energy_consumption" in metric.metrics[0]["metrics"]
+            ]
+        return super().get_energy_measurements()
+
     def get_energy_consumption(self):
         energy = 0
         for metric in self.metrics.all():
             energy += metric.get_energy_consumption()
 
         return energy
+
+    def get_times(self):
+        times = []
+        last_time = 0
+        for metric in self.metrics.all():
+            if "execution_time" in metric.metrics[0]["metrics"]:
+                last_time += metric.metrics[0]["metrics"]["execution_time"]
+                times.append(last_time)
+        return times

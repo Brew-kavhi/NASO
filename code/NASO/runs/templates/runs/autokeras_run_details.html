@@ -122,6 +122,13 @@
                                 </p>
                             </div>
                         </div>
+                        <div class='row'>
+                            <canvas class='h-25 w-100'
+                                    style='max-height:100vh'
+                                    id='energy_plot'
+                                    width="400"
+                                    height="400"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -541,6 +548,43 @@
         let allEpochs = [];
         const COMPARISONS = [{% for id, model in COMPARISON.items %}'{{ id }}',{% endfor %}]
         document.addEventListener("DOMContentLoaded", () => {
+            let energyCanvas = document.getElementById("energy_plot").getContext('2d');
+            energyCanvas = new Chart(energyCanvas, {
+                type: 'line',
+                data: {
+                    labels: {{ run.get_times }},
+                    datasets: [{
+                        data: {{ run.get_energy_measurements }},
+                        label: "Energy consumption"
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'time [s]'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'energy' // Set the dynamic Y-axis title
+                            }
+                        }
+                    },
+                    plugins: {
+                        colors: {
+                            forceOverride: true
+                        },
+                    }
+                }
+            });
             let canvas = document.getElementById("canvas_trial_overview").getContext('2d');
             trialOverviewChart = new Chart(canvas, {
                 type: 'line',

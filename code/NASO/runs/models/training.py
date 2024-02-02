@@ -294,6 +294,11 @@ class Run(SafeDeleteModel):
             self.git_hash = get_current_git_hash()
         super().save(*args, **kwargs)
 
+    def get_energy_measurements(self):
+        if self.energy_measurements == "":
+            return []
+        return [float(energy) for energy in self.energy_measurements.split(",")]
+
     def get_average_energy_consumption(self):
         if self.energy_measurements == "":
             return "NaN"
@@ -417,7 +422,6 @@ class TrainingMetric(models.Model):
                     * metric["metrics"]["execution_time"]
                     / 3600.0
                 )
-        print(energy)
         return energy
 
     def __str__(self):
