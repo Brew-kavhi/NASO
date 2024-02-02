@@ -1,8 +1,8 @@
 import os
-import numpy as np
-import tensorflow.keras.backend as K
 from typing import Any
 
+import numpy as np
+import tensorflow.keras.backend as K
 from django.db import models
 from keras.models import load_model
 

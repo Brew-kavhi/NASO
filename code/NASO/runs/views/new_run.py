@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic.base import TemplateView
+
 from naso.models.page import PageSetup
 from neural_architecture.autokeras import run_autokeras
 from neural_architecture.models.architecture import NetworkConfiguration, NetworkLayer

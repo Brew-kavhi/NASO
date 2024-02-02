@@ -12,7 +12,7 @@ from helper_scripts.extensions import (
     custom_on_trial_begin_decorator,
     custom_on_trial_end_decorator,
 )
-from helper_scripts.importing import get_class, get_object, get_arguments_as_dict
+from helper_scripts.importing import get_arguments_as_dict, get_class, get_object
 from neural_architecture.models.model_optimization import PrunableNetwork
 from neural_architecture.models.model_runs import KerasModelRun
 from neural_architecture.NetworkCallbacks.evaluation_base_callback import (

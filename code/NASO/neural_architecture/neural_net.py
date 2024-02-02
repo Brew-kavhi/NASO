@@ -4,8 +4,8 @@ import traceback
 import numpy as np
 
 import tensorflow as tf
-from loguru import logger
 import tensorflow.keras.backend as K
+from loguru import logger
 
 from celery import shared_task
 from helper_scripts.extensions import start_async_measuring
