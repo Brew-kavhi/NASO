@@ -71,7 +71,7 @@
                                 </select>
                                 <button onclick="removeComparisonFromView(this)"
                                         class="bg-danger button mx-2 p-3"
-                                        data-id="{{ run.run_type }}:{{ run.comparison_id }}"
+                                        data-id="{{ run.comparison_id }}"
                                         data-tooltip='Aus Vergleich ausschliesen'>
                                     <i class="fa fa-times-circle"></i>
                                 </button>
@@ -202,7 +202,7 @@
                                 </select>
                                 <button onclick="removeComparisonFromView(this)"
                                         class="bg-danger button mx-2 p-3"
-                                        data-id="{{ run.run_type }}:{{ run.comparison_id }}"
+                                        data-id="{{ run.comparison_id }}"
                                         data-tooltip='Aus Vergleich ausschliesen'>
                                     <i class="fa fa-times-circle"></i>
                                 </button>
@@ -304,6 +304,9 @@
     {% if session %}
         <div class='container my-3'>{% crispy session %}</div>
     {% endif %}
+    {% if add_form %}
+        <div class='container my-3'>{% crispy add_form %}</div>
+    {% endif %}
     <script>
         const COMPARISONS = {
             {% for run in runs %}'{{ run.comparison_id }}': {
@@ -312,7 +315,7 @@
                 "name": '{{ run.name }}',
                 "model_size":'{{run.size}}',
                 "size_on_disk": {{run.size_on_disk}},
-                "memory_usage": {{ run.memory_usage }}
+                "memory_usage": '{{ run.memory_usage }}'
             },{% endfor %}
         };
         let allMetrics = {};
@@ -738,10 +741,25 @@
         }
 
         function removeComparisonFromView(element) {
-            // remove the card from teh view
-            $('#' + element.dataset.id).remove();
+            {% if comparison_id %}
+            fetch("{% url 'api:comparisons:remove_run' comparison_id 0 %}".replace(0,element.dataset.id),{
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Token ${token}`,
+                    },
+            }).then(function(response) {
+                if (response.ok) {
+                        document.getElementById(element.dataset.id).remove();
+                        COMPARISONS[element.dataset.id] = {};
+                    toastr.success("Vergleich entfernt", "INFO");
+                }
+            });
+            {% else %}
+            document.getElementById(element.dataset.id).remove();
             COMPARISONS[element.dataset.id] = {};
             removeComparison(element);
+            {% endif %}
         }
     </script>
 {% endblock %}
