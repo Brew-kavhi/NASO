@@ -12,7 +12,7 @@ from helper_scripts.extensions import (
     custom_on_trial_begin_decorator,
     custom_on_trial_end_decorator,
 )
-from helper_scripts.importing import get_class, get_object
+from helper_scripts.importing import get_class, get_object, get_arguments_as_dict
 from neural_architecture.models.model_optimization import PrunableNetwork
 from neural_architecture.models.model_runs import KerasModelRun
 from neural_architecture.NetworkCallbacks.evaluation_base_callback import (
@@ -203,6 +203,14 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
             self.save()
         self.build_tuner(run)
 
+        additional_kwargs = {}
+        tuner_arguments = get_arguments_as_dict(
+            self.tuner.additional_arguments, self.tuner.tuner_type.required_arguments
+        )
+        if tuner_arguments["max_consecutive_failed_trials"]:
+            additional_kwargs["max_consecutive_failed_trials"] = tuner_arguments[
+                "max_consecutive_failed_trials"
+            ]
         self.auto_model = autokeras.AutoModel(
             inputs=self.inputs,
             outputs=self.outputs,
@@ -214,6 +222,7 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
             metrics=self.get_metrics(),
             objective=keras_tuner.Objective(self.objective, direction="min"),
             max_model_size=self.max_model_size,
+            **additional_kwargs,
         )
         self.auto_model.tuner.max_epochs = self.epochs
         self.auto_model.tuner.hypermodel.build = custom_hypermodel_build(
