@@ -174,8 +174,8 @@ class NetworkConfiguration(PrunableNetwork, BuildModelFromGraph):
             logger.success(f"Saved model to {self.name}_{self.id}.h5")
 
     def get_gzipped_model_size(self) -> int:
-        if self.saved:
-            return os.path.get_size(self.model_file.replace(".h5", ".zip"))
+        if self.save:
+            return os.path.getsize(self.model_file.replace(".h5", ".zip"))
         return -1
 
 
