@@ -71,7 +71,7 @@ class PruningMethod(TypeInstance):
         if not isinstance(self.additional_arguments, list):
             raise ValidationError("JSON data should be a list of objects.")
         additional_arguments = list(self.additional_arguments)
-        additional_arguments.append({"name": "to_prune", "value": to_prune})
+        additional_arguments.insert(0, {"name": "to_prune", "value": to_prune})
 
         if "pruning_schedule" in kwargs:
             pruning_schedule = kwargs["pruning_schedule"]
@@ -104,12 +104,20 @@ class PruningMethod(TypeInstance):
                 )
         self.additional_arguments = additional_arguments
 
-        return get_object(
-            self.instance_type.module_name,
-            self.instance_type.name,
-            self.additional_arguments,
-            self.instance_type.required_arguments,
-        )
+        try:
+            print(self.additional_arguments)
+            return get_object(
+                self.instance_type.module_name,
+                self.instance_type.name,
+                self.additional_arguments,
+                self.instance_type.required_arguments,
+            )
+        except ValueError:
+            logger.critical("Could no apply pruning method to this layer")
+            return to_prune
+        finally:
+            logger.critical("something happened")
+            return to_prune
 
 
 class PruningSchedule(TypeInstance):
