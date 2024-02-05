@@ -6,6 +6,7 @@ from loguru import logger
 from tensorflow_model_optimization.python.core.sparsity.keras.prune_registry import (
     PruneRegistry,
 )
+from neural_architecture.helper_scripts.architecture import copy_model
 
 from helper_scripts.importing import get_object
 from neural_architecture.models.types import BaseType, TypeInstance
@@ -70,7 +71,12 @@ class PruningMethod(TypeInstance):
         # add to_prune to the additional_arguments
         if not isinstance(self.additional_arguments, list):
             raise ValidationError("JSON data should be a list of objects.")
-        additional_arguments = list(self.additional_arguments)
+        additional_arguments = [
+            argument
+            for argument in list(self.additional_arguments)
+            if not argument["name"] == "to_prune"
+        ]
+
         additional_arguments.insert(0, {"name": "to_prune", "value": to_prune})
 
         if "pruning_schedule" in kwargs:
@@ -105,7 +111,6 @@ class PruningMethod(TypeInstance):
         self.additional_arguments = additional_arguments
 
         try:
-            print(self.additional_arguments)
             return get_object(
                 self.instance_type.module_name,
                 self.instance_type.name,
@@ -115,7 +120,7 @@ class PruningMethod(TypeInstance):
         except ValueError:
             logger.critical("Could no apply pruning method to this layer")
             return to_prune
-        finally:
+        except:
             logger.critical("something happened")
             return to_prune
 
@@ -210,7 +215,17 @@ class PrunableNetwork(models.Model):
                 )
 
             logger.info("Built pruning model")
-            return self.pruning_method.get_pruned_model(**args)
+            # here iterate ove the layers and prune every layer seperately
+            model_layers = {}
+            for i, layer in enumerate(model.layers):
+                if args["pruning_policy"].allow_pruning(layer):
+                    args["to_prune"] = layer
+                    pruned_layer = self.pruning_method.get_pruned_model(**args)
+                    model_layers[layer.name] = pruned_layer
+                else:
+                    print(f" layer {layer} is not prunable")
+                    model_layers[layer.name] = layer
+            return copy_model(model, model_layers)
         return model
 
     def get_pruning_callbacks(self):
