@@ -30,28 +30,12 @@
         var tensorflowTrainings = [{% for network_training_id in network_training_ids %} {{ network_training_id }}, {% endfor %}];
         var kerasRuns = [{% for keras_run_id in autokeras_run_ids %} {{ keras_run_id }}, {% endfor %}];
         document.addEventListener("DOMContentLoaded", () => {
-            // for each tensorflowtraining in tensorflowTrainings, fetch the data from the api and display the graph:
-            tensorflowTrainings.forEach((tensorflowTraining) => {
-                fetch(tensorflowUrl.replace('0', tensorflowTraining))
-                    .then(response => response.json())
-                    .then(data => {
-                        loadDataInGraph('chart', tensorflowTraining, data);
-                    });
-            });
             var ascending = true; // Flag to track sorting direction
             initFilterSort('runs_list');
             $('#sortAutokerasNameButton').on('click', function() {
                 sortByDataset($(this), 'name', 'runs_list_autokeras');
             });
 
-            // for each kerasrun in kerasRuns, fetch the data from the api and display the graph:
-            kerasRuns.forEach((kerasRun) => {
-                fetch(autokerasUrl.replace('0', kerasRun))
-                    .then(response => response.json())
-                    .then(data => {
-                        loadDataInGraph('autokeras_chart', kerasRun, data);
-                    });
-            });
             document.getElementById('toggleSelectionButton').addEventListener('click', function () {
                 var button = document.getElementById('toggleSelectionButton');
                 document.querySelectorAll('input[type="checkbox"]').forEach((el)=>el.classList.toggle('d-none'));
@@ -74,6 +58,21 @@
             });
         });
 
+        function fetchTensorflowData(tensorflowId) {
+                fetch(tensorflowUrl.replace('0', tensorflowId))
+                    .then(response => response.json())
+                    .then(data => {
+                        loadDataInGraph('chart', tensorflowId, data);
+                    });
+        }
+
+        function fetchKerasData(kerasId) {
+                fetch(autokerasUrl.replace('0', kerasId))
+                    .then(response => response.json())
+                    .then(data => {
+                        loadDataInGraph('autokeras_chart', kerasId, data);
+                    });
+        }
 
         function loadDataInGraph(prependix = 'chart', trainingId, data) {
             // first get canvas:
@@ -352,9 +351,10 @@
                                         type="button"
                                         data-toggle="collapse"
                                         data-target="#collapse{{ network_training.id }}"
+                                        onClick='fetchTensorflowData({{ network_training.id }})'
                                         aria-expanded="true"
                                         aria-controls="collapse{{ network_training.id }}">
-                                    {{ network_training.network_config.name }}
+                                    {{ network_training.network_config.name }} (ID:{{ network_training.id }})
                                 </button>
                             </h2>
                             <div class='d-flex is-align-items-center'>
@@ -470,8 +470,9 @@
                                         data-toggle="collapse"
                                         data-target="#autokeras_collapse{{ keras_run.id }}"
                                         aria-expanded="true"
+                                        onClick='fetchKerasData({{ keras_run.id }})'
                                         aria-controls="autokeras_collapse{{ keras_run.id }}">
-                                    {{ keras_run.model.project_name }}
+                                    {{ keras_run.model.project_name }} (ID:{{ keras_run.id }})
                                 </button>
                             </h2>
                             <div class='d-flex is-align-items-center'>
