@@ -2,6 +2,7 @@ import threading
 import time
 import traceback
 import numpy as np
+from naso.celery import restart_all_workers
 
 import tensorflow as tf
 import tensorflow.keras.backend as K
@@ -34,6 +35,7 @@ def run_neural_net(self, training_id):
         Exception: If there is a failure while training the network.
 
     """
+    restart_all_workers()
     self.update_state(state="PROGRESS", meta={"run_id": training_id})
     training = NetworkTraining.objects.get(pk=training_id)
     gpus = tf.config.experimental.list_physical_devices("GPU")

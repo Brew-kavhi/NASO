@@ -1,6 +1,7 @@
 import threading
 import traceback
 from contextlib import redirect_stdout
+from naso.celery import restart_all_workers
 
 import tensorflow as tf
 from loguru import logger
@@ -26,6 +27,7 @@ def run_autokeras(self, run_id):
     Returns:
         None
     """
+    restart_all_workers()
     self.update_state(state="PROGRESS", meta={"autokeras_id": run_id})
 
     run = AutoKerasRun.objects.get(pk=run_id)
@@ -96,6 +98,7 @@ def run_autokeras_trial(self, run_id, trial_id, keras_model_run_id):
     Returns:
         None
     """
+    restart_all_workers()
     gpus = tf.config.experimental.list_physical_devices("GPU")
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu, True)

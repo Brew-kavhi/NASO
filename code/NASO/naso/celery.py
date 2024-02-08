@@ -77,6 +77,14 @@ def kill_celery_task(task_id):
     app.control.revoke(task_id, terminate=True)
 
 
+def restart_all_workers():
+    response = app.control.broadcast(
+        "pool_restart", arguments={"reload": True}, reply=True
+    )
+    if response:
+        print(response)
+
+
 def get_tasks():
     """
     Returns a list of objects that map all the active Celery task ids.
