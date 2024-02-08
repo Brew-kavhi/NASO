@@ -1,4 +1,5 @@
 import autokeras
+from loguru import logger
 import keras_tuner
 import tensorflow as tf
 from django.core.exceptions import ValidationError
@@ -240,15 +241,27 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
             loaded_model (AutoModel): The loaded AutoKeras model.
 
         """
-        if len(self.inputs) == 0 or len(self.outputs) == 0:
-            for input_node in self.get_input_nodes():
-                self.layer_outputs[input_node] = self.inputs[input_node]
-                self.build_connected_layers(input_node)
+        self.inputs = {}
+        self.outputs = {}
+        self.layer_outputs = {}
+        self.tuner_object = None
+
+        for input_node in self.get_input_nodes():
+            self.layer_outputs[input_node] = self.inputs[input_node]
+            self.build_connected_layers(input_node)
         if len(self.directory) == 0 or not self.directory:
             self.directory = f"{self.project_name}_{self.id}"
             self.save()
 
         self.build_tuner(run)
+        additional_kwargs = {}
+        tuner_arguments = get_arguments_as_dict(
+            self.tuner.additional_arguments, self.tuner.tuner_type.required_arguments
+        )
+        if tuner_arguments["max_consecutive_failed_trials"]:
+            additional_kwargs["max_consecutive_failed_trials"] = tuner_arguments[
+                "max_consecutive_failed_trials"
+            ]
 
         self.loaded_model = autokeras.AutoModel(
             inputs=self.inputs,
@@ -261,6 +274,7 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
             metrics=self.get_metrics(),
             objective=keras_tuner.Objective(self.objective, direction="min"),
             max_model_size=self.max_model_size,
+            **additional_kwargs,
         )
 
         return self.loaded_model
@@ -289,11 +303,18 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         )
         trial_model = self.loaded_model.tuner._try_build(hyper_parameters)
         weights_path = self.get_trial_checkpoint_path(trial_id)
+        try:
+            # loading weights here is okay as this is just for building the model and the necessary database items.
+            # the training model is then build as trensorflow model from the databse
+            trial_model.load_weights(weights_path)
+        except Exception as e:
+            logger.info(f"{weights_path} weights was not successful, Fehler: {e}")
         trial_model.compile(
             optimizer=trial_model.optimizer,
             loss=trial_model.loss,
             metrics=self.get_metrics(),
         )
+        trial_model.summary()
         return trial_model
 
     def save_trial_as_model(
