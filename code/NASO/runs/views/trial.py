@@ -126,7 +126,11 @@ class TrialView(TemplateView):
         form.initial["callbacks"] = [
             callback.instance_type for callback in run.model.callbacks.all()
         ]
+        form.initial[
+            "description"
+        ] = f"""Fine tuning of trial {str(trial_id)} from Autokeras run {run.model.project_name}"""
 
+        form.initial["name"] = f"Trial {str(trial_id)} of {run.model.project_name}"
         form.load_metric_configs(
             [
                 {
@@ -200,11 +204,10 @@ class TrialView(TemplateView):
                 build_metrics(form.cleaned_data, metrics_arguments)
             )
 
-            training = NetworkTraining(
-                description=f"""Fine tuning of trial {str(trial_id)} from Autokeras run {autokeras_run.model.project_name}""",
-            )
+            training = NetworkTraining()
 
             training.hyper_parameters = hyper_parameters
+            network_config.name = form.cleaned_data["name"]
 
             network_config.save_model = True
             if form.cleaned_data["enable_pruning"]:
@@ -237,6 +240,7 @@ class TrialView(TemplateView):
             training.fit_parameters = fit_params
             training.evaluation_parameters = eval_params
             training.gpu = form.cleaned_data["gpu"]
+            training.description = form.cleaned_data["description"]
 
             training.save()
 

@@ -22,6 +22,8 @@ class RerunTrialForm(BaseRunWithCallback, PrunableForm):
         self.helper.form_id = "rerun_trial"
         self.helper.layout = Layout(
             HTML('<div class="row mb-3"><h2>Fine tune</h2></div>'),
+            Field("name"),
+            Field("description"),
             Row(
                 Column(
                     Field("epochs"),
