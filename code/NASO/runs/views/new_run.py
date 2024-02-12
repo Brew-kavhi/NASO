@@ -1,5 +1,6 @@
 import json
 import random
+from loguru import logger
 
 from django.contrib import messages
 from django.shortcuts import redirect
