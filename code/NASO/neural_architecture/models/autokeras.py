@@ -1,4 +1,5 @@
 import autokeras
+import os
 from loguru import logger
 import keras_tuner
 import tensorflow as tf
@@ -138,6 +139,7 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
     max_trials = models.IntegerField(default=100)
     directory = models.CharField(max_length=100, default=None)
     objective = models.CharField(max_length=100, default="val_loss")
+    trial_folder = models.CharField(max_length=256, default="")
     tuner = models.ForeignKey(
         AutoKerasTuner, null=True, on_delete=models.deletion.SET_NULL
     )
@@ -201,6 +203,7 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         # and ouputs is the other way around
         if len(self.directory) == 0 or not self.directory:
             self.directory = f"{self.project_name}_{self.id}"
+            self.trial_folder = f"{self.project_name}_{self.id}/{self.project_name}"
             self.save()
         self.build_tuner(run)
 
@@ -251,6 +254,7 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
             self.build_connected_layers(input_node)
         if len(self.directory) == 0 or not self.directory:
             self.directory = f"{self.project_name}_{self.id}"
+            self.trial_folder = f"{self.project_name}_{self.id}/{self.project_name}"
             self.save()
 
         self.build_tuner(run)
@@ -293,6 +297,7 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         """
         if not self.loaded_model:
             self.loaded_model = self.load_model(run)
+        weights_path = self.get_trial_checkpoint_path(trial_id)
 
         # build a dataset to set the inputs size and everything.
         (train_dataset, test_dataset) = run.dataset.get_data()
@@ -302,7 +307,6 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
             train_dataset, test_dataset, trial_id
         )
         trial_model = self.loaded_model.tuner._try_build(hyper_parameters)
-        weights_path = self.get_trial_checkpoint_path(trial_id)
         try:
             # loading weights here is okay as this is just for building the model and the necessary database items.
             # the training model is then build as trensorflow model from the databse
@@ -356,7 +360,16 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         Returns:
             str: The checkpoint path for the specified trial.
         """
-        return f"auto_model/{self.directory}/{self.project_name}/trial_{trial_id}/checkpoint"
+        if os.path.exists(
+            f"auto_model/{self.trial_folder}/trial_{trial_id}/checkpoint"
+        ):
+            return f"auto_model/{self.trial_folder}/trial_{trial_id}/checkpoint"
+
+        file_path = f"auto_model/{self.directory}/{self.project_name}/trial_{trial_id}/checkpoint"
+        if os.path.exists(file_path):
+            return file_path
+        file_path = f"auto_model/{self.project_name}_{self.id}/{self.project_name}/trial_{trial_id}/checkpoint"
+        return file_path
 
     def get_trial_hyperparameters_path(self, trial_id) -> str:
         """
@@ -368,7 +381,14 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         Returns:
             str: The path to the trial hyperparameters file.
         """
-        return f"auto_model/{self.directory}/{self.project_name}/trial_{trial_id}/trial.json"
+        if os.path.exists(f"auto_model/{self.directory}/trial_{trial_id}/trial.json"):
+            return f"auto_model/{self.directory}/trial_{trial_id}/trial.json"
+
+        file_path = f"auto_model/{self.directory}/{self.project_name}/trial_{trial_id}/trial.json"
+        if os.path.exists(file_path):
+            return file_path
+        file_path = f"auto_model/{self.project_name}_{self.id}/{self.project_name}/trial_{trial_id}/trial.json"
+        return file_path
 
     def prepare_data_for_trial(
         self, train_dataset, test_dataset, trial_id: str
