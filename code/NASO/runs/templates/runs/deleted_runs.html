@@ -158,7 +158,9 @@
                                        type='checkbox'
                                        class='d-none'
                                        id='checked_tensorflow_{{ network_training.id }}'>
-                                <button class="btn" type="button">{{ network_training.network_config.name }}</button>
+                                <button class="btn" type="button">
+                                    {{ network_training.network_config.name }} (ID: {{ network_training.network_config.id }})
+                                </button>
                             </h2>
                             <div class='d-flex is-align-items-center'>
                                 <div class='d-flex flex-wrap'>
