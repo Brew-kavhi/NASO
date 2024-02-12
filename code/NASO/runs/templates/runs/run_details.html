@@ -723,6 +723,7 @@
         let yaxis = $('#graph_yaxis').val();
         graphChart.data.datasets.forEach(function(dataset) {
             dataset.data = dictToArray(run_metrics, yaxis, xaxis);
+            dataset.label = yaxis;
         });
         graphChart.options.scales.x.title.text = xaxis;
         graphChart.update();
@@ -732,6 +733,7 @@
         let yaxis = $('#graph_yaxis').val();
         graphChart.data.datasets.forEach(function(dataset) {
             dataset.data = dictToArray(run_metrics, yaxis, $('#graph_xaxis').val());
+            dataset.label = yaxis;
         });
         graphChart.options.scales.y.title.text = yaxis;
         graphChart.update();
@@ -747,7 +749,7 @@
 
         function updateChart() {
             graphChart.data.labels = [];
-            graphChart.data.datasets = [{data:dictToArray(run_metrics, yaxis, xaxis)}];
+            graphChart.data.datasets = [{data:dictToArray(run_metrics, yaxis, xaxis), label: yaxis}];
             graphChart.update();
         }
 

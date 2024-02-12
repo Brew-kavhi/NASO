@@ -638,7 +638,8 @@
             function updateChart() {
                 graphChart.data.labels = [];
                 graphChart.data.datasets = [{
-                    data: dictToArray(run_metrics, yaxis, xaxis)
+                    data: dictToArray(run_metrics, yaxis, xaxis),
+                    label: yaxis
                 }];
                 graphChart.update();
             }
@@ -699,11 +700,10 @@
         }
 
         function allGraphY(event) {
-            console.log('hello');
-            console.log(allPlots.data);
             let yaxis = $('#graph_yaxis_all_plot').val();
             allPlots.data.datasets.forEach(function(dataset) {
                 dataset.data = dictToArray(allMetrics[dataset.cardIndex], yaxis, $('#graph_xaxis_all_plot').val());
+                dataset.label = yaxis;
             });
             allPlots.options.scales.y.title.text = yaxis;
             allPlots.update();
@@ -732,6 +732,7 @@
                 if ('metrics' in COMPARISONS[runID]) {
                     chart.data.datasets.forEach(function(dataset) {
                         dataset.data = dictToArray(COMPARISONS[runID]['metrics'], yaxis, $('#graph_xaxis').val());
+                        dataset.label = yaxis;
                     });
 
                     chart.options.scales.y.title.text = yaxis;
