@@ -50,8 +50,11 @@ to start the development server. For using the local settings append ```--settin
 --settings=naso.settings_local--settings=naso.settings_local```poetry run uvicorn naso.asgi:application --host <host> ---port <port>```
 (Development server can only handle a few connections at one time, maybe 5-10 max, while production server can handle way more.)
 
-Furthermore, there needs to be a celery worker running. You can starte one with this command: 
+Furthermore, there need to be two workers running. One is for actually executing the network, the other one is subscribed to a special queue and only handles the loading of models. This needs to be done in a celery task as when laoding the model, the graphics memory is loaded full and because of tensorflows memory leak we have no option of freeing up the memory. The only option is to spawn a subprocess that is killed afterwards. 
+You need to start the workers with this command: 
 ```poetry run celery -A naso worker -l INFO --concurrency 1```
+and the following one for the trial loading:
+```poetry run celery -A naso worker -Q start_trials -l INFO```
 The concurrency parameter ensures that only one task is executed at a time, because otherwise it could lead to weird behaviour.
 If you want to daemonize it, so it starts one every reboot, you can find  more information about it in the celery folder of this project. Now if this server is running on a remote machine that is behind another network, like it is the case with the workstations at IPVS, we need to enable port forwarding. this is done with the following command, to be executedon your home desktop: 
 ```ssh -L <local_port>:<remote-machine>:<django-port> <username>@ipvslogin.informatik.uni-stuttgart.de```

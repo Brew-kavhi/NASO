@@ -1,8 +1,10 @@
 from django.contrib import messages
+import tensorflow as tf
 from django.shortcuts import redirect
 from django.views.generic.base import TemplateView
 
 from api.views.autokeras import get_trial_details
+from naso.celery import restart_all_workers
 from naso.models.page import PageSetup
 from neural_architecture.models.autokeras import AutoKerasRun
 from neural_architecture.models.model_optimization import (
@@ -11,6 +13,7 @@ from neural_architecture.models.model_optimization import (
     PruningSchedule,
 )
 from neural_architecture.models.types import OptimizerType
+from neural_architecture.models.architecture import NetworkConfiguration
 from neural_architecture.neural_net import run_neural_net
 from runs.forms.trial import RerunTrialForm
 from runs.models.training import (
@@ -27,6 +30,18 @@ from runs.views.new_run import (
     build_metrics,
     get_pruning_parameters,
 )
+from celery import shared_task
+
+
+@shared_task(bind=True)
+def memory_safe_model_load(self, run_id, trial_id):
+    autokeras_run = AutoKerasRun.objects.get(pk=run_id)
+    name = f"{autokeras_run.model.project_name}_trial_{str(trial_id)}"
+    model = autokeras_run.model.load_trial(autokeras_run, trial_id)
+    optimizer = get_optimizer_instance(model.optimizer)
+    network_config = build_network_config(name, model)
+    restart_all_workers()
+    return (optimizer.id, network_config.id)
 
 
 class TrialView(TemplateView):
@@ -155,9 +170,6 @@ class TrialView(TemplateView):
                 callbacks_arguments,
             ) = self.get_typewise_arguments(request.POST.items())
 
-            autokeras_run = AutoKerasRun.objects.get(pk=run_id)
-            model = autokeras_run.model.load_trial(autokeras_run, trial_id)
-
             eval_params = EvaluationParameters.objects.create()
             eval_params.save()
             eval_params.callbacks.set(
@@ -173,25 +185,27 @@ class TrialView(TemplateView):
             )
 
             # create the optimizer config
-            optimizer = get_optimizer_instance(model.optimizer)
-            loss = autokeras_run.model.loss
+            optimizer_id, network_config_id = memory_safe_model_load.delay(
+                run_id, trial_id
+            ).get()
+            optimizer = Optimizer.objects.get(pk=optimizer_id)
+            network_config = NetworkConfiguration.objects.get(pk=network_config_id)
             hyper_parameters = NetworkHyperparameters()
             hyper_parameters.optimizer = optimizer
+            autokeras_run = AutoKerasRun.objects.get(pk=run_id)
+            loss = autokeras_run.model.loss
             hyper_parameters.loss = loss
             hyper_parameters.save()
             hyper_parameters.metrics.set(
                 build_metrics(form.cleaned_data, metrics_arguments)
             )
-            name = f"{autokeras_run.model.project_name}_trial_{str(trial_id)}"
 
             training = NetworkTraining(
-                description=f"""Fine tuning of trial {str(trial_id)} from Autokeras run 
-                {autokeras_run.model.project_name}""",
+                description=f"""Fine tuning of trial {str(trial_id)} from Autokeras run {autokeras_run.model.project_name}""",
             )
 
             training.hyper_parameters = hyper_parameters
 
-            network_config = build_network_config(name, model)
             network_config.save_model = True
             if form.cleaned_data["enable_pruning"]:
                 (

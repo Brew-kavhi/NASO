@@ -19,6 +19,9 @@ app = Celery("naso", backend=config("CELERY_BROKER_URL"))
 #   should have a `CELERY_` prefix.
 app.config_from_object("django.conf:settings", namespace="CELERY")
 app.conf.update(worker_pool_restarts=True, worker_prefetch_multiplier=1)
+app.conf.update(
+    task_routes={"runs.views.trial.memory_safe_model_load": {"queue": "start_trials"}}
+)
 
 # Load task modules from all registered Django apps.
 app.autodiscover_tasks()
