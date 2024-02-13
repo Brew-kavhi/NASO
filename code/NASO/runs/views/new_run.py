@@ -332,7 +332,7 @@ class NewRun(TemplateView):
 
                 if (
                     "rerun" in request.GET
-                    and form.cleaned_data["fine_tuned_saved_model"]
+                    and form.cleaned_data["fine_tune_saved_model"]
                 ):
                     network_config.load_model = True
                     network_config.model_file = form.cleaned_data["load_model"]
