@@ -57,11 +57,19 @@ def build_network_config(name, model):
         }
 
         if not layer.name.startswith("input_"):
-            naso_layer, _ = NetworkLayer.objects.get_or_create(
+            naso_layer = NetworkLayer.objects.filter(
                 layer_type_id=layer_info[i]["naso_type"],
                 name=layer_info[i]["id"],
                 additional_arguments=build_additional_arguments(layer_config),
             )
+            if naso_layer.exists():
+                naso_layer = naso_layer.first()
+            else:
+                naso_layer = NetworkLayer.objects.create(
+                    layer_type_id=layer_info[i]["naso_type"],
+                    name=layer_info[i]["id"],
+                    additional_arguments=build_additional_arguments(layer_config),
+                )
             node_to_layers[layer_info[i]["id"]] = naso_layer.id
             network_config.layers.add(naso_layer)
 
@@ -102,7 +110,7 @@ def build_additional_arguments(confguration):
             if "module" not in v:
                 argument = {"name": k, "value": json.dumps(str(v))}
         else:
-            if type(v) == str:
+            if isinstance(v, str):
                 argument = {"name": k, "value": v}
             else:
                 argument = {"name": k, "value": str(v)}

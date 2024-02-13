@@ -1,8 +1,7 @@
 import asyncio
 
 import numpy as np
-from loguru import logger
-from tensorflow.keras import backend as K
+import tensorflow.keras.backend as K
 from tensorflow_model_optimization.python.core.sparsity.keras import pruning_wrapper
 
 from helper_scripts.power_management import get_power_usage
@@ -40,7 +39,9 @@ def custom_on_epoch_end_decorator(original_on_epoch_end, run):
 
     def on_epoch_end(self, trial, model, epoch, logs=None):
         if "model_size" not in logs:
-            logs["model_size"] = model.count_params()
+            logs["model_size"] = int(
+                np.sum([K.count_params(w) for w in model.trainable_weights])
+            )
 
         if "metrics" not in logs:
             logs["metrics"] = 0
@@ -90,7 +91,9 @@ def custom_on_epoch_begin_decorator(original_on_epoch_begin):
 
     def on_epoch_begin(self, trial, model, epoch, logs=None):
         if "model_size" not in logs:
-            logs["model_size"] = model.count_params()
+            logs["model_size"] = int(
+                np.sum([K.count_params(w) for w in model.trainable_weights])
+            )
         if "trial_id" not in logs:
             logs["trial_id"] = trial.trial_id
 
@@ -180,6 +183,8 @@ def calculate_sparsity(model):
     del values[-1]
     del params[-1]
 
-    sparsity_values = [1 - np.mean(mask_value) for mask_value in values[::2]]
-    # Return the average sparsity across all prunable layers
-    return np.mean(sparsity_values)
+    if len(values[::2]) > 0:
+        sparsity_values = [1 - np.mean(mask_value) for mask_value in values[::2]]
+        # Return the average sparsity across all prunable layers
+        return np.mean(sparsity_values)
+    return 0

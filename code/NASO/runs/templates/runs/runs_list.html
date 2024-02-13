@@ -30,25 +30,12 @@
         var tensorflowTrainings = [{% for network_training_id in network_training_ids %} {{ network_training_id }}, {% endfor %}];
         var kerasRuns = [{% for keras_run_id in autokeras_run_ids %} {{ keras_run_id }}, {% endfor %}];
         document.addEventListener("DOMContentLoaded", () => {
-            // for each tensorflowtraining in tensorflowTrainings, fetch the data from the api and display the graph:
-            tensorflowTrainings.forEach((tensorflowTraining) => {
-                fetch(tensorflowUrl.replace('0', tensorflowTraining))
-                    .then(response => response.json())
-                    .then(data => {
-                        loadDataInGraph('chart', tensorflowTraining, data);
-                    });
-            });
             var ascending = true; // Flag to track sorting direction
             initFilterSort('runs_list');
-
-            // for each kerasrun in kerasRuns, fetch the data from the api and display the graph:
-            kerasRuns.forEach((kerasRun) => {
-                fetch(autokerasUrl.replace('0', kerasRun))
-                    .then(response => response.json())
-                    .then(data => {
-                        loadDataInGraph('autokeras_chart', kerasRun, data);
-                    });
+            $('#sortAutokerasNameButton').on('click', function() {
+                sortByDataset($(this), 'name', 'runs_list_autokeras');
             });
+
             document.getElementById('toggleSelectionButton').addEventListener('click', function () {
                 var button = document.getElementById('toggleSelectionButton');
                 document.querySelectorAll('input[type="checkbox"]').forEach((el)=>el.classList.toggle('d-none'));
@@ -71,6 +58,21 @@
             });
         });
 
+        function fetchTensorflowData(tensorflowId) {
+                fetch(tensorflowUrl.replace('0', tensorflowId))
+                    .then(response => response.json())
+                    .then(data => {
+                        loadDataInGraph('chart', tensorflowId, data);
+                    });
+        }
+
+        function fetchKerasData(kerasId) {
+                fetch(autokerasUrl.replace('0', kerasId))
+                    .then(response => response.json())
+                    .then(data => {
+                        loadDataInGraph('autokeras_chart', kerasId, data);
+                    });
+        }
 
         function loadDataInGraph(prependix = 'chart', trainingId, data) {
             // first get canvas:
@@ -134,6 +136,9 @@
             $('#' + containerID).find('.accordion').sort(function(a, b) {
                 var timeA = parseFloat($(a).data(type));
                 var timeB = parseFloat($(b).data(type));
+                if (isNaN(timeA)) {
+                    return (($(a).data(type) < $(b).data(type)) * 2 - 1) * (ascending * 2 - 1);
+                } 
                 return ascending ? timeA - timeB : timeB - timeA;
             }).appendTo('#' + containerID);
         }
@@ -141,6 +146,9 @@
         function initFilterSort(containerID) {
             $('#sortButton').on('click', function() {
                 sortByDataset($(this), 'time', containerID);
+            });
+            $('#sortNameButton').on('click', function() {
+                sortByDataset($(this), 'name', containerID);
             });
             $('#sortRateButton').on('click', function() {
                 sortByDataset($(this), 'rating', containerID);
@@ -312,6 +320,9 @@
                     <option>5</option>
                 </select>
             </div>
+            <button class='button is-light is-info' id="sortNameButton">
+                Sort by name <span class="sort-icon ml-3"></span>
+            </button>
             <button class='button is-light is-info' id="sortButton">
                 Sort by time <span class="sort-icon ml-3"></span>
             </button>
@@ -324,6 +335,7 @@
                 <div class="accordion"
                      id="accordion{{ network_training.id }}"
                      data-app-version='{{ network_training.naso_app_version }}'
+                     data-name='{{ network_training.network_config.name }}'
                      data-optimizer='{{ network_training.hyper_parameters.optimizer.instance_type.name }}'
                      data-time="{% get_metric network_training.final_metrics.metrics 'time' %}"
                      data-rating="{{ network_training.rate }}">
@@ -339,9 +351,10 @@
                                         type="button"
                                         data-toggle="collapse"
                                         data-target="#collapse{{ network_training.id }}"
+                                        onClick='fetchTensorflowData({{ network_training.id }})'
                                         aria-expanded="true"
                                         aria-controls="collapse{{ network_training.id }}">
-                                    {{ network_training.network_config.name }}
+                                    {{ network_training.network_config.name }} (ID:{{ network_training.id }})
                                 </button>
                             </h2>
                             <div class='d-flex is-align-items-center'>
@@ -431,12 +444,18 @@
     <div class="container content-tab mt-3"
          id='autokeras'
          style="display:none">
+        <div class='d-flex my-3'>
+            <button class='button is-light is-info' id="sortAutokerasNameButton">
+                Sort by name <span class="sort-icon ml-3"></span>
+            </button>
+        </div>
         <div class="container" id="runs_list_autokeras">
             {% for keras_run in autokeras_runs %}
                 <div class="accordion"
                      id="accordion{{ keras_run.id }}"
                      data-app-version='{{ keras_run.naso_app_version }}'
                      data-rating="{{ keras_run.rate }}"
+                     data-name='{{ keras_run.model.project_name }}'
                      data-tuner='{{ keras_run.model.tuner.tuner_type.name }}'>
                     <div class="card">
                         <div class="card-header d-flex justify-content-between is-align-items-center"
@@ -451,8 +470,9 @@
                                         data-toggle="collapse"
                                         data-target="#autokeras_collapse{{ keras_run.id }}"
                                         aria-expanded="true"
+                                        onClick='fetchKerasData({{ keras_run.id }})'
                                         aria-controls="autokeras_collapse{{ keras_run.id }}">
-                                    {{ keras_run.model.project_name }}
+                                    {{ keras_run.model.project_name }} (ID:{{ keras_run.id }})
                                 </button>
                             </h2>
                             <div class='d-flex is-align-items-center'>

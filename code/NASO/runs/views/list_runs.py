@@ -1,6 +1,3 @@
-import os
-import shutil
-
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
@@ -93,12 +90,6 @@ def delete_autokeras_run(request, pk):
     """
     # Fetch the object or return a 404 response if it doesn't exist
     obj = get_object_or_404(AutoKerasRun, pk=pk)
-
-    # Delete the folder:
-    if len(obj.model.directory) > 0:
-        folder = "auto_model/" + obj.model.directory
-        if os.path.exists(folder):
-            shutil.rmtree(folder)
 
     # Delete the object
     obj.delete()

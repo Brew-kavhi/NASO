@@ -1,9 +1,12 @@
+import os
+
 import autokeras
 import keras_tuner
 import tensorflow as tf
 from django.core.exceptions import ValidationError
 from django.db import models
 from keras import backend as K
+from loguru import logger
 
 from helper_scripts.extensions import (
     custom_hypermodel_build,
@@ -12,7 +15,7 @@ from helper_scripts.extensions import (
     custom_on_trial_begin_decorator,
     custom_on_trial_end_decorator,
 )
-from helper_scripts.importing import get_class, get_object
+from helper_scripts.importing import get_arguments_as_dict, get_class, get_object
 from neural_architecture.models.model_optimization import PrunableNetwork
 from neural_architecture.models.model_runs import KerasModelRun
 from neural_architecture.NetworkCallbacks.evaluation_base_callback import (
@@ -137,6 +140,7 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
     max_trials = models.IntegerField(default=100)
     directory = models.CharField(max_length=100, default=None)
     objective = models.CharField(max_length=100, default="val_loss")
+    trial_folder = models.CharField(max_length=256, default="")
     tuner = models.ForeignKey(
         AutoKerasTuner, null=True, on_delete=models.deletion.SET_NULL
     )
@@ -200,9 +204,18 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         # and ouputs is the other way around
         if len(self.directory) == 0 or not self.directory:
             self.directory = f"{self.project_name}_{self.id}"
+            self.trial_folder = f"{self.project_name}_{self.id}/{self.project_name}"
             self.save()
         self.build_tuner(run)
 
+        additional_kwargs = {}
+        tuner_arguments = get_arguments_as_dict(
+            self.tuner.additional_arguments, self.tuner.tuner_type.required_arguments
+        )
+        if tuner_arguments["max_consecutive_failed_trials"]:
+            additional_kwargs["max_consecutive_failed_trials"] = tuner_arguments[
+                "max_consecutive_failed_trials"
+            ]
         self.auto_model = autokeras.AutoModel(
             inputs=self.inputs,
             outputs=self.outputs,
@@ -213,6 +226,8 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
             tuner=self.tuner_object,
             metrics=self.get_metrics(),
             objective=keras_tuner.Objective(self.objective, direction="min"),
+            max_model_size=self.max_model_size,
+            **additional_kwargs,
         )
         self.auto_model.tuner.max_epochs = self.epochs
         self.auto_model.tuner.hypermodel.build = custom_hypermodel_build(
@@ -230,15 +245,28 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
             loaded_model (AutoModel): The loaded AutoKeras model.
 
         """
-        if len(self.inputs) == 0 or len(self.outputs) == 0:
-            for input_node in self.get_input_nodes():
-                self.layer_outputs[input_node] = self.inputs[input_node]
-                self.build_connected_layers(input_node)
+        self.inputs = {}
+        self.outputs = {}
+        self.layer_outputs = {}
+        self.tuner_object = None
+
+        for input_node in self.get_input_nodes():
+            self.layer_outputs[input_node] = self.inputs[input_node]
+            self.build_connected_layers(input_node)
         if len(self.directory) == 0 or not self.directory:
             self.directory = f"{self.project_name}_{self.id}"
+            self.trial_folder = f"{self.project_name}_{self.id}/{self.project_name}"
             self.save()
 
         self.build_tuner(run)
+        additional_kwargs = {}
+        tuner_arguments = get_arguments_as_dict(
+            self.tuner.additional_arguments, self.tuner.tuner_type.required_arguments
+        )
+        if tuner_arguments["max_consecutive_failed_trials"]:
+            additional_kwargs["max_consecutive_failed_trials"] = tuner_arguments[
+                "max_consecutive_failed_trials"
+            ]
 
         self.loaded_model = autokeras.AutoModel(
             inputs=self.inputs,
@@ -250,6 +278,8 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
             tuner=self.tuner_object,
             metrics=self.get_metrics(),
             objective=keras_tuner.Objective(self.objective, direction="min"),
+            max_model_size=self.max_model_size,
+            **additional_kwargs,
         )
 
         return self.loaded_model
@@ -268,6 +298,7 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         """
         if not self.loaded_model:
             self.loaded_model = self.load_model(run)
+        weights_path = self.get_trial_checkpoint_path(trial_id)
 
         # build a dataset to set the inputs size and everything.
         (train_dataset, test_dataset) = run.dataset.get_data()
@@ -277,12 +308,18 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
             train_dataset, test_dataset, trial_id
         )
         trial_model = self.loaded_model.tuner._try_build(hyper_parameters)
-        weights_path = self.get_trial_checkpoint_path(trial_id)
+        try:
+            # loading weights here is okay as this is just for building the model and the necessary database items.
+            # the training model is then build as trensorflow model from the databse
+            trial_model.load_weights(weights_path)
+        except Exception as e:
+            logger.info(f"{weights_path} weights was not successful, Fehler: {e}")
         trial_model.compile(
             optimizer=trial_model.optimizer,
             loss=trial_model.loss,
             metrics=self.get_metrics(),
         )
+        trial_model.summary()
         return trial_model
 
     def save_trial_as_model(
@@ -324,7 +361,16 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         Returns:
             str: The checkpoint path for the specified trial.
         """
-        return f"auto_model/{self.directory}/{self.project_name}/trial_{trial_id}/checkpoint"
+        if os.path.exists(
+            f"auto_model/{self.trial_folder}/trial_{trial_id}/checkpoint"
+        ):
+            return f"auto_model/{self.trial_folder}/trial_{trial_id}/checkpoint"
+
+        file_path = f"auto_model/{self.directory}/{self.project_name}/trial_{trial_id}/checkpoint"
+        if os.path.exists(file_path):
+            return file_path
+        file_path = f"auto_model/{self.project_name}_{self.id}/{self.project_name}/trial_{trial_id}/checkpoint"
+        return file_path
 
     def get_trial_hyperparameters_path(self, trial_id) -> str:
         """
@@ -336,7 +382,14 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         Returns:
             str: The path to the trial hyperparameters file.
         """
-        return f"auto_model/{self.directory}/{self.project_name}/trial_{trial_id}/trial.json"
+        if os.path.exists(f"auto_model/{self.directory}/trial_{trial_id}/trial.json"):
+            return f"auto_model/{self.directory}/trial_{trial_id}/trial.json"
+
+        file_path = f"auto_model/{self.directory}/{self.project_name}/trial_{trial_id}/trial.json"
+        if os.path.exists(file_path):
+            return file_path
+        file_path = f"auto_model/{self.project_name}_{self.id}/{self.project_name}/trial_{trial_id}/trial.json"
+        return file_path
 
     def prepare_data_for_trial(
         self, train_dataset, test_dataset, trial_id: str
@@ -558,9 +611,27 @@ class AutoKerasRun(Run):
         avg_energy = sum(measured_energy) / len(measured_energy)
         return {"model_size": model_size, "average_energy": avg_energy}
 
+    def get_energy_measurements(self):
+        if self.energy_measurements == "":
+            return [
+                metric.metrics[0]["metrics"]["energy_consumption"]
+                for metric in self.metrics.all()
+                if "energy_consumption" in metric.metrics[0]["metrics"]
+            ]
+        return super().get_energy_measurements()
+
     def get_energy_consumption(self):
         energy = 0
         for metric in self.metrics.all():
             energy += metric.get_energy_consumption()
 
         return energy
+
+    def get_times(self):
+        times = []
+        last_time = 0
+        for metric in self.metrics.all():
+            if "execution_time" in metric.metrics[0]["metrics"]:
+                last_time += metric.metrics[0]["metrics"]["execution_time"]
+                times.append(last_time)
+        return times

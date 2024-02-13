@@ -19,6 +19,9 @@ app = Celery("naso", backend=config("CELERY_BROKER_URL"))
 #   should have a `CELERY_` prefix.
 app.config_from_object("django.conf:settings", namespace="CELERY")
 app.conf.update(worker_pool_restarts=True, worker_prefetch_multiplier=1)
+app.conf.update(
+    task_routes={"runs.views.trial.memory_safe_model_load": {"queue": "start_trials"}}
+)
 
 # Load task modules from all registered Django apps.
 app.autodiscover_tasks()
@@ -77,14 +80,22 @@ def kill_celery_task(task_id):
     app.control.revoke(task_id, terminate=True)
 
 
+def restart_all_workers():
+    response = app.control.broadcast(
+        "pool_restart", arguments={"reload": True}, reply=True
+    )
+    if response:
+        print(response)
+
+
 def get_tasks():
     """
     Returns a list of objects that map all the active Celery task ids.
     """
     inspector = app.control.inspect()
+    running_tasks = []
     try:
         active_tasks = inspector.active()
-        running_tasks = []
         if active_tasks:
             for task_collection in active_tasks.values():
                 training_tasks = sorted(
@@ -96,25 +107,34 @@ def get_tasks():
         return running_tasks
     except BrokenPipeError:
         return []
+    except Exception:
+        return running_tasks
 
 
 def get_registered_tasks():
     """
     Returns a list of objects that map all the registered Celery task ids.
     """
-    inspector = app.control.inspect()
-    registered_tasks = inspector.reserved()
-    tasks = []
-    if registered_tasks:
-        for task_collection in registered_tasks.values():
-            # these are the tasks for one worker
-            for task in task_collection:
-                is_autokeras = "autokeras" in task["type"]
-                run_id = task["args"][0]
-                tasks.append(
-                    {"id": task["id"], "run_id": run_id, "is_autokeras": is_autokeras}
-                )
-    return tasks
+    try:
+        inspector = app.control.inspect()
+        registered_tasks = inspector.reserved()
+        tasks = []
+        if registered_tasks:
+            for task_collection in registered_tasks.values():
+                # these are the tasks for one worker
+                for task in task_collection:
+                    is_autokeras = "autokeras" in task["type"]
+                    run_id = task["args"][0]
+                    tasks.append(
+                        {
+                            "id": task["id"],
+                            "run_id": run_id,
+                            "is_autokeras": is_autokeras,
+                        }
+                    )
+        return tasks
+    except Exception:
+        return []
 
 
 if __name__ == "__main__":

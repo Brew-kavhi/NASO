@@ -1,10 +1,12 @@
 import json
+import os
 import random
 
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic.base import TemplateView
+from loguru import logger
 
 from naso.models.page import PageSetup
 from neural_architecture.autokeras import run_autokeras
@@ -293,16 +295,23 @@ class NewRun(TemplateView):
                 training = NetworkTraining()
                 training.hyper_parameters = hyper_parameters
 
-                eval_parameters, _ = EvaluationParameters.objects.get_or_create(
+                eval_parameters = EvaluationParameters.objects.filter(
                     steps=form.cleaned_data["steps_per_execution"],
                     batch_size=form.cleaned_data["batch_size"],
                 )
-                eval_parameters.save()
+                if eval_parameters.exists():
+                    eval_parameters = eval_parameters.first()
+                else:
+                    eval_parameters = EvaluationParameters.objects.create(
+                        steps=form.cleaned_data["steps_per_execution"],
+                        batch_size=form.cleaned_data["batch_size"],
+                    )
+                    eval_parameters.save()
                 eval_parameters.callbacks.set(
                     build_callbacks(form.cleaned_data, callbacks_arguments)
                 )
 
-                fit_parameters, _ = FitParameters.objects.get_or_create(
+                fit_parameters = FitParameters.objects.create(
                     epochs=form.cleaned_data["epochs"],
                     batch_size=form.cleaned_data["batch_size"],
                     shuffle=form.cleaned_data["shuffle"],
@@ -321,17 +330,27 @@ class NewRun(TemplateView):
                     connections=json.loads(request.POST.get("edges")),
                 )
 
-                if "rerun" in request.GET:
-                    old_training = NetworkTraining.objects.get(
-                        pk=request.GET.get("rerun")
-                    )
-                    if form.cleaned_data["fine_tune_saved_model"]:
-                        network_config.load_model = True
+                if (
+                    "rerun" in request.GET
+                    and form.cleaned_data["fine_tune_saved_model"]
+                ):
+                    network_config.load_model = True
+                    network_config.model_file = form.cleaned_data["load_model"]
+                    id = os.path.splitext(
+                        network_config.model_file[
+                            network_config.model_file.rfind("_") + 1 :
+                        ]
+                    )[0]
+                    try:
+                        old_training = NetworkTraining.objects.filter(
+                            network_config__id=id
+                        ).first()
                         fit_parameters.initial_epoch = (
                             old_training.fit_parameters.epochs
                         )
                         fit_parameters.save()
-                        network_config.model_file = form.cleaned_data["load_model"]
+                    except Exception:
+                        logger.info("Model could not be loaded")
 
                 if form.cleaned_data["enable_pruning"]:
                     (
@@ -380,13 +399,14 @@ class NewRun(TemplateView):
                 if network_config.load_model:
                     # copy all the existing metrics to this training as well
                     # but first get id of run from model:
-                    id = network_config.model_file[
-                        network_config.model_file.rfind("_") + 1 :
-                    ].split(".h5")[0]
+                    id = os.path.splitext(
+                        network_config.model_file[
+                            network_config.model_file.rfind("_") + 1 :
+                        ]
+                    )[0]
                     source_queryset = TrainingMetric.objects.filter(
-                        neural_network__id=id
+                        neural_network__network_config__id=id
                     )
-
                     for source_instance in source_queryset:
                         new_instance = TrainingMetric.objects.create(
                             neural_network=training,

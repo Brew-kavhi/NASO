@@ -2,11 +2,14 @@ import threading
 import time
 import traceback
 
+import numpy as np
 import tensorflow as tf
+import tensorflow.keras.backend as K
 from loguru import logger
 
 from celery import shared_task
 from helper_scripts.extensions import start_async_measuring
+from naso.celery import restart_all_workers
 from neural_architecture.models.architecture import NetworkConfiguration
 from neural_architecture.NetworkCallbacks.base_callback import BaseCallback
 from neural_architecture.NetworkCallbacks.evaluation_base_callback import (
@@ -32,6 +35,7 @@ def run_neural_net(self, training_id):
         Exception: If there is a failure while training the network.
 
     """
+    restart_all_workers()
     self.update_state(state="PROGRESS", meta={"run_id": training_id})
     training = NetworkTraining.objects.get(pk=training_id)
     gpus = tf.config.experimental.list_physical_devices("GPU")
@@ -54,7 +58,7 @@ def run_neural_net(self, training_id):
             _nn = NeuralNetwork(training)
             _nn.run_from_config(training, update_call)
             self.update_state(state="SUCCESS")
-    except Exception as _e:
+    except Exception:
         logger.error(
             "Failure while executing the autokeras model: " + traceback.format_exc()
         )
@@ -74,7 +78,8 @@ class NeuralNetwork:
         Initializes a NeuralNetwork object.
 
         Args:
-            training_config (NetworkTraining, optional): The configuration object for network training. Defaults to None.
+            training_config (NetworkTraining, optional): The configuration object for network
+            training. Defaults to None.
 
         Returns:
             None
@@ -104,6 +109,8 @@ class NeuralNetwork:
 
         self.train()
         self.validate()
+        config.size_on_disk = config.network_config.get_gzipped_model_size()
+        config.save()
 
     def build_model_from_config(self, config: NetworkConfiguration = None) -> None:
         """
@@ -134,7 +141,7 @@ class NeuralNetwork:
         model.compile(**self.training_config.hyper_parameters.get_as_dict())
         logger.success("Model is initiated.")
         model.summary()
-        config.size = model.count_params()
+        config.size = int(np.sum([K.count_params(w) for w in model.trainable_weights]))
         config.save()
 
         self.model = model
@@ -194,9 +201,12 @@ class NeuralNetwork:
             use_multiprocessing=fit_parameters.use_multiprocessing,
         )
         self.training_config.network_config.save_model_on_disk(self.model)
-        self.training_config.memory_usage = tf.config.experimental.get_memory_info(
-            self.training_config.gpu
-        )["current"]
+        if self.training_config.gpu.startswith("GPU"):
+            self.training_config.memory_usage = tf.config.experimental.get_memory_info(
+                self.training_config.gpu
+            )["current"]
+        else:
+            self.training_config.memory_usage = -1
         self.training_config.save()
 
         logger.success("Finished training of neural network.")
@@ -220,8 +230,7 @@ class NeuralNetwork:
             return_dict=True,
             callbacks=self.training_config.evaluation_parameters.get_callbacks(
                 self.training_config
-            )
-            # + [EvaluationBaseCallback(self.training_config)],
+            ),
         )
         logger.info("evaluation of the network done...")
 

@@ -71,7 +71,7 @@
                                 </select>
                                 <button onclick="removeComparisonFromView(this)"
                                         class="bg-danger button mx-2 p-3"
-                                        data-id="{{ run.run_type }}:{{ run.comparison_id }}"
+                                        data-id="{{ run.comparison_id }}"
                                         data-tooltip='Aus Vergleich ausschliesen'>
                                     <i class="fa fa-times-circle"></i>
                                 </button>
@@ -202,7 +202,7 @@
                                 </select>
                                 <button onclick="removeComparisonFromView(this)"
                                         class="bg-danger button mx-2 p-3"
-                                        data-id="{{ run.run_type }}:{{ run.comparison_id }}"
+                                        data-id="{{ run.comparison_id }}"
                                         data-tooltip='Aus Vergleich ausschliesen'>
                                     <i class="fa fa-times-circle"></i>
                                 </button>
@@ -292,15 +292,30 @@
                     height="400"></canvas>
         </div>
     </div>
+    <div id="bar_chart"
+         class='mb-auto pb-4 d-flex justify-content-center mx-6 px-6 mb-5'>
+        <canvas class='h-100 w-100 shadow has-background-white-ter p-5 mx-5'
+                style="min-height: 60vh;
+                       max-height:60vh"
+                id='canvas_bar_chart'
+                width="400"
+                height="400"></canvas>
+    </div>
     {% if session %}
         <div class='container my-3'>{% crispy session %}</div>
+    {% endif %}
+    {% if add_form %}
+        <div class='container my-3'>{% crispy add_form %}</div>
     {% endif %}
     <script>
         const COMPARISONS = {
             {% for run in runs %}'{{ run.comparison_id }}': {
                 "run_type": '{{ run.run_type }}',
                 "run_id": '{{ run.id }}',
-                "name": '{{ run.name }}'
+                "name": '{{ run.name }}',
+                "model_size":'{{run.size}}',
+                "size_on_disk": {{run.size_on_disk}},
+                "memory_usage": '{{ run.memory_usage }}'
             },{% endfor %}
         };
         let allMetrics = {};
@@ -335,6 +350,58 @@
         document.addEventListener("DOMContentLoaded", () => {
             cards = document.querySelectorAll('.gallery-card');
             showCard(0);
+
+            var keys = Object.keys(COMPARISONS);
+            var labels = keys.map(function(key) {
+                return COMPARISONS[key]['name'];
+            });
+            var datasets = [];
+
+            for (var barName in COMPARISONS[keys[0]]) {
+                if (barName === 'run_type' || barName === 'run_id' || barName === 'name') {
+                    continue;
+                }
+                var data = keys.map(function (label) {
+                    return COMPARISONS[label][barName];
+                });
+
+                datasets.push({
+                    label: barName,
+                    data: data
+                });
+            }
+
+            var ctx = document.getElementById('canvas_bar_chart').getContext('2d');
+            var myBarChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    scales: {
+                        x: {
+                            stacked: true
+                        },
+                        y: {
+                            stacked: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            onClick: function (event, legendItem) {
+                                var index = legendItem.datasetIndex;
+                                var chart = this.chart;
+                                var meta = chart.getDatasetMeta(index);
+
+                                // Toggle visibility of the dataset
+                                meta.hidden = meta.hidden === null ? !chart.data.datasets[index].hidden : null;
+                                chart.update();
+                            }
+                        }
+                    }
+                }
+            });
 
             let allCanvas = document.getElementById("canvas_all_plot").getContext('2d');
                 allPlots = new Chart(allCanvas, {
@@ -375,10 +442,43 @@
                                 enabled: true,
                                 position: 'nearest',
                             },
+                            zoom: {
+                                enabled: true,
+                                mode: 'y',
+                                zoom: {
+                                    wheel: {
+                                        enabled: true
+                                    },
+                                    pinch: {
+                                        enabled: true
+                                    },
+                                    drag: {
+                                        enabled: true,
+                                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                        borderColor: 'rgb(255, 99, 132)',
+                                        borderWidth: 1,
+                                        modifierKey: 'ctrl'
+                                    },
+                                },
+                                pan:{
+                                    enabled: true,
+                                    mode: 'xy'
+                                },
+                            },
                             legend: {
                                 position: 'top',
-                                onClick: selectDataset
-                            }
+                                //onClick: selectDataset
+                                onClick: function (event, legendItem) {
+                                    var index = legendItem.datasetIndex;
+                                    var chart = this.chart;
+                                    var meta = chart.getDatasetMeta(index);
+
+                                    // Toggle visibility of the dataset
+                                    meta.hidden = meta.hidden === null ? !chart.data.datasets[index].hidden : null;
+                                    chart.update();
+                                    selectDataset(event, legendItem);
+                                }
+                            },
                         }
                     }
                 });
@@ -538,7 +638,8 @@
             function updateChart() {
                 graphChart.data.labels = [];
                 graphChart.data.datasets = [{
-                    data: dictToArray(run_metrics, yaxis, xaxis)
+                    data: dictToArray(run_metrics, yaxis, xaxis),
+                    label: yaxis
                 }];
                 graphChart.update();
             }
@@ -599,11 +700,10 @@
         }
 
         function allGraphY(event) {
-            console.log('hello');
-            console.log(allPlots.data);
             let yaxis = $('#graph_yaxis_all_plot').val();
             allPlots.data.datasets.forEach(function(dataset) {
                 dataset.data = dictToArray(allMetrics[dataset.cardIndex], yaxis, $('#graph_xaxis_all_plot').val());
+                dataset.label = yaxis;
             });
             allPlots.options.scales.y.title.text = yaxis;
             allPlots.update();
@@ -632,6 +732,7 @@
                 if ('metrics' in COMPARISONS[runID]) {
                     chart.data.datasets.forEach(function(dataset) {
                         dataset.data = dictToArray(COMPARISONS[runID]['metrics'], yaxis, $('#graph_xaxis').val());
+                        dataset.label = yaxis;
                     });
 
                     chart.options.scales.y.title.text = yaxis;
@@ -641,10 +742,25 @@
         }
 
         function removeComparisonFromView(element) {
-            // remove the card from teh view
-            $('#' + element.dataset.id).remove();
+            {% if comparison_id %}
+            fetch("{% url 'api:comparisons:remove_run' comparison_id 0 %}".replace(0,element.dataset.id),{
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Token ${token}`,
+                    },
+            }).then(function(response) {
+                if (response.ok) {
+                        document.getElementById(element.dataset.id).remove();
+                        COMPARISONS[element.dataset.id] = {};
+                    toastr.success("Vergleich entfernt", "INFO");
+                }
+            });
+            {% else %}
+            document.getElementById(element.dataset.id).remove();
             COMPARISONS[element.dataset.id] = {};
             removeComparison(element);
+            {% endif %}
         }
     </script>
 {% endblock %}

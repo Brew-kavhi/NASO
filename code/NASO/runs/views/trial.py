@@ -3,7 +3,10 @@ from django.shortcuts import redirect
 from django.views.generic.base import TemplateView
 
 from api.views.autokeras import get_trial_details
+from celery import shared_task
+from naso.celery import restart_all_workers
 from naso.models.page import PageSetup
+from neural_architecture.models.architecture import NetworkConfiguration
 from neural_architecture.models.autokeras import AutoKerasRun
 from neural_architecture.models.model_optimization import (
     PruningMethod,
@@ -29,6 +32,17 @@ from runs.views.new_run import (
 )
 
 
+@shared_task(bind=True)
+def memory_safe_model_load(self, run_id, trial_id):
+    autokeras_run = AutoKerasRun.objects.get(pk=run_id)
+    name = f"{autokeras_run.model.project_name}_trial_{str(trial_id)}"
+    model = autokeras_run.model.load_trial(autokeras_run, trial_id)
+    optimizer = get_optimizer_instance(model.optimizer)
+    network_config = build_network_config(name, model)
+    restart_all_workers()
+    return (optimizer.id, network_config.id)
+
+
 class TrialView(TemplateView):
     """
     View for displaying and handling the details of a trial in an AutoKeras run.
@@ -49,9 +63,12 @@ class TrialView(TemplateView):
             tuple: A tuple containing the following:
                 - tuner_arguments (list): A list of dictionaries representing tuner arguments.
                 - loss_arguments (list): A list of dictionaries representing loss arguments.
-                - metrics_arguments (dict): A dictionary where the keys are metric IDs and the values are lists of dictionaries representing metric arguments.
-                - callbacks_arguments (dict): A dictionary where the keys are callback IDs and the values are lists of dictionaries representing callback arguments.
-                - metric_weights (dict): A dictionary where the keys are metric names and the values are their corresponding weights.
+                - metrics_arguments (dict): A dictionary where the keys are metric IDs and the values are lists of dictionaries
+                representing metric arguments.
+                - callbacks_arguments (dict): A dictionary where the keys are callback
+                IDs and the values are lists of dictionaries representing callback arguments.
+                - metric_weights (dict): A dictionary where the keys are metric names and the values are their
+                corresponding weights.
         """
         metrics_arguments = {}
         callbacks_arguments = {}
@@ -111,7 +128,11 @@ class TrialView(TemplateView):
         form.initial["callbacks"] = [
             callback.instance_type for callback in run.model.callbacks.all()
         ]
+        form.initial[
+            "description"
+        ] = f"""Fine tuning of trial {str(trial_id)} from Autokeras run {run.model.project_name}"""
 
+        form.initial["name"] = f"Trial {str(trial_id)} of {run.model.project_name}"
         form.load_metric_configs(
             [
                 {
@@ -155,9 +176,6 @@ class TrialView(TemplateView):
                 callbacks_arguments,
             ) = self.get_typewise_arguments(request.POST.items())
 
-            autokeras_run = AutoKerasRun.objects.get(pk=run_id)
-            model = autokeras_run.model.load_trial(autokeras_run, trial_id)
-
             eval_params = EvaluationParameters.objects.create()
             eval_params.save()
             eval_params.callbacks.set(
@@ -173,25 +191,26 @@ class TrialView(TemplateView):
             )
 
             # create the optimizer config
-            optimizer = get_optimizer_instance(model.optimizer)
-            loss = autokeras_run.model.loss
+            optimizer_id, network_config_id = memory_safe_model_load.delay(
+                run_id, trial_id
+            ).get()
+            optimizer = Optimizer.objects.get(pk=optimizer_id)
+            network_config = NetworkConfiguration.objects.get(pk=network_config_id)
             hyper_parameters = NetworkHyperparameters()
             hyper_parameters.optimizer = optimizer
+            autokeras_run = AutoKerasRun.objects.get(pk=run_id)
+            loss = autokeras_run.model.loss
             hyper_parameters.loss = loss
             hyper_parameters.save()
             hyper_parameters.metrics.set(
                 build_metrics(form.cleaned_data, metrics_arguments)
             )
-            name = f"{autokeras_run.model.project_name}_trial_{str(trial_id)}"
 
-            training = NetworkTraining(
-                description=f"""Fine tuning of trial {str(trial_id)} from Autokeras run 
-                {autokeras_run.model.project_name}""",
-            )
+            training = NetworkTraining()
 
             training.hyper_parameters = hyper_parameters
+            network_config.name = form.cleaned_data["name"]
 
-            network_config = build_network_config(name, model)
             network_config.save_model = True
             if form.cleaned_data["enable_pruning"]:
                 (
@@ -223,6 +242,7 @@ class TrialView(TemplateView):
             training.fit_parameters = fit_params
             training.evaluation_parameters = eval_params
             training.gpu = form.cleaned_data["gpu"]
+            training.description = form.cleaned_data["description"]
 
             training.save()
 

@@ -7,6 +7,7 @@ from loguru import logger
 
 from celery import shared_task
 from helper_scripts.extensions import start_async_measuring
+from naso.celery import restart_all_workers
 from neural_architecture.models.autokeras import AutoKerasRun
 from neural_architecture.models.model_runs import KerasModelRun
 from neural_architecture.NetworkCallbacks.autokeras_callback import AutoKerasCallback
@@ -26,6 +27,7 @@ def run_autokeras(self, run_id):
     Returns:
         None
     """
+    restart_all_workers()
     self.update_state(state="PROGRESS", meta={"autokeras_id": run_id})
 
     run = AutoKerasRun.objects.get(pk=run_id)
@@ -53,9 +55,12 @@ def run_autokeras(self, run_id):
                     args=(stop_event, run, database_lock),
                     daemon=True,
                 ).start()
-                run.memory_usage = tf.config.experimental.get_memory_info(run.gpu)[
-                    "current"
-                ]
+                if run.gpu.startswith("GPU"):
+                    run.memory_usage = tf.config.experimental.get_memory_info(run.gpu)[
+                        "current"
+                    ]
+                else:
+                    run.memory_usage = -1
                 run.save()
                 autokeras_model.fit(
                     train_dataset,
@@ -93,6 +98,7 @@ def run_autokeras_trial(self, run_id, trial_id, keras_model_run_id):
     Returns:
         None
     """
+    restart_all_workers()
     gpus = tf.config.experimental.list_physical_devices("GPU")
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu, True)
@@ -120,9 +126,12 @@ def run_autokeras_trial(self, run_id, trial_id, keras_model_run_id):
                 args=(stop_event, run, database_lock),
                 daemon=True,
             ).start()
-            run.memory_usage = tf.config.experimental.get_memory_info(run.gpu)[
-                "current"
-            ]
+            if run.gpu.startswith("GPU"):
+                run.memory_usage = tf.config.experimental.get_memory_info(run.gpu)[
+                    "current"
+                ]
+            else:
+                run.memory_usage = -1
             run.save()
             model.fit(
                 train_dataset,

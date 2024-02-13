@@ -19,4 +19,8 @@ urlpatterns = [
         "celery/",
         include(("api.celery_urls", "celery"), namespace="celery"),
     ),
+    path(
+        "comparisons/",
+        include(("api.comparisons_urls", "comparisons"), namespace="comparisons"),
+    ),
 ]

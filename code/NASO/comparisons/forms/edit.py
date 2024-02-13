@@ -2,10 +2,16 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import HTML, Field, Layout, Submit
 from django import forms
 
+from runs.models.training import NetworkTraining
 
-class SaveSession(forms.Form):
-    name = forms.CharField()
-    description = forms.CharField(label="Beschreibung", widget=forms.Textarea())
+
+class AddRunForm(forms.Form):
+    run = forms.ModelChoiceField(
+        required=True,
+        label="Netzwerk",
+        widget=forms.Select(attrs={"class": "select-2 form-control w-100"}),
+        queryset=NetworkTraining.objects.all(),
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -17,8 +23,7 @@ class SaveSession(forms.Form):
         self.helper.label_class = "col-lg-2"
         self.helper.field_class = "col-lg-10"
         self.helper.layout = Layout(
-            HTML('<div class="row mb-3"><h2>Vergleich speichern</h2></div>'),
-            Field("name"),
-            Field("description"),
+            HTML('<div class="row mb-3"><h2>Vergleich hinzufügen</h2></div>'),
+            Field("run"),
             Submit("Save", "speichern"),
         )

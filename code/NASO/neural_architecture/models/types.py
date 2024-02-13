@@ -3,6 +3,14 @@ import abc
 from django.core.exceptions import ValidationError
 from django.db import models
 
+from neural_architecture.helper_scripts.architecture import (
+    edges_from_source,
+    edges_to_target,
+    is_head_node,
+    is_merge_node,
+    build_connected_layer,
+)
+
 
 # This handles all python classses.
 # that is in these types i just want to save what optimizers are availabel and how to call these classes
@@ -223,7 +231,7 @@ class BuildModelFromGraph(models.Model):
         Returns:
             list: A list of edges originating from the given node.
         """
-        return [d for d in self.connections if d["source"] == node_id]
+        return edges_from_source(node_id, self.connections)
 
     def edges_to_target(self, node_id):
         """
@@ -235,7 +243,7 @@ class BuildModelFromGraph(models.Model):
         Returns:
             list: A list of edges targeting the given node.
         """
-        return [d for d in self.connections if d["target"] == node_id]
+        return edges_to_target(node_id, self.connections)
 
     def is_merge_node(self, node_id):
         """
@@ -249,7 +257,7 @@ class BuildModelFromGraph(models.Model):
         Returns:
             bool: True if the node is a merge node, False otherwise.
         """
-        return len(self.edges_to_target(node_id)) > 1
+        return is_merge_node(node_id, self.connections)
 
     def is_head_node(self, node_id):
         """
@@ -263,7 +271,7 @@ class BuildModelFromGraph(models.Model):
         Returns:
             bool: True if the node is a head node, False otherwise.
         """
-        return not len(self.edges_from_source(node_id))
+        return is_head_node(node_id, self.connections)
 
     @abc.abstractmethod
     def get_block_for_node(self, node_id):
@@ -286,26 +294,6 @@ class BuildModelFromGraph(models.Model):
         Args:
             node_id (int): The ID of the starting node.
         """
-        for edge in self.edges_from_source(node_id):
-            if self.is_merge_node(edge["target"]):
-                can_merge = False
-                merge_sources = []
-                for merge_edge in self.edges_to_target(edge["target"]):
-                    if merge_edge["source"] in self.layer_outputs:
-                        can_merge = True
-                        merge_sources.append(self.layer_outputs[merge_edge["source"]])
-                    else:
-                        can_merge = False
-                        break
-                if can_merge:
-                    self.layer_outputs[edge["target"]] = self.get_block_for_node(
-                        edge["target"]
-                    )(merge_sources)
-            else:
-                self.layer_outputs[edge["target"]] = self.get_block_for_node(
-                    edge["target"]
-                )(self.layer_outputs[edge["source"]])
-            if not self.is_head_node(edge["target"]):
-                self.build_connected_layers(edge["target"])
-            else:
-                self.outputs[edge["target"]] = self.layer_outputs[edge["target"]]
+        self.outputs = build_connected_layer(
+            node_id, self.connections, self.get_block_for_node, self.layer_outputs, {}
+        )
