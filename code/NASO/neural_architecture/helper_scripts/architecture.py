@@ -2,6 +2,9 @@ import tensorflow as tf
 
 
 def copy_model(model, layers):
+    def get_layer(node_id):
+        return layers[node_id]
+
     # get the networks connectivity
     connections = []
     for i, layer in enumerate(model.layers):
@@ -22,14 +25,14 @@ def copy_model(model, layers):
         # build outputs
         layer_outputs = {input.name: model.inputs[0]}
         outputs = build_connected_layer(
-            input.name, connections, layers, layer_outputs, {}
+            input.name, connections, get_layer, layer_outputs, {}
         )
         new_model = tf.keras.Model(inputs=model.inputs[0], outputs=outputs)
         return new_model
 
 
 def build_connected_layer(
-    layer_name, connections, layers, layer_outputs={}, outputs={}
+    layer_name, connections, layer_factory, layer_outputs={}, outputs={}
 ):
     for edge in edges_from_source(layer_name, connections):
         if is_merge_node(edge["target"], connections):
@@ -43,14 +46,16 @@ def build_connected_layer(
                     can_merge = False
                     break
             if can_merge:
-                layer_outputs[edge["target"]] = layers[edge["target"]](merge_sources)
+                layer_outputs[edge["target"]] = layer_factory(edge["target"])(
+                    merge_sources
+                )
         else:
-            layer_outputs[edge["target"]] = layers[edge["target"]](
+            layer_outputs[edge["target"]] = layer_factory(edge["target"])(
                 layer_outputs[edge["source"]]
             )
         if not is_head_node(edge["target"], connections):
             return build_connected_layer(
-                edge["target"], connections, layers, layer_outputs, outputs
+                edge["target"], connections, layer_factory, layer_outputs, outputs
             )
         else:
             outputs[edge["target"]] = layer_outputs[edge["target"]]
