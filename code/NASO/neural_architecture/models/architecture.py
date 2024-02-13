@@ -154,13 +154,13 @@ class NetworkConfiguration(PrunableNetwork, BuildModelFromGraph):
             model (tf.keras.Model): The model to be saved.
         """
         if self.save_model:
-            file_path = f"keras_models/tensorflow/{self.name}_{self.id}.h5"
+            file_path = f"keras_models/tensorflow/{self.name}_{self.id}.keras"
             if not os.path.exists("keras_models/tensorflow/"):
                 os.makedirs("keras_models/tensorflow/")
 
             export_model = self.get_export_model(model)
 
-            export_model.save(file_path, include_optimizer=True)
+            export_model.save(file_path, save_format="keras")
 
             with zipfile.ZipFile(
                 f"keras_models/tensorflow/{self.name}_{self.id}.zip",
@@ -171,13 +171,13 @@ class NetworkConfiguration(PrunableNetwork, BuildModelFromGraph):
 
             self.model_file = file_path
             self.save()
-            logger.success(f"Saved model to {self.name}_{self.id}.h5")
+            logger.success(f"Saved model to {self.name}_{self.id}.keras")
         else:
             logger.info(f"Not saving model, but save is {self.save}")
 
     def get_gzipped_model_size(self) -> int:
         if self.save_model:
-            return os.path.getsize(self.model_file.replace(".h5", ".zip"))
+            return os.path.getsize(os.path.splitext(self.model_file)[0] + ".zip")
         return -1
 
 

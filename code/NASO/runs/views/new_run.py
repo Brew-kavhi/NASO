@@ -1,4 +1,5 @@
 import json
+import os
 import random
 from loguru import logger
 
@@ -333,9 +334,11 @@ class NewRun(TemplateView):
                     if form.cleaned_data["fine_tune_saved_model"]:
                         network_config.load_model = True
                         network_config.model_file = form.cleaned_data["load_model"]
-                        id = network_config.model_file[
-                            network_config.model_file.rfind("_") + 1 :
-                        ].split(".h5")[0]
+                        id = os.path.splitext(
+                            network_config.model_file[
+                                network_config.model_file.rfind("_") + 1 :
+                            ]
+                        )[0]
                         try:
                             old_training = NetworkTraining.objects.filter(
                                 network_config__id=id
@@ -394,9 +397,11 @@ class NewRun(TemplateView):
                 if network_config.load_model:
                     # copy all the existing metrics to this training as well
                     # but first get id of run from model:
-                    id = network_config.model_file[
-                        network_config.model_file.rfind("_") + 1 :
-                    ].split(".h5")[0]
+                    id = os.path.splitext(
+                        network_config.model_file[
+                            network_config.model_file.rfind("_") + 1 :
+                        ]
+                    )[0]
                     source_queryset = TrainingMetric.objects.filter(
                         neural_network__network_config__id=id
                     )

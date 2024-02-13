@@ -197,7 +197,8 @@ class NewRunForm(BaseRunWithCallback, PrunableForm):
         models = [
             (join(models_path, f), f)
             for f in listdir(models_path)
-            if isfile(join(models_path, f)) and f.endswith(".h5")
+            if isfile(join(models_path, f))
+            and (f.endswith(".h5") or f.endswith(".keras"))
         ]
         return models
 
