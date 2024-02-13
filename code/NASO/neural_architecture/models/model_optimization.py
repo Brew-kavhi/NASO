@@ -6,9 +6,9 @@ from loguru import logger
 from tensorflow_model_optimization.python.core.sparsity.keras.prune_registry import (
     PruneRegistry,
 )
-from neural_architecture.helper_scripts.architecture import copy_model
 
 from helper_scripts.importing import get_object
+from neural_architecture.helper_scripts.architecture import copy_model
 from neural_architecture.models.types import BaseType, TypeInstance
 
 
@@ -74,7 +74,7 @@ class PruningMethod(TypeInstance):
         additional_arguments = [
             argument
             for argument in list(self.additional_arguments)
-            if not argument["name"] == "to_prune"
+            if argument["name"] != "to_prune"
         ]
 
         additional_arguments.insert(0, {"name": "to_prune", "value": to_prune})
@@ -120,7 +120,7 @@ class PruningMethod(TypeInstance):
         except ValueError:
             logger.critical("Could no apply pruning method to this layer")
             return to_prune
-        except:
+        except Exception:
             logger.critical("something happened")
             return to_prune
 

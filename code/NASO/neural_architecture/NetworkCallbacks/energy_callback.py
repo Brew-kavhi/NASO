@@ -1,5 +1,3 @@
-import subprocess
-
 import tensorflow as tf
 
 from helper_scripts.power_management import get_power_usage
@@ -143,8 +141,8 @@ class EnergyCallback(tf.keras.callbacks.Callback):
         Returns:
             None
 
-        This method calculates the power usage measurement at the end of each prediction and updates the average power usage.
-        The average power usage is then added to the logs dictionary with the key "energy_consumption".
+        This method calculates the power usage measurement at the end of each prediction and updates
+        the average power usage. This is then added to the logs dictionary with the key "energy_consumption".
         """
         measurement = get_power_usage(self.run.gpu)
         self.measurements.append(measurement)

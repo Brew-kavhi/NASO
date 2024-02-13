@@ -1,4 +1,4 @@
-from django.urls import include, path
+from django.urls import path
 
 from comparisons.views.details import ComparisonDetailView, SessionComparisonView
 from comparisons.views.list import ComparisonListView, delete_comparison

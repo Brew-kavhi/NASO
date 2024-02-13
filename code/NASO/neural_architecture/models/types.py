@@ -2,11 +2,12 @@ import abc
 
 from django.core.exceptions import ValidationError
 from django.db import models
+
 from neural_architecture.helper_scripts.architecture import (
-    is_head_node,
-    is_merge_node,
     edges_from_source,
     edges_to_target,
+    is_head_node,
+    is_merge_node,
 )
 
 

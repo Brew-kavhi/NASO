@@ -88,7 +88,7 @@ def get_task_details(request, task_id):
     try:
         details = get_celery_task_state(task_id)["details"]
         return Response(details)
-    except Exception as e:
+    except Exception:
         return Response({"sucess": False})
 
 

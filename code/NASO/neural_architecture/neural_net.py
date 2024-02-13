@@ -1,15 +1,15 @@
 import threading
 import time
 import traceback
-import numpy as np
-from naso.celery import restart_all_workers
 
+import numpy as np
 import tensorflow as tf
 import tensorflow.keras.backend as K
 from loguru import logger
 
 from celery import shared_task
 from helper_scripts.extensions import start_async_measuring
+from naso.celery import restart_all_workers
 from neural_architecture.models.architecture import NetworkConfiguration
 from neural_architecture.NetworkCallbacks.base_callback import BaseCallback
 from neural_architecture.NetworkCallbacks.evaluation_base_callback import (
@@ -58,7 +58,7 @@ def run_neural_net(self, training_id):
             _nn = NeuralNetwork(training)
             _nn.run_from_config(training, update_call)
             self.update_state(state="SUCCESS")
-    except Exception as _e:
+    except Exception:
         logger.error(
             "Failure while executing the autokeras model: " + traceback.format_exc()
         )
@@ -78,7 +78,8 @@ class NeuralNetwork:
         Initializes a NeuralNetwork object.
 
         Args:
-            training_config (NetworkTraining, optional): The configuration object for network training. Defaults to None.
+            training_config (NetworkTraining, optional): The configuration object for network
+            training. Defaults to None.
 
         Returns:
             None

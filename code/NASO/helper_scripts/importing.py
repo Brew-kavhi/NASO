@@ -57,7 +57,8 @@ def get_object(
 
 def get_callback(callback_definition, required_arguments=None):
     """
-    This function returns a callback instance build from the module and the class and instantiated with given arguments.
+    This function returns a callback instance build from the module and the class and
+    instantiated with given arguments.
 
     Args:
         callback_definition (dict): A dictionary containing the module_name, class_name and additional_arguments.

@@ -2,8 +2,6 @@ import asyncio
 
 import numpy as np
 import tensorflow.keras.backend as K
-from loguru import logger
-from tensorflow.keras import backend as K
 from tensorflow_model_optimization.python.core.sparsity.keras import pruning_wrapper
 
 from helper_scripts.power_management import get_power_usage

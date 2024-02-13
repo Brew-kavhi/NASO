@@ -1,11 +1,12 @@
-import autokeras
 import os
-from loguru import logger
+
+import autokeras
 import keras_tuner
 import tensorflow as tf
 from django.core.exceptions import ValidationError
 from django.db import models
 from keras import backend as K
+from loguru import logger
 
 from helper_scripts.extensions import (
     custom_hypermodel_build,

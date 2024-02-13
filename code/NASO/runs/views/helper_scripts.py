@@ -110,7 +110,7 @@ def build_additional_arguments(confguration):
             if "module" not in v:
                 argument = {"name": k, "value": json.dumps(str(v))}
         else:
-            if type(v) == str:
+            if isinstance(v, str):
                 argument = {"name": k, "value": v}
             else:
                 argument = {"name": k, "value": str(v)}

@@ -1,6 +1,7 @@
-import safedelete
 import os
 import shutil
+
+import safedelete
 from django.urls import reverse_lazy
 from django.views.generic.base import TemplateView
 

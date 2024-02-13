@@ -1,13 +1,13 @@
 import threading
 import traceback
 from contextlib import redirect_stdout
-from naso.celery import restart_all_workers
 
 import tensorflow as tf
 from loguru import logger
 
 from celery import shared_task
 from helper_scripts.extensions import start_async_measuring
+from naso.celery import restart_all_workers
 from neural_architecture.models.autokeras import AutoKerasRun
 from neural_architecture.models.model_runs import KerasModelRun
 from neural_architecture.NetworkCallbacks.autokeras_callback import AutoKerasCallback

@@ -1,12 +1,12 @@
 import json
 import os
 import random
-from loguru import logger
 
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic.base import TemplateView
+from loguru import logger
 
 from naso.models.page import PageSetup
 from neural_architecture.autokeras import run_autokeras
@@ -330,25 +330,27 @@ class NewRun(TemplateView):
                     connections=json.loads(request.POST.get("edges")),
                 )
 
-                if "rerun" in request.GET:
-                    if form.cleaned_data["fine_tune_saved_model"]:
-                        network_config.load_model = True
-                        network_config.model_file = form.cleaned_data["load_model"]
-                        id = os.path.splitext(
-                            network_config.model_file[
-                                network_config.model_file.rfind("_") + 1 :
-                            ]
-                        )[0]
-                        try:
-                            old_training = NetworkTraining.objects.filter(
-                                network_config__id=id
-                            ).first()
-                            fit_parameters.initial_epoch = (
-                                old_training.fit_parameters.epochs
-                            )
-                            fit_parameters.save()
-                        except:
-                            logger.info("Model could not be loaded")
+                if (
+                    "rerun" in request.GET
+                    and form.cleaned_data["fine_tuned_saved_model"]
+                ):
+                    network_config.load_model = True
+                    network_config.model_file = form.cleaned_data["load_model"]
+                    id = os.path.splitext(
+                        network_config.model_file[
+                            network_config.model_file.rfind("_") + 1 :
+                        ]
+                    )[0]
+                    try:
+                        old_training = NetworkTraining.objects.filter(
+                            network_config__id=id
+                        ).first()
+                        fit_parameters.initial_epoch = (
+                            old_training.fit_parameters.epochs
+                        )
+                        fit_parameters.save()
+                    except Exception:
+                        logger.info("Model could not be loaded")
 
                 if form.cleaned_data["enable_pruning"]:
                     (

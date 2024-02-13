@@ -4,7 +4,6 @@ from comparisons.forms.create import SaveSession
 from comparisons.forms.edit import AddRunForm
 from comparisons.models.comparison import Comparison, get_comparison_details
 from naso.models.page import PageSetup
-from runs.models.training import NetworkTraining
 
 
 class ComparisonDetailView(TemplateView):
@@ -16,7 +15,6 @@ class ComparisonDetailView(TemplateView):
 
     def get(self, request, pk):
         comparison = Comparison.objects.get(id=pk)
-        all_runs = NetworkTraining.objects.all()
         # get the ComparisonDetailsView
         # then the the etails and append to the runs
         self.context["runs"] = comparison.get_details()

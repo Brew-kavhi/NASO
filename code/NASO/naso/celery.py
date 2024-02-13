@@ -107,7 +107,7 @@ def get_tasks():
         return running_tasks
     except BrokenPipeError:
         return []
-    finally:
+    except Exception:
         return running_tasks
 
 
@@ -133,7 +133,7 @@ def get_registered_tasks():
                         }
                     )
         return tasks
-    except:
+    except Exception:
         return []
 
 

@@ -1,11 +1,12 @@
 from django.contrib import messages
-import tensorflow as tf
 from django.shortcuts import redirect
 from django.views.generic.base import TemplateView
 
 from api.views.autokeras import get_trial_details
+from celery import shared_task
 from naso.celery import restart_all_workers
 from naso.models.page import PageSetup
+from neural_architecture.models.architecture import NetworkConfiguration
 from neural_architecture.models.autokeras import AutoKerasRun
 from neural_architecture.models.model_optimization import (
     PruningMethod,
@@ -13,7 +14,6 @@ from neural_architecture.models.model_optimization import (
     PruningSchedule,
 )
 from neural_architecture.models.types import OptimizerType
-from neural_architecture.models.architecture import NetworkConfiguration
 from neural_architecture.neural_net import run_neural_net
 from runs.forms.trial import RerunTrialForm
 from runs.models.training import (
@@ -30,7 +30,6 @@ from runs.views.new_run import (
     build_metrics,
     get_pruning_parameters,
 )
-from celery import shared_task
 
 
 @shared_task(bind=True)
@@ -64,9 +63,12 @@ class TrialView(TemplateView):
             tuple: A tuple containing the following:
                 - tuner_arguments (list): A list of dictionaries representing tuner arguments.
                 - loss_arguments (list): A list of dictionaries representing loss arguments.
-                - metrics_arguments (dict): A dictionary where the keys are metric IDs and the values are lists of dictionaries representing metric arguments.
-                - callbacks_arguments (dict): A dictionary where the keys are callback IDs and the values are lists of dictionaries representing callback arguments.
-                - metric_weights (dict): A dictionary where the keys are metric names and the values are their corresponding weights.
+                - metrics_arguments (dict): A dictionary where the keys are metric IDs and the values are lists of dictionaries
+                representing metric arguments.
+                - callbacks_arguments (dict): A dictionary where the keys are callback
+                IDs and the values are lists of dictionaries representing callback arguments.
+                - metric_weights (dict): A dictionary where the keys are metric names and the values are their
+                corresponding weights.
         """
         metrics_arguments = {}
         callbacks_arguments = {}
