@@ -132,7 +132,7 @@ class BaseCallback(tf.keras.callbacks.Callback):
                     },
                 ],
             )
-            # TODO the possiblity of a databse locked error occurs here. So wait  a milliseconds and try again
+            # Database could be locked. In that case, wait and try again
             try:
                 metric.save()
             except django.db.utils.OperationalError:
