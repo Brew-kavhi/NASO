@@ -9,6 +9,7 @@ from helper_scripts.timer import Timer
 from neural_architecture.models.autokeras import AutoKerasRun
 from neural_architecture.models.model_runs import KerasModelRun
 from runs.models.training import NetworkTraining, TrainingMetric
+from inference.models.inference import Inference
 
 
 class BaseCallback(tf.keras.callbacks.Callback):
@@ -95,6 +96,7 @@ class BaseCallback(tf.keras.callbacks.Callback):
                 "metrics": metrics,
                 "autokeras_trial": isinstance(self.run, KerasModelRun),
                 "autokeras": isinstance(self.run, AutoKerasRun),
+                "inference": isinstance(self.run, Inference),
             },
         )
 
@@ -167,5 +169,6 @@ class BaseCallback(tf.keras.callbacks.Callback):
                 "gpu": {"device": self.run.gpu, "power": self.gpu_consumption},
                 "autokeras_trial": isinstance(self.run, KerasModelRun),
                 "autokeras": isinstance(self.run, AutoKerasRun),
+                "inference": isinstance(self.run, Inference),
             },
         )

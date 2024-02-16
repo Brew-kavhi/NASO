@@ -283,14 +283,14 @@
                                 <div>
                                     {% if metric.additional_arguments %}
                                         {% for argument in metric.additional_arguments %}
-                                            <p>
+                                            <p class='col-2'>
                                                 <span class='has-text-weight-bold'>{{ argument.name }}</span>
                                                 {{ argument.value }}
                                             </p>
                                         {% endfor %}
                                     {% else %}
                                         {% for argument in metric.instance_type.required_arguments %}
-                                            <p>
+                                            <p class='col-2'>
                                                 <span class='has-text-weight-bold'>{{ argument.name }}</span>
                                                 {{ argument.default }}
                                             </p>
@@ -323,14 +323,14 @@
                                 <div>
                                     {% if callback.additional_arguments %}
                                         {% for argument in callback.additional_arguments %}
-                                            <p>
+                                            <p class='col-2'>
                                                 <span class='has-text-weight-bold'>{{ argument.name }}</span>
                                                 <span class="border-bottom">{{ argument.value }}</span>
                                             </p>
                                         {% endfor %}
                                     {% else %}
                                         {% for argument in callback.instance_type.required_arguments %}
-                                            <p>
+                                            <p class='col-2'>
                                                 <span class='has-text-weight-bold'>{{ argument.name }}</span>
                                                 <span class="border-bottom">{{ argument.default }}</span>
                                             </p>

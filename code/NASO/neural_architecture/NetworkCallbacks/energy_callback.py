@@ -1,7 +1,10 @@
 import tensorflow as tf
+import numpy as np
 
 from helper_scripts.power_management import get_power_usage
+from inference.models.inference import Inference
 from neural_architecture.models.autokeras import AutoKerasRun
+from runs.models.training import NetworkTraining
 
 
 class EnergyCallback(tf.keras.callbacks.Callback):
@@ -31,7 +34,9 @@ class EnergyCallback(tf.keras.callbacks.Callback):
     measurements = []
     trial_measurements = []
 
-    def __init__(self, run: AutoKerasRun, *args, **kwargs):
+    def __init__(
+        self, run: AutoKerasRun | Inference | NetworkTraining, *args, **kwargs
+    ):
         super().__init__(*args, **kwargs)
         self.run = run
         self.trial_measurements = []
@@ -80,6 +85,7 @@ class EnergyCallback(tf.keras.callbacks.Callback):
         logs["trial_energy_consumption"] = sum(self.trial_measurements) / len(
             self.trial_measurements
         )
+        logs["trial_energy_consumption_var"] = np.var(self.trial_measurements)
 
     def on_test_begin(self, logs=None):
         """
@@ -148,6 +154,7 @@ class EnergyCallback(tf.keras.callbacks.Callback):
         self.measurements.append(measurement)
         average_power_usage = sum(self.measurements) / len(self.measurements)
         logs["energy_consumption"] = average_power_usage
+        logs["energy_consumption_var"] = np.var(self.measurements)
 
     def on_predict_batch_begin(self, batch, logs=None):
         """

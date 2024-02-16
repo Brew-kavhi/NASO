@@ -1,8 +1,10 @@
 import math
+import numpy as np
 
 import tensorflow as tf
 
 from helper_scripts.timer import Timer
+from inference.models.inference import Inference
 from runs.models.training import Run, TrainingMetric
 
 
@@ -29,8 +31,9 @@ class EvaluationBaseCallback(tf.keras.callbacks.Callback):
     """
 
     times = []
+    _batch = 0
 
-    def __init__(self, run: Run):
+    def __init__(self, run: Run | Inference):
         super().__init__()
         self.run = run
         self.timer = Timer()
@@ -114,7 +117,9 @@ class EvaluationBaseCallback(tf.keras.callbacks.Callback):
         Returns:
             None
         """
-        logs["execution_time"] = sum(self.times) / len(self.times)
+        logs["execution_time_mean"] = sum(self.times) / len(self.times)
+        logs["execution_time_variance"] = np.var(self.times)
+        logs["total_batches"] = self._batch
         metrics = {}
         for key in logs:
             if not math.isnan(logs[key]):
@@ -161,3 +166,4 @@ class EvaluationBaseCallback(tf.keras.callbacks.Callback):
         elapsed_time = self.timer.stop()
         self.times.append(elapsed_time)
         logs["execution_time"] = self.timer.get_total_time()
+        self._batch = batch
