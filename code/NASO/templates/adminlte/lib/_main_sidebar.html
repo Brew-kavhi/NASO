@@ -60,6 +60,29 @@
         </ul>
     </li>
     <li class=" nav-item has-tree-view">
+        <a class="{% add_active 'inference:list' exact_match=True %} nav-link"
+           href="{% url 'inference:list' %}">
+            <i class="nav-icon me-3 fa fa-forward"></i> <span class="ml-3">Inference</span>
+            <p>
+                <i class="right fas fa-angle-left"></i>
+            </p>
+        </a>
+        <ul class="nav nav-treeview menu-open pl-3">
+            <li class="nav-item">
+                <a class="nav-link {% add_active 'inference:new' exact_match=True %}"
+                   href="{% url 'inference:new' %}">
+                    <i class="nav-icon me-3 fa fa-forward"></i> <span class="ml-3">New Inference</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'inference:list' %}">
+                    <i class="nav-icon me-3 fa fa-file-invoice"></i> <span class="ml-3">All Inferences</span>
+                </a>
+            </li>
+        </ul>
+    </li>
+    <hr>
+    <li class=" nav-item has-tree-view">
         <a class="{% add_active 'runs:templates:list' exact_match=True %} nav-link"
            href="{% url 'runs:templates:list' %}">
             <i class="nav-icon me-3 fa fa-file-invoice"></i> <span class="ml-3">Templates</span>

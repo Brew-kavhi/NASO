@@ -12,6 +12,7 @@ from naso.models.page import PageSetup
 from neural_architecture.models.autokeras import AutoKerasRun
 from neural_architecture.models.model_runs import KerasModelRun
 from runs.models.training import NetworkTraining
+from inference.models.inference import Inference
 
 
 class Dashboard(TemplateView):
@@ -94,6 +95,19 @@ class Dashboard(TemplateView):
                                     "name": run.model.name,
                                     "id": run.id,
                                     "link": reverse_lazy("runs:list"),
+                                    "task_id": running_tasks["training_task_id"],
+                                }
+                            )
+                        elif "inference" in run_details and run_details["inference"]:
+                            run = Inference.objects.get(id=run_details["run_id"])
+                            self.context["run"].append(
+                                {
+                                    "name": run.name,
+                                    "id": run.id,
+                                    "link": reverse_lazy(
+                                        "inference:details",
+                                        kwargs={"pk": run_details["run_id"]},
+                                    ),
                                     "task_id": running_tasks["training_task_id"],
                                 }
                             )

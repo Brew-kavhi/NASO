@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load get_values %}
+{% block content %}
+    <div class='container pb-3' id='inference_runs'>
+        {% for inference in inferences %}
+            <div class="accordion" id="accordion{{ inference.id }}">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between is-align-items-center"
+                         id="heading_{{ inference.id }}">
+                        <h2 class="mb-0">
+                            <button class="btn"
+                                    type="button"
+                                    data-toggle="collapse"
+                                    data-target="#collapse_{{ inference.id }}"
+                                    aria-expanded="true"
+                                    aria-controls="collapse_{{ inference.id }}">{{ inference.name }}</button>
+                        </h2>
+                        <div class='d-flex is-align-items-center'>
+                            <div class='d-flex flex-wrap'>
+                                {% for metrics in  inference.prediction_metrics.first.metrics %}
+                                    {% for metric in metrics.metrics %}
+                                        <span class="my-1 mx-1 tag is-primary is-light">{{ metric }}: {% get_attribute_tag metrics.metrics metric %}</span>
+                                    {% endfor %}
+                                {% endfor %}
+                            </div>
+                            <a class="button is-info ml-2 has-tooltip-arrow has-tooltip-left"
+                               href="{% url 'inference:new' %}?rerun={{ inference.id }}"
+                               data-tooltip='Dieses Experiment neu starten'>
+                                <i class="fas fa-redo"></i>
+                            </a>
+                            <button class="button is-danger ml-2 delete-btn"
+                                    data-target="#confirmDeleteModal"
+                                    data-item-name='{{ inference.name }}'
+                                    data-action="{% url 'inference:delete' inference.id %}"
+                                    data-item-id="{{ inference.id }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="collapse_{{ inference.id }}"
+                         class="collapse"
+                         aria-labelledby="heading_{{ inference.id }}"
+                         data-parent="#accordion{{ inference.id }}">
+                        <div class="card-body has-background-light">
+                            <p>{{ inference.description }}</p>
+                            <a href='{% url 'inference:details' inference.id %}' class='button'>Details</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    {% include 'components/delete_modal.html' %}
+{% endblock content %}
