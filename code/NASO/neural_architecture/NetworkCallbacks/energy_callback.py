@@ -1,8 +1,9 @@
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 
 from helper_scripts.power_management import get_power_usage
 from inference.models.inference import Inference
+from naso.settings import ENERGY_MEASUREMENT_FREQUENCY
 from neural_architecture.models.autokeras import AutoKerasRun
 from runs.models.training import NetworkTraining
 
@@ -33,6 +34,7 @@ class EnergyCallback(tf.keras.callbacks.Callback):
 
     measurements = []
     trial_measurements = []
+    _last_measurement = 0
 
     def __init__(
         self, run: AutoKerasRun | Inference | NetworkTraining, *args, **kwargs
@@ -134,8 +136,6 @@ class EnergyCallback(tf.keras.callbacks.Callback):
             None
         """
         self.measurements = []
-        measurement = get_power_usage(self.run.gpu)
-        self.measurements.append(measurement)
 
     def on_predict_end(self, logs=None):
         """
@@ -156,20 +156,6 @@ class EnergyCallback(tf.keras.callbacks.Callback):
         logs["energy_consumption"] = average_power_usage
         logs["energy_consumption_var"] = np.var(self.measurements)
 
-    def on_predict_batch_begin(self, batch, logs=None):
-        """
-        Callback method called at the beginning of each batch during prediction.
-
-        Args:
-            batch: The batch index.
-            logs: Dictionary containing the loss value and metrics for the current batch.
-
-        Returns:
-            None
-        """
-        measurement = get_power_usage(self.run.gpu)
-        self.measurements.append(measurement)
-
     def on_predict_batch_end(self, batch, logs=None):
         """
         Callback method called at the end of each batch during prediction.
@@ -181,5 +167,7 @@ class EnergyCallback(tf.keras.callbacks.Callback):
         Returns:
             None
         """
-        measurement = get_power_usage(self.run.gpu)
-        self.measurements.append(measurement)
+        if logs["total_time"] - self._last_measurement > ENERGY_MEASUREMENT_FREQUENCY:
+            self._last_measurement = logs["total_time"]
+            measurement = get_power_usage(self.run.gpu)
+            self.measurements.append(measurement)

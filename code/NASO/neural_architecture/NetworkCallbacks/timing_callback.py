@@ -1,14 +1,11 @@
-import math
-
 import numpy as np
 import tensorflow as tf
 
 from helper_scripts.timer import Timer
-from inference.models.inference import Inference
-from runs.models.training import Run, TrainingMetric
+from naso.settings import ENERGY_MEASUREMENT_FREQUENCY
 
 
-class EvaluationBaseCallback(tf.keras.callbacks.Callback):
+class TimingCallback(tf.keras.callbacks.Callback):
     """
     Callback for evaluating the execution time of testing and prediction in a neural network model.
     Logs the execution time of each batch and the average execution time of the testing/prediction.
@@ -32,11 +29,41 @@ class EvaluationBaseCallback(tf.keras.callbacks.Callback):
 
     times = []
     _batch = 0
+    _last_measurement = 0
 
-    def __init__(self, run: Run | Inference):
+    def __init__(self):
         super().__init__()
-        self.run = run
         self.timer = Timer()
+        self.times = []
+
+    def on_epoch_begin(self, epochs, logs=None):
+        """
+        Called at the beginning of an epoch.
+
+        Args:
+            logs (dict): Dictionary of logs.
+
+        Returns:
+            None
+        """
+        self.timer.start()
+
+    def on_epoch_end(self, epochs, logs=None):
+        """
+        Called at the end of an epoch.
+        Logs the execution time of the epoch
+
+        Args:
+            logs (dict): Dictionary of logs.
+
+        Returns:
+            None
+        """
+        elapsed_time = self.timer.stop()
+        if logs is None:
+            logs = []
+        self.times.append(elapsed_time)
+        logs["execution_time"] = np.mean(self.times)
 
     def on_test_begin(self, logs=None):
         """
@@ -62,8 +89,6 @@ class EvaluationBaseCallback(tf.keras.callbacks.Callback):
             None
         """
         logs["execution_time"] = sum(self.times) / len(self.times)
-        keys = list(logs.keys())
-        print(f"Stop testing; got log keys: {keys}")
 
     def on_test_batch_begin(self, batch, logs=None):
         """
@@ -117,23 +142,8 @@ class EvaluationBaseCallback(tf.keras.callbacks.Callback):
         Returns:
             None
         """
-        logs["total_batches"] = self._batch
-        metrics = {}
-        for key in logs:
-            if not math.isnan(logs[key]):
-                metrics[key] = logs[key]
-        if self.run:
-            metric = TrainingMetric(
-                epoch=0,
-                metrics=[
-                    {
-                        "run_id": self.run.id,
-                        "metrics": metrics,
-                    },
-                ],
-            )
-            metric.save()
-            self.run.prediction_metrics.add(metric)
+        logs["execution_time_mean"] = sum(self.times) / len(self.times)
+        logs["execution_time_variance"] = np.var(self.times)
 
     def on_predict_batch_begin(self, batch, logs=None):
         """
@@ -162,7 +172,9 @@ class EvaluationBaseCallback(tf.keras.callbacks.Callback):
             None
         """
         elapsed_time = self.timer.stop()
-        self.times.append(elapsed_time)
-        logs["execution_time"] = self.timer.get_total_time()
-        # add one because of the index things
-        self._batch = batch + 1
+        logs["total_time"] = self.timer.get_total_time()
+        if logs["total_time"] - self._last_measurement > ENERGY_MEASUREMENT_FREQUENCY:
+            self._last_measurement = logs["total_time"]
+        else:
+            self.times.append(elapsed_time)
+            logs["execution_time"] = elapsed_time

@@ -21,6 +21,7 @@ from neural_architecture.models.model_runs import KerasModelRun
 from neural_architecture.NetworkCallbacks.evaluation_base_callback import (
     EvaluationBaseCallback,
 )
+from neural_architecture.NetworkCallbacks.timing_callback import TimingCallback
 from runs.models.training import (
     CallbackFunction,
     LossFunction,
@@ -551,12 +552,15 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         if not self.auto_model:
             raise ValueError("Model has not been built yet.")
         batch_size = 1
+        timing_callback = TimingCallback()
         return self.get_export_model(self.auto_model.export_model()).predict(
             dataset,
             batch_size,
             verbose=2,
             steps=None,
-            callbacks=self.get_callbacks(run) + [EvaluationBaseCallback(run)],
+            callbacks=[timing_callback]
+            + self.get_callbacks(run)
+            + [EvaluationBaseCallback(run)],
         )
 
     def evaluate(self, *args, **kwargs):

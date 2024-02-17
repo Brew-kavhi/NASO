@@ -5,6 +5,7 @@ from django.db import models
 
 from helper_scripts.importing import get_object
 from neural_architecture.models.dataset import Dataset
+from neural_architecture.NetworkCallbacks.timing_callback import TimingCallback
 from runs.models.training import (
     CallbackFunction,
     Metric,
@@ -113,9 +114,10 @@ class Inference(models.Model):
     def measure_inference(self, callbacks=[], **kwargs):
         if not self._model:
             self._load_model()
+        timer = TimingCallback()
         return self._model.predict(
             self._test_data.batch(self.batch_size),
             batch_size=self.batch_size,
             verbose=2,
-            callbacks=self.get_callbacks() + callbacks,
+            callbacks=[timer] + self.get_callbacks() + callbacks,
         )
