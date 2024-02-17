@@ -12,6 +12,7 @@ from neural_architecture.models.autokeras import AutoKerasRun
 from neural_architecture.models.model_runs import KerasModelRun
 from neural_architecture.NetworkCallbacks.autokeras_callback import AutoKerasCallback
 from neural_architecture.NetworkCallbacks.base_callback import BaseCallback
+from neural_architecture.NetworkCallbacks.timing_callback import TimingCallback
 
 logger.add("net.log", backtrace=True, diagnose=True)
 
@@ -42,6 +43,7 @@ def run_autokeras(self, run_id):
         (train_dataset, test_dataset) = run.dataset.get_data()
 
         callback = AutoKerasCallback(self, run)
+        timing_callback = TimingCallback()
         base_callback = BaseCallback(self, run, epochs=run.model.epochs)
 
         stop_event = threading.Event()
@@ -64,15 +66,14 @@ def run_autokeras(self, run_id):
                 run.save()
                 autokeras_model.fit(
                     train_dataset,
-                    callbacks=autokeras_model.get_callbacks(run)
+                    callbacks=[timing_callback]
+                    + self.get_callbacks(run)
                     + [callback]
                     + [base_callback],
                     verbose=2,
                     epochs=autokeras_model.epochs,
                 )
 
-            # Evaluate the best model with testing data.
-            print(autokeras_model.evaluate(test_dataset))
             autokeras_model.predict(test_dataset.take(200).batch(1), run)
             self.update_state(state="SUCCESS")
         except Exception:

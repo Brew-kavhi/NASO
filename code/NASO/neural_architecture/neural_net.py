@@ -15,6 +15,7 @@ from neural_architecture.NetworkCallbacks.base_callback import BaseCallback
 from neural_architecture.NetworkCallbacks.evaluation_base_callback import (
     EvaluationBaseCallback,
 )
+from neural_architecture.NetworkCallbacks.timing_callback import TimingCallback
 from runs.models.training import NetworkTraining, TrainingMetric
 
 logger.add("net.log", backtrace=True, diagnose=True)
@@ -179,11 +180,14 @@ class NeuralNetwork:
 
         logger.success("Started training of the network...")
 
-        callbacks = self.training_config.fit_parameters.get_callbacks(
-            self.training_config
-        ) + (
-            self.training_config.network_config.get_pruning_callbacks()
-            + [self.celery_callback]
+        timing_callback = TimingCallback()
+        callbacks = (
+            [timing_callback]
+            + self.training_config.fit_parameters.get_callbacks(self.training_config)
+            + (
+                self.training_config.network_config.get_pruning_callbacks()
+                + [self.celery_callback]
+            )
         )
 
         self.model.fit(
@@ -234,14 +238,10 @@ class NeuralNetwork:
         )
         logger.info("evaluation of the network done...")
 
-        time = "Fehler"
-        if self.celery_callback:
-            time = self.celery_callback.get_total_time()
-
         eval_metric = TrainingMetric(
             neural_network=self.training_config,
             epoch=self.training_config.fit_parameters.epochs + 1,
-            metrics=[{"metrics": metrics, "time": time}],
+            metrics=[{"metrics": metrics}],
         )
         eval_metric.save()
         self.training_config.final_metrics = eval_metric
@@ -265,6 +265,7 @@ class NeuralNetwork:
         # sleep for one second to cool donw the gpu
         # energy measurement returns the average over the last second, so make sure the training does not affect this metric
         time.sleep(1)
+        timing_callback = TimingCallback()
         batch_size = 1
         predict_model = self.training_config.network_config.get_export_model(self.model)
         return predict_model.predict(
@@ -272,7 +273,8 @@ class NeuralNetwork:
             batch_size,
             verbose=2,
             steps=None,
-            callbacks=self.training_config.evaluation_parameters.get_callbacks(
+            callbacks=[timing_callback]
+            + self.training_config.evaluation_parameters.get_callbacks(
                 self.training_config
             )
             + [EvaluationBaseCallback(self.training_config)],

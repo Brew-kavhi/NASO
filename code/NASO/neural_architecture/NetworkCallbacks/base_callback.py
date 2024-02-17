@@ -110,9 +110,6 @@ class BaseCallback(tf.keras.callbacks.Callback):
             epoch (int): The current epoch number.
             logs (dict): Dictionary containing the training metrics for the current epoch.
         """
-        elapsed_time = self.timer.stop()
-        logs["execution_time"] = elapsed_time
-        logs["total_time"] = self.timer.get_total_time()
 
         logs["sparsity"] = calculate_sparsity(self.model)
         metrics = {}
