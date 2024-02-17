@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "naso"
-version = "0.2.0"
-description = "Neural architecture search and optimizer. A framework to allow for easy and gui configurable neural architecture search as well as optimizatio runs"
+version = "1.0.0"
+description = "Neural architecture search and optimizer. A framework to allow for easy and gui configurable neural architecture search as well as optimization runs"
 authors = ["Marius Goehring <marius@mariusgoehring.de>"]
 license = "MIT"
 readme = "README.md"

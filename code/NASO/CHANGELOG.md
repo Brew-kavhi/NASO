@@ -1,3 +1,131 @@
+## 1.0.0 (2024-02-17)
+
+### Breaking Changes
+- **Metrics**: Now using physically correct naming power and energy measurement
+- **Pruning**: rebuild the model and apply pruning based on layers
+- **Model File**: Storing the models in modern .keras format now
+
+### Feat
+
+- **comparison**: add prediction metrics to graph
+- **energy_consumption**: compute energy consumption as well
+- **prediction**: include memory usage in prediction metrics
+- **inference**: run inference on any stored tensorflow model
+- **trial**: set name and description
+- **graphs**: show labels on all plots
+- **comparison**: modify comparisons
+- **autokeras**: plot energy consumption
+- **runs_list**: sort by name
+- **graphs**: enable zoomingon important graphs
+- **comparison**: add plot for point metric
+- **model_size**: save size of model file
+- **comparison**: reset session with comparisons
+- **runs_list**: display model size in details
+- **comparison**: introduce comparison model and view
+- **comparison**: show everything in one plot
+- **details**: show size on disk for runs
+- **device_name**: saving human readable device name
+- **safe_delete**: enablre restoriation and harddelete
+- **comparison**: showing opatimizer and pruning properties
+- **tensorflow**: save disk size and choose from list of models
+- **pruning**: save zippped model to the disk
+- **pruning**: measuring sparsity and fixing layers prunable
+- **comparison**: implemented comparison view for runs
+- **comparison**: select the runs
+- **comparison**: select the runs
+- **runs**: edit run details
+- **pruning**: show details in run page
+- **memory**: measure memory usage on gpu
+
+### Fix
+
+- **timing**: measure time in first separate callback
+- **reruninig**: wrong parameter name
+- **autokeras**: extra field for storing path to model files
+- **deletion**: delete model files when deleting the run
+- **TRIALS**: load trial model in celery worker because  of memory_leak
+- **autokeras**: trial overview chart fix height
+- **runs_list**: load the charts only when cards expand
+- **trial**: when loading a trial also try load ing weights
+- **dashboard**: link for queued tasks
+- **celery**: restart the workers always
+- **pruning**: catch some errors in pruning initialization
+- **filesize**: use correct function to get filesize of network
+- **celery**: initial_load of celery workers was broken
+- **autokeras_tuner**: add argument
+- **autokeras**: max_model_size was ignored
+- **sparsity**: return 0 if no pruning
+- **memory_usage**: memory cannotbe measured on CPU
+- **rerun**: load data from the selected model
+- **get_or_create**: for some objects dont use it
+- **get_or_create**: found another get or create
+- **database_lock**: catch lock error and try again
+- **importing**: fixed further importing errors
+- **count_params**: size is only determined by trainable_weights
+- **timeouterror**: error occured often on reloading
+- **trial_run**: fixed some bugs for running trials
+- **celery**: bugfix when run not found
+- **comparison**: key in session was missing
+- **comparison**: session key error
+- **celery_api**: no active tasks return Response
+- **keras_trial**: build pruning model in each step
+- **kerastrial**: fix pruning for keras model runs
+- **autokeras**: cannot prune last autokeras layer
+- **selection**: delete autokeras wrong url
+- **autokeras**: start timer for autokeras run
+- **design**: sticky side and head bar
+- **comparison**: keyerror in session
+- **prediction**: use export model for prediction
+- **all**: proper number formatting
+- **comparison**: ids for runs were not unique
+- **reset_graph**: use correct function to reset
+- **runs**: reset tensorflow graph after run
+- **runs_list**: tags showed the evaluation metrics
+- **runs**: delete modal for run shows name
+- **auto-import**: read dtypes from annotations
+- **runs**: update state
+
+### Refactor
+
+- **energy**: correct power and energy naming
+- **build_model**: use one function for all models to build
+- **save_model**: use modern keras format
+- **pruning**: pruning is now on layer base
+- **keras_model_runs**: use tensorflow runs to run autokeras trials
+
+## 0.4.6 (2023-12-20)
+
+### Fix
+
+- **pruning**: parameters
+
+## 0.4.5 (2023-12-20)
+
+### Feat
+
+- **runs**: measure energy constantly
+- **plugins**: kaggle plugin offers deepsat dataset
+- **energy**: show total energy consumption of runs
+- **runs**: added Soft delete
+- **runs**: filter runs by rating
+- **gpu**: display name of the device in seletion
+- **plugin**: added Kaggledataset loader
+- **worker**: task states in run details page and worker control
+
+### Fix
+
+- **autokeras**: best trial in details page
+- **celery**: prefetching for multiple workers
+- **runs**: strong of autokeras trials
+- **style**: runs list adaptive for smaller screens
+- **ci**: set upstream branch
+- **CI**: push tag to main
+- **CI**: commitizen arguments
+- **CI**: ignore NoIncrementError on Commitizen bump
+- **CI**: install commitizen adn bump version
+- **importing**: null objects
+- fixed rating api, new tensorflow run and task-details api
+
 ## 0.3.0 (2023-12-04)
 
 ### Feat
