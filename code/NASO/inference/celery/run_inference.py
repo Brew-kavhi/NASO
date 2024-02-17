@@ -1,14 +1,14 @@
 import traceback
+
 import tensorflow as tf
 from loguru import logger
 
 from celery import shared_task
 from inference.models.inference import Inference
+from naso.celery import restart_all_workers
 from neural_architecture.NetworkCallbacks.evaluation_base_callback import (
     EvaluationBaseCallback,
 )
-
-from naso.celery import restart_all_workers
 
 
 @shared_task(bind=True)
