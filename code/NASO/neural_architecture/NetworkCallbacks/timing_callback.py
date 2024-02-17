@@ -63,7 +63,7 @@ class TimingCallback(tf.keras.callbacks.Callback):
         if logs is None:
             logs = []
         self.times.append(elapsed_time)
-        logs["execution_time"] = np.mean(self.times)
+        logs["execution_time"] = sum(self.times)
 
     def on_test_begin(self, logs=None):
         """
@@ -171,6 +171,8 @@ class TimingCallback(tf.keras.callbacks.Callback):
         Returns:
             None
         """
+        if not logs:
+            logs = []
         elapsed_time = self.timer.stop()
         logs["total_time"] = self.timer.get_total_time()
         if logs["total_time"] - self._last_measurement > ENERGY_MEASUREMENT_FREQUENCY:

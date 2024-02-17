@@ -88,6 +88,10 @@ class EnergyCallback(tf.keras.callbacks.Callback):
             self.trial_measurements
         )
         logs["trial_power_consumption_var"] = np.var(self.trial_measurements)
+        if "execution_time" in logs:
+            logs["energy_consumption [Ws]"] = (
+                average_power_usage * logs["execution_time"]
+            )
 
     def on_test_begin(self, logs=None):
         """
@@ -155,6 +159,10 @@ class EnergyCallback(tf.keras.callbacks.Callback):
         average_power_usage = sum(self.measurements) / len(self.measurements)
         logs["power_consumption"] = average_power_usage
         logs["power_consumption_var"] = np.var(self.measurements)
+        if "execution_time_mean" in logs:
+            logs["energy_consumption [Ws]"] = (
+                average_power_usage * logs["execution_time_mean"]
+            )
 
     def on_predict_batch_end(self, batch, logs=None):
         """
