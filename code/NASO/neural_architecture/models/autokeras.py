@@ -601,28 +601,26 @@ class AutoKerasRun(Run):
 
     def get_trial_metric(self, trial_id):
         model_size = 0
-        measured_energy = []
+        measured_power = []
         for metric in self.metrics.all():
             if "trial_id" not in metric.metrics[0]:
                 continue
             if metric.metrics[0]["trial_id"] == trial_id:
                 model_size = metric.metrics[0]["metrics"]["model_size"]
-                if "energy_consumption" not in metric.metrics[0]["metrics"]:
+                if "power_consumption" not in metric.metrics[0]["metrics"]:
                     continue
-                measured_energy.append(
-                    metric.metrics[0]["metrics"]["energy_consumption"]
-                )
-        avg_energy = sum(measured_energy) / len(measured_energy)
-        return {"model_size": model_size, "average_energy": avg_energy}
+                measured_power.append(metric.metrics[0]["metrics"]["power_consumption"])
+        avg_power = sum(measured_power) / len(measured_power)
+        return {"model_size": model_size, "average_power": avg_power}
 
-    def get_energy_measurements(self):
-        if self.energy_measurements == "":
+    def get_power_measurements(self):
+        if self.power_measurements == "":
             return [
-                metric.metrics[0]["metrics"]["energy_consumption"]
+                metric.metrics[0]["metrics"]["power_consumption"]
                 for metric in self.metrics.all()
-                if "energy_consumption" in metric.metrics[0]["metrics"]
+                if "power_consumption" in metric.metrics[0]["metrics"]
             ]
-        return super().get_energy_measurements()
+        return super().get_power_measurements()
 
     def get_energy_consumption(self):
         energy = 0

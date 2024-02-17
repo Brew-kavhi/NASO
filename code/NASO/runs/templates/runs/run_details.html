@@ -106,7 +106,7 @@
                                 </p>
                                 <p>
                                     <span class='has-text-weight-bold'>Avg. Power draw:</span>
-                                    {{ run.get_average_energy_consumption|floatformat:2 }} W
+                                    {{ run.get_average_power_consumption|floatformat:2 }} W
                                 </p>
                             </div>
                         </div>
@@ -680,8 +680,8 @@
                 td.style.borderWidth = 0;
 
                 let bodyText = $('#graph_yaxis').val() + ": " + body
-                if ('trial_energy_consumption' in metrics) {
-                    bodyText += ', Energy: ' + metrics['trial_energy_consumption'].toLocaleString() + ' W';
+                if ('trial_power_consumption' in metrics) {
+                    bodyText += ', Power: ' + metrics['trial_power_consumption'].toLocaleString() + ' W';
                 }
                 const text = document.createTextNode(bodyText);
 

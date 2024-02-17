@@ -96,8 +96,8 @@
                                     <p>{{ run.size_on_disk|intcomma }} Bytes</p>
                                 </div>
                                 <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
-                                    <p class='my-2 text-bold'>Average energy consumption</p>
-                                    <p>{{ run.energy_consumption|floatformat:2 }} W</p>
+                                    <p class='my-2 text-bold'>Average power consumption</p>
+                                    <p>{{ run.power_consumption|floatformat:2 }} W</p>
                                 </div>
                                 <!-- Pruning properties -->
                                 {% if run.pruning_method %}
@@ -227,8 +227,8 @@
                                     <p>{{ run.size_on_disk|intcomma }} Bytes</p>
                                 </div>
                                 <div class='align-items-center border-bottom d-flex justify-content-between px-3'>
-                                    <p class='my-2 text-bold'>Average energy consumption</p>
-                                    <p>{{ run.energy_consumption|floatformat:2 }} W</p>
+                                    <p class='my-2 text-bold'>Average power consumption</p>
+                                    <p>{{ run.power_consumption|floatformat:2 }} W</p>
                                 </div>
                                 <!-- Pruning properties -->
                                 {% if run.pruning_method %}

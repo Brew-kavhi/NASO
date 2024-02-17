@@ -275,7 +275,7 @@ class Run(SafeDeleteModel):
     gpu = models.CharField(max_length=20, default="/gpu:0")
     compute_device = models.CharField(max_length=20, default="")
 
-    energy_measurements = models.TextField()
+    power_measurements = models.TextField()
 
     memory_usage = models.FloatField(default=0)
 
@@ -294,27 +294,27 @@ class Run(SafeDeleteModel):
             self.git_hash = get_current_git_hash()
         super().save(*args, **kwargs)
 
-    def get_energy_measurements(self):
-        if self.energy_measurements == "":
+    def get_power_measurements(self):
+        if self.power_measurements == "":
             return []
-        return [float(energy) for energy in self.energy_measurements.split(",")]
+        return [float(power) for power in self.power_measurements.split(",")]
 
-    def get_average_energy_consumption(self):
-        if self.energy_measurements == "":
+    def get_average_power_consumption(self):
+        if self.power_measurements == "":
             return "NaN"
-        measurements = [float(energy) for energy in self.energy_measurements.split(",")]
+        measurements = [float(power) for power in self.power_measurements.split(",")]
         return sum(measurements) / len(measurements)
 
-    def get_min_energy_consumption(self):
-        if self.energy_measurements == "":
+    def get_min_power_consumption(self):
+        if self.power_measurements == "":
             return 0
-        measurements = [float(energy) for energy in self.energy_measurements.split(",")]
+        measurements = [float(power) for power in self.power_measurements.split(",")]
         return min(measurements)
 
-    def get_max_energy_consumption(self):
-        if self.energy_measurements == "":
+    def get_max_power_consumption(self):
+        if self.power_measurements == "":
             return 0
-        measurements = [float(energy) for energy in self.energy_measurements.split(",")]
+        measurements = [float(power) for power in self.power_measurements.split(",")]
         return max(measurements)
 
 
@@ -413,11 +413,11 @@ class TrainingMetric(models.Model):
         energy = 0
         for metric in self.metrics:
             if (
-                "energy_consumption" in metric["metrics"]
+                "power_consumption" in metric["metrics"]
                 and "execution_time" in metric["metrics"]
             ):
                 energy += (
-                    metric["metrics"]["energy_consumption"]
+                    metric["metrics"]["power_consumption"]
                     / 1000.0
                     * metric["metrics"]["execution_time"]
                     / 3600.0

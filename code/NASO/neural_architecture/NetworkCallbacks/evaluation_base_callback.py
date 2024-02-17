@@ -1,6 +1,5 @@
 import math
 
-import numpy as np
 import tensorflow as tf
 
 from helper_scripts.timer import Timer

@@ -154,8 +154,8 @@ class BaseCallback(tf.keras.callbacks.Callback):
             metric.save()
             self.run.metrics.add(metric)
 
-        if "energy_consumption" in logs:
-            self.gpu_consumption = logs["energy_consumption"]
+        if "power_consumption" in logs:
+            self.gpu_consumption = logs["power_consumption"]
         self.celery_task.update_state(
             state="PROGRESS",
             meta={
