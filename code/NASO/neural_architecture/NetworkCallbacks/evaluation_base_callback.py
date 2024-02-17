@@ -1,6 +1,6 @@
 import math
-import numpy as np
 
+import numpy as np
 import tensorflow as tf
 
 from helper_scripts.timer import Timer
@@ -117,8 +117,6 @@ class EvaluationBaseCallback(tf.keras.callbacks.Callback):
         Returns:
             None
         """
-        logs["execution_time_mean"] = sum(self.times) / len(self.times)
-        logs["execution_time_variance"] = np.var(self.times)
         logs["total_batches"] = self._batch
         metrics = {}
         for key in logs:
@@ -166,4 +164,5 @@ class EvaluationBaseCallback(tf.keras.callbacks.Callback):
         elapsed_time = self.timer.stop()
         self.times.append(elapsed_time)
         logs["execution_time"] = self.timer.get_total_time()
-        self._batch = batch
+        # add one because of the index things
+        self._batch = batch + 1
