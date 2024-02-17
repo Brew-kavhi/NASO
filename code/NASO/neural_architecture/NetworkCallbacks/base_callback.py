@@ -6,10 +6,10 @@ import tensorflow as tf
 
 from helper_scripts.extensions import calculate_sparsity
 from helper_scripts.timer import Timer
+from inference.models.inference import Inference
 from neural_architecture.models.autokeras import AutoKerasRun
 from neural_architecture.models.model_runs import KerasModelRun
 from runs.models.training import NetworkTraining, TrainingMetric
-from inference.models.inference import Inference
 
 
 class BaseCallback(tf.keras.callbacks.Callback):

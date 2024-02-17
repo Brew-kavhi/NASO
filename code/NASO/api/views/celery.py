@@ -3,10 +3,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from inference.models.inference import Inference
 from naso.celery import app, get_celery_task_state
 from neural_architecture.models.autokeras import AutoKerasRun, KerasModelRun
 from runs.models.training import NetworkTraining
-from inference.models.inference import Inference
 
 
 @api_view(["GET"])

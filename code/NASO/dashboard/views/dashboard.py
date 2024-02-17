@@ -2,6 +2,7 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic.base import TemplateView
 
+from inference.models.inference import Inference
 from naso.celery import (
     get_celery_task_state,
     get_registered_tasks,
@@ -12,7 +13,6 @@ from naso.models.page import PageSetup
 from neural_architecture.models.autokeras import AutoKerasRun
 from neural_architecture.models.model_runs import KerasModelRun
 from runs.models.training import NetworkTraining
-from inference.models.inference import Inference
 
 
 class Dashboard(TemplateView):

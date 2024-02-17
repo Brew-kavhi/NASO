@@ -1,11 +1,11 @@
 from django.shortcuts import redirect
 from django.views.generic.base import TemplateView
 
+from inference.celery.run_inference import run_inference
 from inference.forms.new import NewInferenceForm
 from inference.models.inference import Inference
 from naso.models.page import PageSetup
 from runs.views.new_run import build_callbacks, build_dataset, build_metrics
-from inference.celery.run_inference import run_inference
 
 
 class NewInference(TemplateView):
