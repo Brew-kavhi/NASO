@@ -9,14 +9,14 @@ from runs.models.training import Run, TrainingMetric
 
 
 def start_async_measuring(stop_event, run: Run, database_lock):
-    task = asyncio.run(measure_energy(stop_event, run, database_lock))
+    task = asyncio.run(measure_power(stop_event, run, database_lock))
     with database_lock:
-        run.energy_measurements = ",".join([str(energy) for energy in task])
+        run.power_measurements = ",".join([str(power) for power in task])
         run.save()
     return task
 
 
-async def measure_energy(stop_event, run: Run, database_lock):
+async def measure_power(stop_event, run: Run, database_lock):
     power = []
     while not stop_event.is_set():
         power.append(get_power_usage(run.gpu))

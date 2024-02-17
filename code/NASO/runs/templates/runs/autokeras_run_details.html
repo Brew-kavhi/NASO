@@ -84,7 +84,7 @@
                                 {% endif %}
                                 <p>
                                     <span class='has-text-weight-bold'>Avg. Powerdraw:</span>
-                                    {{ run.get_average_energy_consumption|floatformat:2 }} W
+                                    {{ run.get_average_power_consumption|floatformat:2 }} W
                                 </p>
                                 <p>
                                     <span class='has-text-weight-bold'>Memory:</span>
@@ -117,7 +117,7 @@
                                     {% endif %}
                                 </p>
                                 <p>
-                                    <span class='has-text-weight-bold'>Energy:</span>
+                                    <span class='has-text-weight-bold'>Energy consumption:</span>
                                     {{ run.get_energy_consumption|floatformat:2 }} kWH
                                 </p>
                             </div>
@@ -125,7 +125,7 @@
                         <div class='row'>
                             <canvas class='h-25 w-100'
                                     style='max-height:100vh'
-                                    id='energy_plot'
+                                    id='power_plot'
                                     width="400"
                                     height="400"></canvas>
                         </div>
@@ -548,14 +548,14 @@
         let allEpochs = [];
         const COMPARISONS = [{% for id, model in COMPARISON.items %}'{{ id }}',{% endfor %}]
         document.addEventListener("DOMContentLoaded", () => {
-            let energyCanvas = document.getElementById("energy_plot").getContext('2d');
-            energyCanvas = new Chart(energyCanvas, {
+            let powerCanvas = document.getElementById("power_plot").getContext('2d');
+            powerCanvas = new Chart(powerCanvas, {
                 type: 'line',
                 data: {
                     labels: {{ run.get_times }},
                     datasets: [{
-                        data: {{ run.get_energy_measurements }},
-                        label: "Energy consumption"
+                        data: {{ run.get_power_measurements }},
+                        label: "Power consumption"
                     }]
                 },
                 options: {
@@ -574,7 +574,7 @@
                             display: true,
                             title: {
                                 display: true,
-                                text: 'energy' // Set the dynamic Y-axis title
+                                text: 'Power' // Set the dynamic Y-axis title
                             }
                         }
                     },
@@ -849,8 +849,8 @@
                     td.style.borderWidth = 0;
 
                     let bodyText = body + ', Modelsize: ' + metrics['model_size'].toLocaleString()
-                    if ('trial_energy_consumption' in metrics) {
-                        bodyText += ', Energy: ' + metrics['trial_energy_consumption'].toLocaleString() + ' W';
+                    if ('trial_power_consumption' in metrics) {
+                        bodyText += ', Power: ' + metrics['trial_power_consumption'].toLocaleString() + ' W';
                     }
                     const text = document.createTextNode(bodyText);
 

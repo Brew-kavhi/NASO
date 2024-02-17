@@ -10,13 +10,13 @@ from runs.models.training import NetworkTraining
 
 class EnergyCallback(tf.keras.callbacks.Callback):
     """
-    Callback class to measure and log energy consumption during training, testing, and prediction.
+    Callback class to measure and log power consumption during training, testing, and prediction.
 
     This callback calculates the power usage of the GPU during different stages of the model's lifecycle,
     such as training, testing, and prediction. It uses the `nvidia-smi` command-line tool to query the GPU's
     power draw and calculates the average power usage.
 
-    The energy consumption measurements are logged in the `logs` dictionary, which can be accessed by other
+    The power consumption measurements are logged in the `logs` dictionary, which can be accessed by other
     callbacks or during model evaluation.
 
     Example usage:
@@ -82,12 +82,16 @@ class EnergyCallback(tf.keras.callbacks.Callback):
 
         # calculate average power usage:
         average_power_usage = sum(self.measurements) / len(self.measurements)
-        logs["energy_consumption"] = average_power_usage
+        logs["power_consumption"] = average_power_usage
         self.trial_measurements.append(average_power_usage)
-        logs["trial_energy_consumption"] = sum(self.trial_measurements) / len(
+        logs["trial_power_consumption"] = sum(self.trial_measurements) / len(
             self.trial_measurements
         )
-        logs["trial_energy_consumption_var"] = np.var(self.trial_measurements)
+        logs["trial_power_consumption_var"] = np.var(self.trial_measurements)
+        if "execution_time" in logs:
+            logs["energy_consumption [Ws]"] = (
+                average_power_usage * logs["execution_time"]
+            )
 
     def on_test_begin(self, logs=None):
         """
@@ -118,12 +122,12 @@ class EnergyCallback(tf.keras.callbacks.Callback):
         This function calculates the power usage measurement at the end of testing,
         appends it to the measurements list, and calculates the average power usage
         based on all the measurements. The average power usage is then added to the
-        logs dictionary with the key "energy_consumption".
+        logs dictionary with the key "power_consumption".
         """
         measurement = get_power_usage(self.run.gpu)
         self.measurements.append(measurement)
         average_power_usage = sum(self.measurements) / len(self.measurements)
-        logs["energy_consumption"] = average_power_usage
+        logs["power_consumption"] = average_power_usage
 
     def on_predict_begin(self, logs=None):
         """
@@ -148,13 +152,17 @@ class EnergyCallback(tf.keras.callbacks.Callback):
             None
 
         This method calculates the power usage measurement at the end of each prediction and updates
-        the average power usage. This is then added to the logs dictionary with the key "energy_consumption".
+        the average power usage. This is then added to the logs dictionary with the key "power_consumption".
         """
         measurement = get_power_usage(self.run.gpu)
         self.measurements.append(measurement)
         average_power_usage = sum(self.measurements) / len(self.measurements)
-        logs["energy_consumption"] = average_power_usage
-        logs["energy_consumption_var"] = np.var(self.measurements)
+        logs["power_consumption"] = average_power_usage
+        logs["power_consumption_var"] = np.var(self.measurements)
+        if "execution_time_mean" in logs:
+            logs["energy_consumption [Ws]"] = (
+                average_power_usage * logs["execution_time_mean"]
+            )
 
     def on_predict_batch_end(self, batch, logs=None):
         """

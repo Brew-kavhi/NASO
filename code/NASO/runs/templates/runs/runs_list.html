@@ -96,7 +96,7 @@
                 return 'current' in point
             }).slice(-1)[0].metrics;
             Object.entries(lastMetric).forEach((metric) => {
-                if (!metric[0].includes('val') && !metric[0].includes('energy') && !metric[0].includes('time')) {
+                if (!metric[0].includes('val') && !metric[0].includes('power') && !metric[0].includes('time')) {
                     tagContainer.innerHTML = '<span class="my-1 mx-1 is-info is-light tag">' + metric[0] + ': ' + metric[1].toFixed(5) + '</span>' + tagContainer.innerHTML;
                 }
             });

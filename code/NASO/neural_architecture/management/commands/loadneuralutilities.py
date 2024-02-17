@@ -70,7 +70,7 @@ class Command(BaseCommand):
             keras_native_callback=False,
             required_arguments=[],
         )
-        call.registers_metrics = '["energy_consumption", "trial_energy_consumption"]'
+        call.registers_metrics = '["power_consumption", "trial_power_consumption"]'
         call.save()
 
         self.stdout.write(

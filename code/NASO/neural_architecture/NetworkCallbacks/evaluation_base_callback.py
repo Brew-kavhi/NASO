@@ -1,6 +1,5 @@
 import math
 
-import numpy as np
 import tensorflow as tf
 
 from helper_scripts.timer import Timer
@@ -118,6 +117,10 @@ class EvaluationBaseCallback(tf.keras.callbacks.Callback):
             None
         """
         logs["total_batches"] = self._batch
+        if self.run.gpu.startswith("GPU"):
+            logs["memory_consumption"] = tf.config.experimental.get_memory_info(
+                self.run.gpu
+            )["current"]
         metrics = {}
         for key in logs:
             if not math.isnan(logs[key]):
