@@ -315,7 +315,11 @@
                 "name": '{{ run.name }}',
                 "model_size":'{{run.size}}',
                 "size_on_disk": {{run.size_on_disk}},
-                "memory_usage": '{{ run.memory_usage }}'
+                {% for metrics in  run.prediction_metrics.first.metrics %}
+                    {% for metric in metrics.metrics %}
+                        "{{metric}}":{% get_attribute_tag metrics.metrics metric %},
+                    {% endfor %}
+                {% endfor %}
             },{% endfor %}
         };
         let allMetrics = {};
@@ -351,20 +355,32 @@
             cards = document.querySelectorAll('.gallery-card');
             showCard(0);
 
-            var keys = Object.keys(COMPARISONS);
-            var labels = keys.map(function(key) {
+            var comparisonRuns = Object.keys(COMPARISONS);
+            var barData = [];
+            for(const run of comparisonRuns) {
+                for(var barName in COMPARISONS[run]) {
+                    if (barName === 'run_type' || barName === 'run_id' || barName === 'name') {
+                        continue;
+                    }
+                    if (!barData.includes(barName)) {
+                        barData.push(barName);
+                    }
+                }
+            }
+            var labels = comparisonRuns.map(function(key) {
                 return COMPARISONS[key]['name'];
             });
             var datasets = [];
 
-            for (var barName in COMPARISONS[keys[0]]) {
-                if (barName === 'run_type' || barName === 'run_id' || barName === 'name') {
-                    continue;
+            for (var barName of barData) {
+                var data = [];
+                for (var run of comparisonRuns) {
+                    if(COMPARISONS[run][barName]) {
+                        data.push(COMPARISONS[run][barName]);
+                    } else {
+                        data.push(0);
+                    }
                 }
-                var data = keys.map(function (label) {
-                    return COMPARISONS[label][barName];
-                });
-
                 datasets.push({
                     label: barName,
                     data: data
@@ -573,7 +589,6 @@
                     fetch(autokerasTrialMetricAPI.replace(0, runID).replace('-1',trialID)).then(function(response) {
                         response.json().then(function(data) {
                             run_metrics = data;
-                        console.log(data);
                             let metrics = [];
                             for (metric in run_metrics[0].metrics) {
                                 metrics.push(metric);
@@ -597,7 +612,6 @@
         const selectDataset = function (e, legendItem, legend) {
             const index = legendItem.datasetIndex;
             showCard(allPlots.data.datasets[index].cardIndex);
-            console.log(allPlots.data.datasets[index].cardIndex);
         };
 
         function generateOption(value, text, parent, existingLabels) {
@@ -616,7 +630,6 @@
             let xaxis = $('#graph_xaxis_all_plot').val();
             canvas.data.datasets.push({cardIndex: index,label: name, data:dictToArray(data, yaxis, xaxis)});
             canvas.update();
-            console.log(canvas.data);
 
             for (let epoch in data) {
                 labels.push(epoch);

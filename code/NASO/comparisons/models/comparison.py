@@ -34,6 +34,7 @@ def get_tensorflow_details(run_id):
         "pruning_schedule": run.network_config.pruning_schedule,
         "pruning_policy": run.network_config.pruning_policy,
         "optimizer": run.hyper_parameters.optimizer,
+        "prediction_metrics": run.prediction_metrics,
     }
     model["optimizer"].additional_arguments = get_arguments_as_dict(
         run.hyper_parameters.optimizer.additional_arguments
@@ -68,6 +69,7 @@ def get_autokeras_details(run_id):
         "pruning_method": run.model.pruning_method,
         "pruning_schedule": run.model.pruning_schedule,
         "pruning_policy": run.model.pruning_policy,
+        "prediction_metrics": run.prediction_metrics,
     }
     if run.model.pruning_method:
         model["pruning_method"].additional_arguments = get_arguments_as_dict(

@@ -601,6 +601,7 @@ class AutoKerasRun(Run):
 
     def get_trial_metric(self, trial_id):
         model_size = 0
+        avg_power = "NaN"
         measured_power = []
         for metric in self.metrics.all():
             if "trial_id" not in metric.metrics[0]:
@@ -610,7 +611,8 @@ class AutoKerasRun(Run):
                 if "power_consumption" not in metric.metrics[0]["metrics"]:
                     continue
                 measured_power.append(metric.metrics[0]["metrics"]["power_consumption"])
-        avg_power = sum(measured_power) / len(measured_power)
+        if len(measured_power) > 0:
+            avg_power = sum(measured_power) / len(measured_power)
         return {"model_size": model_size, "average_power": avg_power}
 
     def get_power_measurements(self):
