@@ -226,15 +226,18 @@ class NeuralNetwork:
         steps = self.training_config.evaluation_parameters.steps
 
         logger.info("Started evaluation of the network...")
+        timing_callback = TimingCallback()
         metrics = self.model.evaluate(
             self.test_dataset.batch(64),
             batch_size=batch_size,
             steps=steps,
             verbose=2,
             return_dict=True,
-            callbacks=self.training_config.evaluation_parameters.get_callbacks(
+            callbacks=[timing_callback]
+            + self.training_config.evaluation_parameters.get_callbacks(
                 self.training_config
-            ),
+            )
+            + [EvaluationBaseCallback(self.training_config)],
         )
         logger.info("evaluation of the network done...")
 

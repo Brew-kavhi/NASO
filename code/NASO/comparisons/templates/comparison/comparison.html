@@ -321,6 +321,9 @@
                 "run_id": '{{ run.id }}',
                 "name": '{{ run.name }}',
                 "model_size":'{{run.size}}',
+                "loss":'{{run.loss}}',
+                "val_loss":'{{run.val_loss}}',
+                "sparsity":'{{run.sparsity}}',
                 "size_on_disk": {{run.size_on_disk}},
                 {% for metrics in  run.prediction_metrics.first.metrics %}
                     {% for metric in metrics.metrics %}
