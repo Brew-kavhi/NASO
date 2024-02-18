@@ -301,6 +301,13 @@
                 width="400"
                 height="400"></canvas>
     </div>
+    <div class='mx-5 px-5 text-right'>
+        <div id='table' class='has-background-white my-5 overflow-auto rounded-lg'></div>
+        <button class='btn btn-primary' id="generate-latex-btn">Generate LaTeX</button>
+        <div class='text-left'>
+            <textarea id='latex-code-container' class='w-100 my-2' style='height: 0px;'></textarea>
+        </div>
+    </div>
     {% if session %}
         <div class='container my-3'>{% crispy session %}</div>
     {% endif %}
@@ -352,6 +359,7 @@
             }
 
         document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById('generate-latex-btn').addEventListener('click', getLatexCode);
             cards = document.querySelectorAll('.gallery-card');
             showCard(0);
 
@@ -378,7 +386,7 @@
                     if(COMPARISONS[run][barName]) {
                         data.push(COMPARISONS[run][barName]);
                     } else {
-                        data.push(0);
+                        data.push('-');
                     }
                 }
                 datasets.push({
@@ -387,6 +395,10 @@
                 });
             }
 
+            // Generate the table and append it to a container element
+            var tableContainer = document.getElementById('table');
+            tableContainer.innerHTML = generateTable({labels: labels, datasets: datasets});
+            
             var ctx = document.getElementById('canvas_bar_chart').getContext('2d');
             var myBarChart = new Chart(ctx, {
                 type: 'bar',
@@ -624,6 +636,46 @@
             }
         }
 
+        function getLatexCode(){
+            var selectedRows = [];
+            var selectedColumns = [];
+
+            // Get selected rows
+            var rowCheckboxes = document.querySelectorAll('.row-checkbox:checked');
+            rowCheckboxes.forEach(function(checkbox) {
+              selectedRows.push(checkbox.dataset.row);
+            });
+            var colCheckboxes = document.querySelectorAll('.column-checkbox:checked');
+            colCheckboxes.forEach(function(checkbox) {
+              selectedColumns.push(checkbox.dataset.column);
+            });
+
+            let latexCode = "\\begin{table}\n\\begin{tabular}{|c|" + "c|".repeat(selectedColumns.length) + "}\n\\hline\n";
+
+            // Adding column headers
+            latexCode += "& " + selectedColumns.join(" & ") + " \\\\\n\\hline\n";
+
+            // Adding row data
+            selectedRows.forEach(rowLabel => {
+                latexCode += COMPARISONS[rowLabel]['name'];
+                selectedColumns.forEach(columnLabel => {
+                    const value = COMPARISONS[rowLabel][columnLabel];
+                    latexCode += " & " + value;
+                });
+                latexCode += " \\\\\n\\hline\n";
+            });
+
+            latexCode += "\\end{tabular}\n\\end{table}";
+            var codeContainer = document.getElementById('latex-code-container')
+            codeContainer.innerHTML = latexCode;
+            codeContainer.focus();
+            codeContainer.select();
+            codeContainer.style.height = (codeContainer.scrollHeight) + "px";
+            document.execCommand('copy');
+            codeContainer.setSelectionRange(0,0);
+            toastr.info("Copied to clipboard");
+        }
+
         function addDatasetToPlot(data, canvas, name, index) {
             var labels = [];
             let yaxis = $('#graph_yaxis_all_plot').val();
@@ -753,6 +805,32 @@
                 }
             }
         }
+
+        // Function to generate the table HTML
+        function generateTable(data) {
+          var tableHTML = '<table>';
+          
+          // Add table headers with checkboxes above columns
+          tableHTML += '<thead><tr><th></th>'; // Empty cell for checkboxes above columns
+          data.datasets.forEach(function(dataset) {
+            tableHTML += '<th class="text-center"><input type="checkbox" class="column-checkbox" data-column="' + dataset.label + '">' + dataset.label + '</th>';
+          });
+          tableHTML += '</tr></thead>';
+          
+          // Add table body with checkboxes for rows and data values
+          tableHTML += '<tbody>';
+          data.labels.forEach(function(label, index) {
+            tableHTML += '<tr><td class="d-flex"><input type="checkbox" class="row-checkbox" data-row="' + Object.keys(COMPARISONS)[index] + '">' + label + '</td>'; // Checkbox for each row
+            data.datasets.forEach(function(dataset) {
+              tableHTML += '<td>' + dataset.data[index] + '</td>'; // Display data values
+            });
+            tableHTML += '</tr>';
+          });
+          tableHTML += '</tbody></table>';
+
+          return tableHTML;
+        }
+
 
         function removeComparisonFromView(element) {
             {% if comparison_id %}
