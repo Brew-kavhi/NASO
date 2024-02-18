@@ -3,7 +3,7 @@ from django.urls import reverse_lazy
 
 from api.views.autokeras import get_trial_details
 from neural_architecture.models.autokeras import AutoKerasRun
-from runs.models.training import NetworkTraining
+from runs.models.training import NetworkTraining, TrainingMetric
 
 
 class Comparison(models.Model):
@@ -23,6 +23,20 @@ def get_tensorflow_details(run_id):
     run = NetworkTraining.objects.filter(pk=run_id).first()
     if not run:
         return {}, None
+    metrics = (
+        TrainingMetric.objects.filter(
+            neural_network=run, epoch__lte=run.fit_parameters.epochs
+        )
+        .last()
+        .metrics[0]["metrics"]
+    )
+    loss, val_loss, sparsity = "-", "-", "-"
+    if "loss" in metrics:
+        loss = metrics["loss"]
+    if "val_loss" in metrics:
+        val_loss = metrics["val_loss"]
+    if "sparsity" in metrics:
+        sparsity = metrics["sparsity"]
     model = {
         "id": run_id,
         "name": run.network_config.name,
@@ -35,6 +49,9 @@ def get_tensorflow_details(run_id):
         "pruning_policy": run.network_config.pruning_policy,
         "optimizer": run.hyper_parameters.optimizer,
         "prediction_metrics": run.prediction_metrics,
+        "loss": loss,
+        "val_loss": val_loss,
+        "sparsity": sparsity,
     }
     model["optimizer"].additional_arguments = get_arguments_as_dict(
         run.hyper_parameters.optimizer.additional_arguments
