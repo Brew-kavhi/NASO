@@ -153,6 +153,15 @@
             $('#sortRateButton').on('click', function() {
                 sortByDataset($(this), 'rating', containerID);
             });
+            $('#filterVersion').on('change', function() {
+                var selectedVersion = $(this).val();
+
+                $('#' + containerID + ' .accordion').hide();
+                $('#' + containerID + ' .accordion').filter(function() {
+                    var version = $(this).data('nasoversion');
+                    return version >= selectedVersion;
+                }).show();
+            });
             $('#filterOptimizer').on('change', function() {
                 var selectedOptimizer = $(this).val();
                 if (selectedOptimizer === 'all') {
@@ -302,12 +311,16 @@
             </div>
         </div>
     </div>
-    <div class="container content-tab" id="tensorflow">
+    <div class="container content-tab pb-3" id="tensorflow">
         <div class="align-items-center row mb-3">
             <h3>Filtering</h3>
             <div class="align-items-center col-3 d-flex">
                 <label class="column">Optimizer:</label>
                 <input id='filterOptimizer' class="input" type="text">
+            </div>
+            <div class="align-items-center col-3 d-flex">
+                <label class="column">NASO Version:</label>
+                <input id='filterVersion' class="input" type="text">
             </div>
             <div class="align-items-center col-3 d-flex">
                 <label class="column">Rating:</label>
@@ -334,7 +347,7 @@
             {% for network_training in network_training_data %}
                 <div class="accordion"
                      id="accordion{{ network_training.id }}"
-                     data-app-version='{{ network_training.naso_app_version }}'
+                     data-nasoversion='{{ network_training.naso_app_version }}'
                      data-name='{{ network_training.network_config.name }}'
                      data-optimizer='{{ network_training.hyper_parameters.optimizer.instance_type.name }}'
                      data-time="{% get_metric network_training.final_metrics.metrics 'time' %}"
@@ -453,7 +466,7 @@
             {% for keras_run in autokeras_runs %}
                 <div class="accordion"
                      id="accordion{{ keras_run.id }}"
-                     data-app-version='{{ keras_run.naso_app_version }}'
+                     data-nasoversion='{{ keras_run.naso_app_version }}'
                      data-rating="{{ keras_run.rate }}"
                      data-name='{{ keras_run.model.project_name }}'
                      data-tuner='{{ keras_run.model.tuner.tuner_type.name }}'>
