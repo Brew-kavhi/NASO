@@ -1,16 +1,17 @@
-import tensorflow as tf
 import inspect
 import re
-import numpy as np
 
-from neural_architecture.models.model_optimization import PruningMethodTypes
-from plugins.interfaces.commands import InstallerInterface
-from plugins.interfaces.pruning_method import PruningInterface
-from helper_scripts.pruning import smart_cond
+import numpy as np
+import tensorflow as tf
 from tensorflow_model_optimization.python.core.keras import compat as tf_compat
 from tensorflow_model_optimization.python.core.sparsity.keras.prune_registry import (
     PruneRegistry,
 )
+
+from helper_scripts.pruning import smart_cond
+from neural_architecture.models.model_optimization import PruningMethodTypes
+from plugins.interfaces.commands import InstallerInterface
+from plugins.interfaces.pruning_method import PruningInterface
 
 keras = tf.keras
 K = keras.backend

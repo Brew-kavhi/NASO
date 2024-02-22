@@ -1,12 +1,12 @@
 import numpy as np
 import tensorflow as tf
-from plugins.interfaces.pruning_method import PruningInterface
 
 # TODO(b/151772467): Move away from depending on private APIs
 from tensorflow.python.framework import smart_cond as smart_module
 from tensorflow.python.ops import variables
 from tensorflow_model_optimization.python.core.sparsity.keras import pruning_wrapper
 
+from plugins.interfaces.pruning_method import PruningInterface
 
 keras = tf.keras
 K = keras.backend

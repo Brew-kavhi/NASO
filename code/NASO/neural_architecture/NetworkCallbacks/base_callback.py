@@ -12,7 +12,6 @@ from neural_architecture.models.autokeras import AutoKerasRun
 from neural_architecture.models.model_runs import KerasModelRun
 from runs.models.training import NetworkTraining, TrainingMetric
 
-
 K = tf.keras.backend
 
 
