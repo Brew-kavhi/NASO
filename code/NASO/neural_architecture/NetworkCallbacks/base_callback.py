@@ -4,12 +4,15 @@ import time
 import django
 import tensorflow as tf
 
-from helper_scripts.extensions import calculate_sparsity
+from helper_scripts.pruning import calculate_sparsity, collect_prunable_layers
 from helper_scripts.timer import Timer
 from inference.models.inference import Inference
 from neural_architecture.models.autokeras import AutoKerasRun
 from neural_architecture.models.model_runs import KerasModelRun
 from runs.models.training import NetworkTraining, TrainingMetric
+
+
+K = tf.keras.backend
 
 
 class BaseCallback(tf.keras.callbacks.Callback):
@@ -72,6 +75,25 @@ class BaseCallback(tf.keras.callbacks.Callback):
         """
         return round(self.timer.get_total_time(), 2)
 
+    def on_train_begin(self, logs=None):
+        # Collect all the prunable layers in the model.
+        self.prunable_layers = collect_prunable_layers(self.model)
+        if not self.prunable_layers:
+            return
+        # If the model is newly created/initialized, set the 'pruning_step' to 0.
+        # If the model is saved and then restored, do nothing.
+        if self.prunable_layers[0].pruning_step == -1:
+            tuples = []
+            mask_update_ops = []
+            for layer in self.prunable_layers:
+                tuples.append((layer.pruning_step, 0))
+                if tf.executing_eagerly():
+                    layer.conditional_mask_update()
+                else:
+                    mask_update_ops.append(layer.conditional_mask_update())
+            K.batch_set_value(tuples)
+            K.batch_get_value(mask_update_ops)
+
     def on_epoch_begin(self, epoch, logs=None):
         """
         Callback function called at the beginning of each epoch.
@@ -111,7 +133,21 @@ class BaseCallback(tf.keras.callbacks.Callback):
             logs (dict): Dictionary containing the training metrics for the current epoch.
         """
 
-        logs["sparsity"] = calculate_sparsity(self.model)
+        if self.model:
+            # call prune –weights:
+            weight_mask_ops = []
+            for layer in self.prunable_layers:
+                if tf.executing_eagerly():
+                    if not epoch == self.epochs - 1:
+                        layer.conditional_mask_update()
+                    layer.weight_mask_op()
+                else:
+                    if not epoch == self.epochs - 1:
+                        weight_mask_ops.append(layer.conditional_mask_update())
+                    weight_mask_ops.append(layer.weight_mask_op())
+
+            K.batch_get_value(weight_mask_ops)
+            logs["sparsity"] = calculate_sparsity(self.model)
         metrics = {}
         for key in logs:
             if not math.isnan(logs[key]):

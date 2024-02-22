@@ -1,0 +1,7 @@
+{
+  "name": "SimSaPruner",
+  "author": "Marius Goehring",
+  "version": "1.0.0",
+  "description": "This is a similarity measure and sensitivity analyiss method pruner, inspired by paper https://arxiv.org/pdf/2011.00241.pdf. For convolutional laayers have a look at https://link.springer.com/content/pdf/10.1007/s10994-022-06193-w.pdf"
+}
+

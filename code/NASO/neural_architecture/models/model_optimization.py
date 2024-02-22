@@ -8,6 +8,7 @@ from tensorflow_model_optimization.python.core.sparsity.keras.prune_registry imp
 )
 
 from helper_scripts.importing import get_object
+from helper_scripts.pruning import strip_pruning
 from neural_architecture.helper_scripts.architecture import copy_model
 from neural_architecture.models.types import BaseType, TypeInstance
 
@@ -236,6 +237,7 @@ class PrunableNetwork(models.Model):
             A list of pruning callbacks.
 
         """
+        # TODO: only do this if prune_low_magnitude
         if self.pruning_method:
             return [
                 tfmot.sparsity.keras.UpdatePruningStep(),
@@ -254,7 +256,7 @@ class PrunableNetwork(models.Model):
 
         """
         if self.pruning_method:
-            export_model = tfmot.sparsity.keras.strip_pruning(model)
+            export_model = strip_pruning(model)
             print("final model")
             export_model.summary()
             return export_model
