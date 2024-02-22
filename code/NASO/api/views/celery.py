@@ -5,7 +5,7 @@ from rest_framework.response import Response
 
 from inference.models.inference import Inference
 from naso.celery import app, get_celery_task_state
-from neural_architecture.models.autokeras import AutoKerasRun, KerasModelRun
+from neural_architecture.models.autokeras import AutoKerasRun
 from runs.models.training import NetworkTraining
 
 
@@ -148,18 +148,6 @@ def get_workers_information():
                         else:
                             task["name"] = "Undefined"
                             task["link"] = ""
-                    elif (
-                        "autokeras_trial" in task_details
-                        and task_details["autokeras_trial"]
-                    ):
-                        run = KerasModelRun.objects.filter(id=task_details["run_id"])
-                        if run.exists():
-                            run = run.first()
-                            task["name"] = run.model.name
-                            task["link"] = reverse_lazy("runs:list")
-                        else:
-                            task["link"] = ""
-                            task["name"] = "Undefined"
                     elif "inference" in task_details and task_details["inference"]:
                         run = Inference.objects.filter(id=task_details["run_id"])
                         if run.exists():

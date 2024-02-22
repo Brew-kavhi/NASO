@@ -17,7 +17,6 @@ from helper_scripts.extensions import (
 )
 from helper_scripts.importing import get_arguments_as_dict, get_class, get_object
 from neural_architecture.models.model_optimization import PrunableNetwork
-from neural_architecture.models.model_runs import KerasModelRun
 from neural_architecture.NetworkCallbacks.evaluation_base_callback import (
     EvaluationBaseCallback,
 )
@@ -132,7 +131,6 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         build_model(run): Builds the AutoKeras model.
         load_model(run): Loads the AutoKeras model.
         load_trial(run, trial_id): Loads a trial of the AutoKeras model.
-        save_trial_as_model(run, keras_model_run, trial_id): Saves a trial as a KerasModel.
 
     """
 
@@ -322,35 +320,6 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         )
         trial_model.summary()
         return trial_model
-
-    def save_trial_as_model(
-        self, run: "AutoKerasRun", keras_model_run: KerasModelRun, trial_id: str
-    ) -> (tf.data.Dataset, tf.data.Dataset):
-        """
-        Saves a trial as a KerasModel and returns the train and validation datasets.
-
-        Args:
-            run (AutoKerasRun): The AutoKerasRun object.
-            keras_model_run (KerasModelRun): The KerasModelRun object.
-            trial_id (str): The ID of the trial.
-
-        Returns:
-            train_data (tf.data.Dataset): The train dataset.
-            validation_data (tf.data.Dataset): The validation dataset.
-
-        """
-        keras_model_run.model.metrics.set(self.metrics.all())
-
-        trial_model = self.load_trial(run, trial_id)
-        keras_model_run.model.set_model(trial_model)
-        (train_data, validation_data) = keras_model_run.dataset.get_data()
-        (_, _, train_dataset, validation_dataset) = self.prepare_data_for_trial(
-            train_data, validation_data, trial_id
-        )
-
-        # free up the memory
-        K.clear_session()
-        return (train_dataset, validation_dataset)
 
     def get_trial_checkpoint_path(self, trial_id) -> str:
         """

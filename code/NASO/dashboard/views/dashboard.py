@@ -11,7 +11,6 @@ from naso.celery import (
 )
 from naso.models.page import PageSetup
 from neural_architecture.models.autokeras import AutoKerasRun
-from neural_architecture.models.model_runs import KerasModelRun
 from runs.models.training import NetworkTraining
 
 
@@ -52,10 +51,6 @@ class Dashboard(TemplateView):
                 task["link"] = reverse_lazy(
                     "runs:autokeras:details", kwargs={"pk": run.id}
                 )
-            elif "is_autokeras_trial" in task and task["is_autokeras_trial"]:
-                run = KerasModelRun.objects.get(id=task["run_id"])
-                task["name"] = run.model.name
-                task["link"] = reverse_lazy("runs:list")
             else:
                 run = NetworkTraining.objects.get(id=task["run_id"])
                 task["name"] = run.network_config.name
@@ -82,19 +77,6 @@ class Dashboard(TemplateView):
                                         "runs:autokeras:details",
                                         kwargs={"pk": run_details["run_id"]},
                                     ),
-                                    "task_id": running_tasks["training_task_id"],
-                                }
-                            )
-                        elif (
-                            "autokeras_trial" in run_details
-                            and run_details["autokeras_trial"]
-                        ):
-                            run = KerasModelRun.objects.get(id=run_details["run_id"])
-                            self.context["run"].append(
-                                {
-                                    "name": run.model.name,
-                                    "id": run.id,
-                                    "link": reverse_lazy("runs:list"),
                                     "task_id": running_tasks["training_task_id"],
                                 }
                             )
