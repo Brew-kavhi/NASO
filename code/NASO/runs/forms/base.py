@@ -287,6 +287,31 @@ class PrunableForm(forms.Form):
             ),
         )
 
+    def load_pruning_config(self, pruning_method, pruning_scheduler, pruning_policy):
+        self.extra_context["pruning_method_config"] = [
+            {
+                "id": pruning_method.instance_type.id,
+                "arguments": pruning_method.additional_arguments,
+            }
+        ]
+        self.initial["pruning_method"] = pruning_method.instance_type
+        if pruning_scheduler:
+            self.extra_context["pruning_scheduler_config"] = [
+                {
+                    "id": pruning_scheduler.instance_type.id,
+                    "arguments": pruning_scheduler.additional_arguments,
+                }
+            ]
+            self.initial["pruning_scheduler"] = pruning_scheduler.instance_type
+        if pruning_policy:
+            self.extra_context["pruning_policy_config"] = [
+                {
+                    "id": pruning_policy.instance_type.id,
+                    "arguments": pruning_policy.additional_arguments,
+                }
+            ]
+            self.initial["pruning_policy"] = pruning_policy.instance_type
+
 
 class BaseRunWithCallback(BaseRun):
     callbacks = forms.ModelMultipleChoiceField(

@@ -167,6 +167,13 @@ class NewRun(TemplateView):
                 }
                 for layer in training.network_config.layers.all()
             ]
+            if training.network_config.pruning_method:
+                form.initial["enable_pruning"] = True
+                form.load_pruning_config(
+                    training.network_config.pruning_method,
+                    training.network_config.pruning_schedule,
+                    training.network_config.pruning_policy,
+                )
             form.load_graph(nodes, training.network_config.connections)
             form.load_optimizer_config(
                 training.hyper_parameters.optimizer.additional_arguments
@@ -694,6 +701,13 @@ class NewAutoKerasRun(TemplateView):
                 }
                 for layer in autokeras_run.model.blocks.all()
             ]
+            if autokeras_run.model.pruning_method:
+                form.initial["enable_pruning"] = True
+                form.load_pruning_config(
+                    autokeras_run.model.pruning_method,
+                    autokeras_run.model.pruning_schedule,
+                    autokeras_run.model.pruning_policy,
+                )
             form.load_graph(nodes, autokeras_run.model.connections)
             form.load_tuner_config(autokeras_run.model.tuner.additional_arguments)
             form.load_loss_config(autokeras_run.model.loss.additional_arguments)
