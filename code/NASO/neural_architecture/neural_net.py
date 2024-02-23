@@ -4,7 +4,6 @@ import traceback
 
 import numpy as np
 import tensorflow as tf
-import tensorflow.keras.backend as K
 from loguru import logger
 
 from celery import shared_task
@@ -19,6 +18,8 @@ from neural_architecture.NetworkCallbacks.timing_callback import TimingCallback
 from runs.models.training import NetworkTraining, TrainingMetric
 
 logger.add("net.log", backtrace=True, diagnose=True)
+keras = tf.keras
+K = keras.backend
 
 
 @shared_task(bind=True)

@@ -1,21 +1,24 @@
 import asyncio
 
 import numpy as np
-import tensorflow.keras.backend as K
+import tensorflow as tf
 
 from helper_scripts.power_management import get_power_usage
 from runs.models.training import Run, TrainingMetric
 
+keras = tf.keras
+K = keras.backend
+
 
 def start_async_measuring(stop_event, run: Run, database_lock):
-    task = asyncio.run(measure_power(stop_event, run, database_lock))
+    task = asyncio.run(measure_power(stop_event, run))
     with database_lock:
         run.power_measurements = ",".join([str(power) for power in task])
         run.save()
     return task
 
 
-async def measure_power(stop_event, run: Run, database_lock):
+async def measure_power(stop_event, run: Run):
     power = []
     while not stop_event.is_set():
         power.append(get_power_usage(run.gpu))
@@ -152,9 +155,9 @@ def custom_hypermodel_build(original_build_fn, run):
         function: The decorated build function.
     """
 
-    def build_fn(hp):
+    def build_fn(hyper_parameters):
         if original_build_fn:
-            model = original_build_fn(hp)
+            model = original_build_fn(hyper_parameters)
             loss = model.loss
             optimizer = model.optimizer
 

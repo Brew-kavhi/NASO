@@ -83,7 +83,7 @@ class SimilarityPruning(Wrapper, PruningInterface):
 
     def __init__(
         self,
-        to_prune: tf.keras.layers.Layer,
+        to_prune: keras.layers.Layer,
         threshold: float,
         similarity_metric: str,
         update_frequency: int = 10,
@@ -95,8 +95,8 @@ class SimilarityPruning(Wrapper, PruningInterface):
         )
         super().__init__(layer=to_prune, **kwargs)
         self._threshold = tf.constant(threshold)
-        self._is_dense_layer = isinstance(self.layer, tf.keras.layers.Dense)
-        self._is_conv_layer = isinstance(self.layer, tf.keras.layers.Conv2D)
+        self._is_dense_layer = isinstance(self.layer, keras.layers.Dense)
+        self._is_conv_layer = isinstance(self.layer, keras.layers.Conv2D)
         if similarity_metric not in ["EUC", "COS", "IoU"]:
             raise ValueError(
                 "Unsupported metric type '{}'. Should be 'EUC' or 'COS' or 'IoU'.".format(
@@ -142,7 +142,7 @@ class SimilarityPruning(Wrapper, PruningInterface):
                 mask = self.add_weight(
                     "mask",
                     shape=weight.shape,
-                    initializer=tf.keras.initializers.get("ones"),
+                    initializer=keras.initializers.get("ones"),
                     dtype=weight.dtype,
                     trainable=False,
                     aggregation=tf.VariableAggregation.MEAN,
@@ -155,7 +155,7 @@ class SimilarityPruning(Wrapper, PruningInterface):
         self.pruning_step = self.add_weight(
             "pruning_step",
             shape=[],
-            initializer=tf.keras.initializers.Constant(-1),
+            initializer=keras.initializers.Constant(-1),
             dtype=tf.int64,
             trainable=False,
         )
@@ -252,12 +252,12 @@ class SimilarityPruning(Wrapper, PruningInterface):
 
     def get_config(self):
         config = super().get_config().copy()
-        config["layer"] = tf.keras.layers.serialize(self.layer)
+        config["layer"] = keras.layers.serialize(self.layer)
         return config
 
     @classmethod
     def from_config(cls, config):
-        layer = tf.keras.layers.deserialize(config.pop("layer"))
+        layer = keras.layers.deserialize(config.pop("layer"))
         return cls(layer, **config)
 
     @property
