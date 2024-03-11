@@ -7,6 +7,7 @@ import tensorflow as tf
 from helper_scripts.pruning import calculate_sparsity, collect_prunable_layers
 from helper_scripts.timer import Timer
 from inference.models.inference import Inference
+from neural_architecture.helper_scripts.architecture import calculate_flops
 from neural_architecture.models.autokeras import AutoKerasRun
 from neural_architecture.models.model_runs import KerasModelRun
 from runs.models.training import NetworkTraining, TrainingMetric
@@ -38,12 +39,13 @@ class BaseCallback(tf.keras.callbacks.Callback):
         on_epoch_end(epoch, logs): Callback function called at the end of each epoch.
     """
 
-    def __init__(self, celery_task, run, epochs):
+    def __init__(self, celery_task, run, epochs, batch_size):
         super().__init__()
         self.celery_task = celery_task
         self.timer = Timer()
         self.epochs = epochs
         self.run = run
+        self.batch_size = batch_size
         self.gpu_consumption = "NaN"
         try:
             device = self.get_physical_device(run.gpu)
@@ -93,6 +95,8 @@ class BaseCallback(tf.keras.callbacks.Callback):
                     mask_update_ops.append(layer.conditional_mask_update())
             K.batch_set_value(tuples)
             K.batch_get_value(mask_update_ops)
+        if self.model:
+            logs["flops"] = calculate_flops(self.model, self.batch_size)
 
     def on_epoch_begin(self, epoch, logs=None):
         """
@@ -148,6 +152,7 @@ class BaseCallback(tf.keras.callbacks.Callback):
 
             K.batch_get_value(weight_mask_ops)
             logs["sparsity"] = calculate_sparsity(self.model)
+            logs["flops"] = calculate_flops(self.model, self.batch_size)
         metrics = {}
         for key in logs:
             if not math.isnan(logs[key]):

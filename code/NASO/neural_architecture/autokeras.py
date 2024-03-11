@@ -44,7 +44,7 @@ def run_autokeras(self, run_id):
 
         callback = AutoKerasCallback(self, run)
         timing_callback = TimingCallback()
-        base_callback = BaseCallback(self, run, epochs=run.model.epochs)
+        base_callback = BaseCallback(self, run, epochs=run.model.epochs, batch_size=32)
 
         stop_event = threading.Event()
         database_lock = threading.Lock()
@@ -67,7 +67,7 @@ def run_autokeras(self, run_id):
                 autokeras_model.fit(
                     train_dataset,
                     callbacks=[timing_callback]
-                    + self.get_callbacks(run)
+                    + autokeras_model.get_callbacks(run)
                     + [callback]
                     + [base_callback],
                     verbose=2,
