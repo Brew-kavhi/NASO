@@ -87,3 +87,50 @@ def is_merge_node(layer_name, connections):
         bool: True if the node is a merge node, False otherwise.
     """
     return len(edges_to_target(layer_name, connections)) > 1
+
+
+def calculate_flops(model, batch_size):
+    total_flops = 0
+
+    for layer in model.layers:
+        if isinstance(layer, tf.keras.layers.Conv2D):
+            total_flops += conv_flops(layer, batch_size)
+        elif isinstance(layer, tf.keras.layers.MaxPooling2D) or isinstance(
+            layer, tf.keras.layers.AveragePooling2D
+        ):
+            total_flops += pooling_flops(layer, batch_size)
+        elif isinstance(layer, tf.keras.layers.Dense):
+            total_flops += fc_flops(layer, batch_size)
+
+    return total_flops
+
+
+def conv_flops(layer, batch_size):
+    input_shape = layer.input_shape[1:]
+    output_shape = layer.output_shape[1:]
+    kernel_size = layer.kernel_size[0] * layer.kernel_size[1]
+    Cin = input_shape[-1]
+    Cout = output_shape[-1]
+    Hout, Wout = output_shape[1:3]
+
+    flops = Cin * Cout * kernel_size * Hout * Wout * batch_size
+    return flops
+
+
+def pooling_flops(layer, batch_size):
+    input_shape = layer.input_shape[1:]
+    Cin = input_shape[-1]
+    Hin, Win = input_shape[1:3]
+
+    flops = Cin * Hin * Win * batch_size
+    return flops
+
+
+def fc_flops(layer, batch_size):
+    input_shape = layer.input_shape[1:]
+    output_shape = layer.output_shape[1:]
+    Cin = input_shape[-1]
+    Cout = output_shape[-1]
+
+    flops = Cin * Cout * batch_size
+    return flops

@@ -4,6 +4,7 @@ import tensorflow as tf
 from django.db import models
 
 from helper_scripts.importing import get_object
+from neural_architecture.helper_scripts.architecture import calculate_flops
 from neural_architecture.models.dataset import Dataset
 from neural_architecture.NetworkCallbacks.timing_callback import TimingCallback
 from runs.models.training import (
@@ -45,6 +46,7 @@ class Inference(models.Model):
         NetworkTraining, on_delete=models.deletion.DO_NOTHING, null=True, blank=True
     )
     batch_size = models.IntegerField(default=1)
+    flops = models.IntegerField(default=0)
 
     _model = None
     _train_data = None
@@ -115,6 +117,8 @@ class Inference(models.Model):
         if not self._model:
             self._load_model()
         timer = TimingCallback()
+        self.flops = calculate_flops(self._model, self.batch_size)
+        self.save()
         return self._model.predict(
             self._test_data.batch(self.batch_size),
             batch_size=self.batch_size,

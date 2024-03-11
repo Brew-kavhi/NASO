@@ -44,7 +44,10 @@ def run_neural_net(self, training_id):
         tf.config.experimental.set_memory_growth(gpu, True)
 
     update_call = BaseCallback(
-        self, run=training, epochs=training.fit_parameters.epochs
+        self,
+        run=training,
+        epochs=training.fit_parameters.epochs,
+        batch_size=training.fit_parameters.batch_size,
     )
     stop_event = threading.Event()
     database_lock = threading.Lock()

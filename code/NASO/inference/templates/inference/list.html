@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load get_values %}
+{% load humanize %}
 {% block content %}
     <div class='container pb-3' id='inference_runs'>
         {% for inference in inferences %}
@@ -42,6 +43,7 @@
                          aria-labelledby="heading_{{ inference.id }}"
                          data-parent="#accordion{{ inference.id }}">
                         <div class="card-body has-background-light">
+                            <strong>FLOPs:</strong> {{ inference.flops|intcomma }}
                             <p>{{ inference.description }}</p>
                             <a href='{% url 'inference:details' inference.id %}' class='button'>Details</a>
                         </div>
