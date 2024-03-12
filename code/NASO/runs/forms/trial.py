@@ -1,10 +1,10 @@
 from crispy_forms.layout import HTML, Column, Field, Layout, Row, Submit
 from django import forms
 
-from runs.forms.base import BaseRunWithCallback, PrunableForm
+from runs.forms.base import BaseRunWithCallback, ClusterableForm, PrunableForm
 
 
-class RerunTrialForm(BaseRunWithCallback, PrunableForm):
+class RerunTrialForm(BaseRunWithCallback, PrunableForm, ClusterableForm):
     epochs = forms.IntegerField(
         label="Epochen",
         initial=10,
@@ -37,6 +37,7 @@ class RerunTrialForm(BaseRunWithCallback, PrunableForm):
             self.callback_html(),
             self.dataloader_html(),
             self.get_pruning_fields(),
+            self.get_clustering_fields(),
             self.gpu_field(),
             Submit("customer-general-edit", "Training starten"),
         )

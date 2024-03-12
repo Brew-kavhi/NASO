@@ -16,7 +16,10 @@ from helper_scripts.extensions import (
     custom_on_trial_end_decorator,
 )
 from helper_scripts.importing import get_arguments_as_dict, get_class, get_object
-from neural_architecture.models.model_optimization import PrunableNetwork
+from neural_architecture.models.model_optimization import (
+    ClusterableNetwork,
+    PrunableNetwork,
+)
 from neural_architecture.NetworkCallbacks.evaluation_base_callback import (
     EvaluationBaseCallback,
 )
@@ -155,6 +158,9 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
     )
     metric_weights = models.JSONField(null=True)
     epochs = models.IntegerField(default=1000)
+    clustering_options = models.ForeignKey(
+        ClusterableNetwork, null=True, on_delete=models.deletion.CASCADE
+    )
 
     auto_model: autokeras.AutoModel = None
     loaded_model: autokeras.AutoModel = None
@@ -522,7 +528,12 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
             raise ValueError("Model has not been built yet.")
         batch_size = 1
         timing_callback = TimingCallback()
-        return self.get_export_model(self.auto_model.export_model()).predict(
+        export_model = self.get_export_model(self.auto_model.export_model())
+        if self.clustering_options:
+            export_model = self.clustering_options.get_cluster_export_model(
+                export_model
+            )
+        return export_model.predict(
             dataset,
             batch_size,
             verbose=2,

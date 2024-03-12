@@ -162,6 +162,10 @@ def custom_hypermodel_build(original_build_fn, run):
             optimizer = model.optimizer
 
             model = run.model.build_pruning_model(model, include_last_layer=False)
+            if run.model.clustering_options:
+                model = run.model.clustering_options.build_clustered_model(
+                    model, include_last_layer=False
+                )
             model.loss = loss
             model.optimizer = optimizer
             model.compile(optimizer, loss)

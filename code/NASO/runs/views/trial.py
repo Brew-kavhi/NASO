@@ -9,6 +9,7 @@ from naso.models.page import PageSetup
 from neural_architecture.models.architecture import NetworkConfiguration
 from neural_architecture.models.autokeras import AutoKerasRun
 from neural_architecture.models.model_optimization import (
+    ClusterableNetwork,
     PruningMethod,
     PruningPolicy,
     PruningSchedule,
@@ -212,6 +213,17 @@ class TrialView(TemplateView):
             network_config.name = form.cleaned_data["name"]
 
             network_config.save_model = True
+            if form.cleaned_data["enable_clustering"]:
+                number_of_clusters = form.cleaned_data["number_of_clusters"]
+                centroids_init = form.cleaned_data["centroids_init"]
+                clustering_options = ClusterableNetwork(
+                    use_clustering=True,
+                    number_of_cluster=number_of_clusters,
+                    cluster_centroids_init=centroids_init,
+                )
+                clustering_options.save()
+                network_config.clustering_options = clustering_options
+
             if form.cleaned_data["enable_pruning"]:
                 (
                     method_arguments,

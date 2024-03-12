@@ -19,6 +19,7 @@ from neural_architecture.models.autokeras import (
 )
 from neural_architecture.models.dataset import Dataset
 from neural_architecture.models.model_optimization import (
+    ClusterableNetwork,
     PruningMethod,
     PruningPolicy,
     PruningSchedule,
@@ -359,6 +360,16 @@ class NewRun(TemplateView):
                     except Exception:
                         logger.info("Model could not be loaded")
 
+                if form.cleaned_data["enable_clustering"]:
+                    number_of_clusters = form.cleaned_data["number_of_clusters"]
+                    centroids_init = form.cleaned_data["centroids_init"]
+                    clustering_options = ClusterableNetwork(
+                        use_clustering=True,
+                        number_of_cluster=number_of_clusters,
+                        cluster_centroids_init=centroids_init,
+                    )
+                    clustering_options.save()
+                    network_config.clustering_options = clustering_options
                 if form.cleaned_data["enable_pruning"]:
                     (
                         method_arguments,
@@ -815,6 +826,17 @@ class NewAutoKerasRun(TemplateView):
                 loss=build_loss_function(form.cleaned_data, loss_arguments),
                 weights=weights,
             )
+
+            if form.cleaned_data["enable_clustering"]:
+                number_of_clusters = form.cleaned_data["number_of_clusters"]
+                centroids_init = form.cleaned_data["centroids_init"]
+                clustering_options = ClusterableNetwork(
+                    use_clustering=True,
+                    number_of_cluster=number_of_clusters,
+                    cluster_centroids_init=centroids_init,
+                )
+                clustering_options.save()
+                model.clustering_options = clustering_options
 
             if form.cleaned_data["enable_pruning"]:
                 (

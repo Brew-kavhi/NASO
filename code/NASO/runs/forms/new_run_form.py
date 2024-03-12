@@ -11,10 +11,10 @@ from neural_architecture.models.templates import (
     KerasNetworkTemplate,
 )
 from neural_architecture.models.types import NetworkLayerType, OptimizerType
-from runs.forms.base import BaseRunWithCallback, PrunableForm
+from runs.forms.base import BaseRunWithCallback, ClusterableForm, PrunableForm
 
 
-class NewRunForm(BaseRunWithCallback, PrunableForm):
+class NewRunForm(BaseRunWithCallback, PrunableForm, ClusterableForm):
     optimizer = forms.ModelChoiceField(
         label="Optimizer",
         queryset=OptimizerType.objects.all(),
@@ -160,6 +160,7 @@ class NewRunForm(BaseRunWithCallback, PrunableForm):
             self.dataloader_html(),
             self.gpu_field(),
             self.get_pruning_fields(),
+            self.get_clustering_fields(),
             Row(
                 Column(Field("save_model"), css_class="col-2"),
                 Column(
@@ -227,7 +228,7 @@ class NewRunForm(BaseRunWithCallback, PrunableForm):
         return optimizer_choices
 
 
-class NewAutoKerasRunForm(BaseRunWithCallback, PrunableForm):
+class NewAutoKerasRunForm(BaseRunWithCallback, PrunableForm, ClusterableForm):
     tuner = forms.ModelChoiceField(
         label="Tuner",
         required=False,
@@ -360,6 +361,7 @@ class NewAutoKerasRunForm(BaseRunWithCallback, PrunableForm):
             ),
             self.dataloader_html(),
             self.get_pruning_fields(),
+            self.get_clustering_fields(),
             self.gpu_field(),
             Submit("customer-general-edit", "Training starten"),
         )

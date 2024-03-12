@@ -7,7 +7,10 @@ from loguru import logger
 
 from helper_scripts.importing import get_object
 from neural_architecture.models.graphs import Graph
-from neural_architecture.models.model_optimization import PrunableNetwork
+from neural_architecture.models.model_optimization import (
+    ClusterableNetwork,
+    PrunableNetwork,
+)
 from neural_architecture.models.types import (
     ActivationFunctionType,
     BuildModelFromGraph,
@@ -102,6 +105,9 @@ class NetworkConfiguration(PrunableNetwork, BuildModelFromGraph):
     save_model = models.BooleanField(default=False)
     model_file = models.CharField(max_length=100)
     load_model = models.BooleanField(default=False)
+    clustering_options = models.ForeignKey(
+        ClusterableNetwork, null=True, on_delete=models.deletion.CASCADE
+    )
 
     inputs: dict = {}
 
@@ -161,6 +167,10 @@ class NetworkConfiguration(PrunableNetwork, BuildModelFromGraph):
                 os.makedirs("keras_models/tensorflow/")
 
             export_model = self.get_export_model(model)
+            if self.clustering_options:
+                export_model = self.clustering_options.get_cluster_export_model(
+                    export_model
+                )
 
             export_model.save(file_path, save_format="keras")
 
