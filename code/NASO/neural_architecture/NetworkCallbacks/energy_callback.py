@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-from helper_scripts.power_management import get_gpu_power_usage, get_cpu_power_usage
+from helper_scripts.power_management import get_cpu_power_usage, get_gpu_power_usage
 from inference.models.inference import Inference
 from naso.settings import ENERGY_MEASUREMENT_FREQUENCY
 from neural_architecture.models.autokeras import AutoKerasRun

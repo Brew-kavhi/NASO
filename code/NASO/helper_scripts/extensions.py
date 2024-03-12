@@ -3,7 +3,7 @@ import asyncio
 import numpy as np
 import tensorflow as tf
 
-from helper_scripts.power_management import get_gpu_power_usage, get_cpu_power_usage
+from helper_scripts.power_management import get_cpu_power_usage, get_gpu_power_usage
 from runs.models.training import Run, TrainingMetric
 
 keras = tf.keras
