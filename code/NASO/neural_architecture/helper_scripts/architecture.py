@@ -1,3 +1,4 @@
+import numpy as np
 import tensorflow as tf
 
 
@@ -134,3 +135,13 @@ def fc_flops(layer, batch_size):
 
     flops = Cin * Cout * batch_size
     return flops
+
+
+def quantize_weights(model):
+    for layer in model.layers:
+        if isinstance(layer, tf.keras.layers.Dense) or isinstance(
+            layer, tf.keras.layers.Conv2D
+        ):
+            print("leyer")
+            layer.set_weights([w.astype(np.bool_) for w in layer.get_weights()])
+    return model

@@ -30,6 +30,8 @@ For async task io we use celery. This is automatically installed with poetry, bu
 
 If its not possible to start or install a rabbitmq server. you can ask me (Marius Goehring) for an alternative. This server does not need to run locally, so you can use any other **hosted rabbitmq instance**. I have one running for this purpose.
 
+Another thing is the measurement of the power consumption. For GPUs this tool uses ```nvidia-smi``` and for CPU we use ```turbostat``` which can be installed by ```apt install linux-cpupower```. These command line tools are invoked in python by spawning a subprocess
+
 ## Configuration
 
 Last step is to configure the environment. This roject uses python-decouple to laod environment variables into the django app. This is important to keep sensitive information local and to have all the config in one place. You can find a sample configuration in the file .envrc. just copy it to a file named .env and adjust it to your needs. Here you also need to configure the rabbitmq server instance. This env file also holds the database connection credentials. This is only necessary if you are using something else than sqlite, which is preconfigured in the project settings. So if you are using SQLite, because you might not be able to install a proper SQL-database server, you need to change the database settings in the file naso/settings_local.py. 

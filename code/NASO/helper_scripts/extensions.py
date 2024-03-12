@@ -1,24 +1,30 @@
 import asyncio
 
 import numpy as np
-import tensorflow.keras.backend as K
+import tensorflow as tf
 
-from helper_scripts.power_management import get_power_usage
+from helper_scripts.power_management import get_cpu_power_usage, get_gpu_power_usage
 from runs.models.training import Run, TrainingMetric
+
+keras = tf.keras
+K = keras.backend
 
 
 def start_async_measuring(stop_event, run: Run, database_lock):
-    task = asyncio.run(measure_power(stop_event, run, database_lock))
+    task = asyncio.run(measure_power(stop_event, run))
     with database_lock:
         run.power_measurements = ",".join([str(power) for power in task])
         run.save()
     return task
 
 
-async def measure_power(stop_event, run: Run, database_lock):
+async def measure_power(stop_event, run: Run):
     power = []
     while not stop_event.is_set():
-        power.append(get_power_usage(run.gpu))
+        if run.gpu.startswith("GPU"):
+            power.append(get_gpu_power_usage(run.gpu))
+        elif run.gpu.startswith("CPU"):
+            power.append(get_cpu_power_usage(run.gpu))
         await asyncio.sleep(2)
     return power
 
@@ -152,13 +158,17 @@ def custom_hypermodel_build(original_build_fn, run):
         function: The decorated build function.
     """
 
-    def build_fn(hp):
+    def build_fn(hyper_parameters):
         if original_build_fn:
-            model = original_build_fn(hp)
+            model = original_build_fn(hyper_parameters)
             loss = model.loss
             optimizer = model.optimizer
 
             model = run.model.build_pruning_model(model, include_last_layer=False)
+            if run.model.clustering_options:
+                model = run.model.clustering_options.build_clustered_model(
+                    model, include_last_layer=False
+                )
             model.loss = loss
             model.optimizer = optimizer
             model.compile(optimizer, loss)

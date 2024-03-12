@@ -1,16 +1,17 @@
-import tensorflow as tf
 import inspect
 import re
-import numpy as np
 
-from neural_architecture.models.model_optimization import PruningMethodTypes
-from plugins.interfaces.commands import InstallerInterface
-from plugins.interfaces.pruning_method import PruningInterface
-from helper_scripts.pruning import smart_cond
+import numpy as np
+import tensorflow as tf
 from tensorflow_model_optimization.python.core.keras import compat as tf_compat
 from tensorflow_model_optimization.python.core.sparsity.keras.prune_registry import (
     PruneRegistry,
 )
+
+from helper_scripts.pruning import smart_cond
+from neural_architecture.models.model_optimization import PruningMethodTypes
+from plugins.interfaces.commands import InstallerInterface
+from plugins.interfaces.pruning_method import PruningInterface
 
 keras = tf.keras
 K = keras.backend
@@ -82,7 +83,7 @@ class SimilarityPruning(Wrapper, PruningInterface):
 
     def __init__(
         self,
-        to_prune: tf.keras.layers.Layer,
+        to_prune: keras.layers.Layer,
         threshold: float,
         similarity_metric: str,
         update_frequency: int = 10,
@@ -94,8 +95,8 @@ class SimilarityPruning(Wrapper, PruningInterface):
         )
         super().__init__(layer=to_prune, **kwargs)
         self._threshold = tf.constant(threshold)
-        self._is_dense_layer = isinstance(self.layer, tf.keras.layers.Dense)
-        self._is_conv_layer = isinstance(self.layer, tf.keras.layers.Conv2D)
+        self._is_dense_layer = isinstance(self.layer, keras.layers.Dense)
+        self._is_conv_layer = isinstance(self.layer, keras.layers.Conv2D)
         if similarity_metric not in ["EUC", "COS", "IoU"]:
             raise ValueError(
                 "Unsupported metric type '{}'. Should be 'EUC' or 'COS' or 'IoU'.".format(
@@ -141,7 +142,7 @@ class SimilarityPruning(Wrapper, PruningInterface):
                 mask = self.add_weight(
                     "mask",
                     shape=weight.shape,
-                    initializer=tf.keras.initializers.get("ones"),
+                    initializer=keras.initializers.get("ones"),
                     dtype=weight.dtype,
                     trainable=False,
                     aggregation=tf.VariableAggregation.MEAN,
@@ -154,7 +155,7 @@ class SimilarityPruning(Wrapper, PruningInterface):
         self.pruning_step = self.add_weight(
             "pruning_step",
             shape=[],
-            initializer=tf.keras.initializers.Constant(-1),
+            initializer=keras.initializers.Constant(-1),
             dtype=tf.int64,
             trainable=False,
         )
@@ -251,12 +252,12 @@ class SimilarityPruning(Wrapper, PruningInterface):
 
     def get_config(self):
         config = super().get_config().copy()
-        config["layer"] = tf.keras.layers.serialize(self.layer)
+        config["layer"] = keras.layers.serialize(self.layer)
         return config
 
     @classmethod
     def from_config(cls, config):
-        layer = tf.keras.layers.deserialize(config.pop("layer"))
+        layer = keras.layers.deserialize(config.pop("layer"))
         return cls(layer, **config)
 
     @property

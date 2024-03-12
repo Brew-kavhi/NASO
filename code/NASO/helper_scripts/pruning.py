@@ -1,12 +1,12 @@
 import numpy as np
 import tensorflow as tf
-from plugins.interfaces.pruning_method import PruningInterface
 
 # TODO(b/151772467): Move away from depending on private APIs
 from tensorflow.python.framework import smart_cond as smart_module
 from tensorflow.python.ops import variables
 from tensorflow_model_optimization.python.core.sparsity.keras import pruning_wrapper
 
+from plugins.interfaces.pruning_method import PruningInterface
 
 keras = tf.keras
 K = keras.backend
@@ -18,7 +18,7 @@ def calculate_sparsity(model):
     tfmot_sparsity = 0
     tfmot_prunable_layers = pruning_wrapper.collect_prunable_layers(model)
     for layer in tfmot_prunable_layers:
-        for _, mask, threshold in layer.pruning_vars:
+        for _, mask, _ in layer.pruning_vars:
             params.append(mask)
 
     params.append(model.optimizer.iterations)
@@ -83,7 +83,7 @@ def strip_pruning(model):
         )
 
     def _strip_pruning_wrapper(layer):
-        if isinstance(layer, tf.keras.Model):
+        if isinstance(layer, keras.Model):
             # A keras model with prunable layers
             return keras.models.clone_model(
                 layer, input_tensors=None, clone_function=_strip_pruning_wrapper
@@ -97,7 +97,7 @@ def strip_pruning(model):
             ):
                 layer.layer._batch_input_shape = layer._batch_input_shape
             return layer.layer
-        elif issubclass(layer.__class__, PruningInterface):
+        if issubclass(layer.__class__, PruningInterface):
             return layer.strip_pruning()
         return layer
 

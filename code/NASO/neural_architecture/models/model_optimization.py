@@ -152,6 +152,58 @@ class PruningPolicy(TypeInstance):
     )
 
 
+class ClusterableNetwork(models.Model):
+    number_of_cluster = models.IntegerField(default=0)
+    cluster_centroids_init = models.CharField(
+        max_length=7,
+        choices=[
+            ("linear", "Linear"),
+            ("random", "Random"),
+            ("kmeans", "Kmeans++"),
+            ("density", "Density Based"),
+        ],
+        default="linear",
+    )
+    use_clustering = models.BooleanField(default=False)
+
+    def build_clustered_model(self, model, include_last_layer=True):
+        """
+        Builds a model with clustered weights using the tensorflow model optimization toolkit
+        """
+        if not self.use_clustering:
+            return model
+
+        centroids_init = tfmot.clustering.keras.CentroidInitialization.LINEAR
+        if self.cluster_centroids_init == "linear":
+            centroids_init = tfmot.clustering.keras.CentroidInitialization.LINEAR
+        elif self.cluster_centroids_init == "random":
+            centroids_init = tfmot.clustering.keras.CentroidInitialization.RANDOM
+        elif self.cluster_centroids_init == "density":
+            centroids_init = tfmot.clustering.keras.CentroidInitialization.DENSITY_BASED
+        elif self.cluster_centroids_init == "kmeans":
+            centroids_init = (
+                tfmot.clustering.keras.CentroidInitialization.KMEANS_PLUS_PLUS
+            )
+
+        model_layers = {}
+        for i, layer in enumerate(model.layers):
+            if not (not include_last_layer and i == model.layers.__len__() - 1):
+                clustered_layer = tfmot.clustering.keras.cluster_weights(
+                    layer,
+                    number_of_clusters=self.number_of_cluster,
+                    cluster_centroids_init=centroids_init,
+                )
+                model_layers[layer.name] = clustered_layer
+            else:
+                model_layers[layer.name] = layer
+        return copy_model(model, model_layers)
+
+    def get_cluster_export_model(self, model):
+        if self.use_clustering:
+            return tfmot.clustering.keras.strip_clustering(model)
+        return model
+
+
 class PrunableNetwork(models.Model):
     """
     A base class for prunable neural network models.

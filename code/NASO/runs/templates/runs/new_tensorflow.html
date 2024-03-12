@@ -31,6 +31,9 @@
             handleMetricChange($('#{{form.metrics.auto_id}}'));
             handleLayerChange($('#{{form.layers.auto_id}}'));
             handleCallbackChange($('#{{form.callbacks.auto_id}}'));
+            handlePruningMethodChange($('#{{form.pruning_method.auto_id}}'));
+            handlePruningSchedulerChange($('#{{form.pruning_scheduler.auto_id}}'));
+            handlePruningPolicyChange($('#{{form.pruning_policy.auto_id}}'));
 
             $('#id_fine_tune_saved_model').change(function() {
                 if($(this).prop('checked')) {
@@ -110,8 +113,43 @@
                 }
                 delete existing_callbacks;
             {% endif %}
-        }
-        );
+            {% if pruning_method_config %}
+                let existing_pruning_methods = {{ pruning_method_config | safe }};
+                for (const p_method of existing_pruning_methods) {
+                    for (const argument of p_method['arguments']) {
+                        let fields = document.getElementsByName('pruning-method_argument_' + argument.name);
+                        if (fields[0]) {
+                            fields[0].value = argument.value;
+                        }
+                    }
+                }
+                delete existing_pruning_methods;
+            {% endif %}
+            {% if pruning_scheduler_config %}
+                let existing_pruning_schedulers = {{ pruning_scheduler_config | safe }};
+                for (const p_scheduler of existing_pruning_schedulers) {
+                    for (const argument of p_scheduler['arguments']) {
+                        let fields = document.getElementsByName('pruning-scheduler_argument_' + argument.name);
+                        if (fields[0]) {
+                            fields[0].value = argument.value;
+                        }
+                    }
+                }
+                delete existing_pruning_schedulers;
+            {% endif %}
+            {% if pruning_policy_config %}
+                let existing_pruning_policys = {{ pruning_policy_config | safe }};
+                for (const p_policy of existing_pruning_policys) {
+                    for (const argument of p_policy['arguments']) {
+                        let fields = document.getElementsByName('pruning-policy_argument_' + argument.name);
+                        if (fields[0]) {
+                            fields[0].value = argument.value;
+                        }
+                    }
+                }
+                delete existing_pruning_policys;
+            {% endif %}
+        });
         const False = false;
         const True = true;
         const None = undefined;

@@ -4,6 +4,17 @@ function togglePruning() {
     $('#div_id_pruning_policy').parent().toggleClass('d-none');
 }
 
+function toggleClustering() {
+    $('#div_id_number_of_clusters').parent().toggleClass('d-none');
+    $('#div_id_centroids_init').parent().toggleClass('d-none');
+}
+
+function showPruning() {
+    $('#div_id_pruning_method').parent().removeClass('d-none');
+    $('#div_id_pruning_scheduler').parent().removeClass('d-none');
+    $('#div_id_pruning_policy').parent().removeClass('d-none');
+}
+
 function handlePruningMethodChange(selectElement) {
     var selectedPruningMethodId = $(selectElement).val();
     var selectedPruningMethod = pruningMethodOptions.find(function(opt) {
@@ -16,6 +27,7 @@ function handlePruningMethodChange(selectElement) {
     if (!selectedPruningMethod) {
         return ;
     }
+    showPruning();
 
     // Clear existing input fields
 

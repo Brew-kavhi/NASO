@@ -962,14 +962,14 @@
             let maxMetrics = getMaxValuesPerTrial(trial_data);
             for (let metric in maxMetrics) {
                 if (maxMetrics.hasOwnProperty(metric)) {
-                    $('#canvas_configure_' + trial_id).parent().parent().attr('data-max-' + metric, maxMetrics[metric]);
+                    $('#canvas_configure_' + trial_id).parent().parent().attr('data-max-' + snake_case_string(metric), maxMetrics[metric]);
                 }
             }
 
             let minMetrics = getMinValuesPerTrial(trial_data);
             for (let metric in minMetrics) {
                 if (minMetrics.hasOwnProperty(metric)) {
-                    $('#canvas_configure_' + trial_id).parent().parent().attr('data-min-' + metric, minMetrics[metric]);
+                    $('#canvas_configure_' + trial_id).parent().parent().attr('data-min-' + snake_case_string(metric), minMetrics[metric]);
                 }
             }
             hideDetailsButton.addEventListener("click", function() {

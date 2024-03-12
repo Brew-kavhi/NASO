@@ -14,10 +14,6 @@ from runs.models.training import (
     TrainingMetric,
 )
 
-"""from neural_architecture.NetworkCallbacks.evaluation_base_callback import (
-    EvaluationBaseCallback,
-)"""
-
 
 class Inference(models.Model):
     """
@@ -87,10 +83,14 @@ class Inference(models.Model):
 
     def _try_link_run(self):
         # get the id from the model file, and then tr=y to get the networktraining object from it
-        id = os.path.splitext(self.model_file[self.model_file.rfind("_") + 1 :])[0]
-        if not id:
+        model_file_id = os.path.splitext(
+            self.model_file[self.model_file.rfind("_") + 1 :]
+        )[0]
+        if not model_file_id:
             return
-        matching_networks = NetworkTraining.objects.filter(network_config__id=id)
+        matching_networks = NetworkTraining.objects.filter(
+            network_config__id=model_file_id
+        )
         if matching_networks.exists():
             self.network_training = matching_networks.first()
             self.save()

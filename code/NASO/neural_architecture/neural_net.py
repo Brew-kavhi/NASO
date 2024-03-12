@@ -4,7 +4,6 @@ import traceback
 
 import numpy as np
 import tensorflow as tf
-import tensorflow.keras.backend as K
 from loguru import logger
 
 from celery import shared_task
@@ -19,6 +18,8 @@ from neural_architecture.NetworkCallbacks.timing_callback import TimingCallback
 from runs.models.training import NetworkTraining, TrainingMetric
 
 logger.add("net.log", backtrace=True, diagnose=True)
+keras = tf.keras
+K = keras.backend
 
 
 @shared_task(bind=True)
@@ -142,6 +143,8 @@ class NeuralNetwork:
         model = config.build_model(input_shape)
 
         model = config.build_pruning_model(model)
+        if config.clustering_options:
+            model = config.clustering_options.build_clustered_model(model)
         model.compile(**self.training_config.hyper_parameters.get_as_dict())
         logger.success("Model is initiated.")
         model.summary()
@@ -274,6 +277,10 @@ class NeuralNetwork:
         timing_callback = TimingCallback()
         batch_size = 1
         predict_model = self.training_config.network_config.get_export_model(self.model)
+        if self.training_config.network_config.clustering_options:
+            predict_model = self.training_config.network_config.clustering_options.get_cluster_export_model(
+                predict_model
+            )
         return predict_model.predict(
             dataset,
             batch_size,

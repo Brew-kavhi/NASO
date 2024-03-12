@@ -9,9 +9,7 @@ from helper_scripts.timer import Timer
 from inference.models.inference import Inference
 from neural_architecture.helper_scripts.architecture import calculate_flops
 from neural_architecture.models.autokeras import AutoKerasRun
-from neural_architecture.models.model_runs import KerasModelRun
 from runs.models.training import NetworkTraining, TrainingMetric
-
 
 K = tf.keras.backend
 
@@ -120,7 +118,6 @@ class BaseCallback(tf.keras.callbacks.Callback):
                 "gpu": {"device": self.run.gpu, "power": self.gpu_consumption},
                 "run_id": self.run.id,
                 "metrics": metrics,
-                "autokeras_trial": isinstance(self.run, KerasModelRun),
                 "autokeras": isinstance(self.run, AutoKerasRun),
                 "inference": isinstance(self.run, Inference),
             },
@@ -178,22 +175,6 @@ class BaseCallback(tf.keras.callbacks.Callback):
             except django.db.utils.OperationalError:
                 time.sleep(0.5)
                 metric.save()
-        elif isinstance(self.run, KerasModelRun):
-            metric = TrainingMetric(
-                epoch=epoch,
-                metrics=[
-                    {
-                        "current": epoch,
-                        "total": self.epochs,
-                        "run_id": self.run.id,
-                        "metrics": metrics,
-                        "time": self.timer.get_total_time(),
-                        "autokeras_trial": True,
-                    },
-                ],
-            )
-            metric.save()
-            self.run.metrics.add(metric)
 
         if "power_consumption" in logs:
             self.gpu_consumption = logs["power_consumption"]
@@ -205,7 +186,6 @@ class BaseCallback(tf.keras.callbacks.Callback):
                 "run_id": self.run.id,
                 "metrics": metrics,
                 "gpu": {"device": self.run.gpu, "power": self.gpu_consumption},
-                "autokeras_trial": isinstance(self.run, KerasModelRun),
                 "autokeras": isinstance(self.run, AutoKerasRun),
                 "inference": isinstance(self.run, Inference),
             },

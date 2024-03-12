@@ -197,6 +197,56 @@ class BaseRun(forms.Form):
         )
 
 
+class ClusterableForm(forms.Form):
+    enable_clustering = forms.BooleanField(required=False, initial=False)
+    number_of_clusters = forms.IntegerField(required=False, initial=3)
+    centroids_init = forms.ChoiceField(
+        required=False,
+        choices=[
+            ("linear", "Linear"),
+            ("random", "Random"),
+            ("kmeans", "Kmeans++"),
+            ("density", "Density Based"),
+        ],
+        initial="linear",
+    )
+
+    def get_clustering_fields(self):
+        self.fields["enable_clustering"].widget.attrs[
+            "onchange"
+        ] = "toggleClustering(this)"
+        return Layout(
+            Row(
+                HTML(
+                    """
+                    <h2>Clustering</h2>
+                    """
+                ),
+                css_class="border-top pt-3",
+            ),
+            Row(
+                Column(
+                    Field(
+                        "enable_clustering",
+                        css_class="form-check-input",
+                        wrapper_class="form-check offset-0",
+                    ),
+                    css_class="col-3",
+                ),
+                Column(
+                    Field(
+                        "number_of_clusters",
+                    ),
+                    css_class="col-4 d-none",
+                ),
+                Column(
+                    Field("centroids_init", css_class="select2"),
+                    css_class="col-5 d-none",
+                ),
+            ),
+        )
+
+
 class PrunableForm(forms.Form):
     enable_pruning = forms.BooleanField(required=False, initial=False)
     pruning_method = forms.ModelChoiceField(
@@ -286,6 +336,31 @@ class PrunableForm(forms.Form):
                 ),
             ),
         )
+
+    def load_pruning_config(self, pruning_method, pruning_scheduler, pruning_policy):
+        self.extra_context["pruning_method_config"] = [
+            {
+                "id": pruning_method.instance_type.id,
+                "arguments": pruning_method.additional_arguments,
+            }
+        ]
+        self.initial["pruning_method"] = pruning_method.instance_type
+        if pruning_scheduler:
+            self.extra_context["pruning_scheduler_config"] = [
+                {
+                    "id": pruning_scheduler.instance_type.id,
+                    "arguments": pruning_scheduler.additional_arguments,
+                }
+            ]
+            self.initial["pruning_scheduler"] = pruning_scheduler.instance_type
+        if pruning_policy:
+            self.extra_context["pruning_policy_config"] = [
+                {
+                    "id": pruning_policy.instance_type.id,
+                    "arguments": pruning_policy.additional_arguments,
+                }
+            ]
+            self.initial["pruning_policy"] = pruning_policy.instance_type
 
 
 class BaseRunWithCallback(BaseRun):

@@ -7,7 +7,10 @@ from loguru import logger
 
 from helper_scripts.importing import get_object
 from neural_architecture.models.graphs import Graph
-from neural_architecture.models.model_optimization import PrunableNetwork
+from neural_architecture.models.model_optimization import (
+    ClusterableNetwork,
+    PrunableNetwork,
+)
 from neural_architecture.models.types import (
     ActivationFunctionType,
     BuildModelFromGraph,
@@ -15,6 +18,8 @@ from neural_architecture.models.types import (
     TypeInstance,
 )
 from neural_architecture.validators import validate_dtype
+
+keras = tf.keras
 
 
 class SearchSpace(models.Model):
@@ -100,6 +105,9 @@ class NetworkConfiguration(PrunableNetwork, BuildModelFromGraph):
     save_model = models.BooleanField(default=False)
     model_file = models.CharField(max_length=100)
     load_model = models.BooleanField(default=False)
+    clustering_options = models.ForeignKey(
+        ClusterableNetwork, null=True, on_delete=models.deletion.CASCADE
+    )
 
     inputs: dict = {}
 
@@ -111,7 +119,7 @@ class NetworkConfiguration(PrunableNetwork, BuildModelFromGraph):
             input_shape (tuple): The shape of the input data. Defaults to (28, 28).
 
         Returns:
-            tf.keras.Model: The built Keras model.
+            keras.Model: The built Keras model.
         """
         if (
             self.load_model
@@ -119,12 +127,12 @@ class NetworkConfiguration(PrunableNetwork, BuildModelFromGraph):
             and os.path.exists(self.model_file)
         ):
             logger.info(f"Loading model from {self.model_file}")
-            return tf.keras.models.load_model(self.model_file)
+            return keras.models.load_model(self.model_file)
 
-        self.inputs["input_node"] = tf.keras.Input(input_shape)
+        self.inputs["input_node"] = keras.Input(input_shape)
         self.layer_outputs["input_node"] = self.inputs["input_node"]
         self.build_connected_layers("input_node")
-        return tf.keras.Model(self.inputs, self.outputs)
+        return keras.Model(self.inputs, self.outputs)
 
     def get_block_for_node(self, node_id):
         """
@@ -151,7 +159,7 @@ class NetworkConfiguration(PrunableNetwork, BuildModelFromGraph):
         Saves the model on disk if the `save_model` flag is set to True.
 
         Args:
-            model (tf.keras.Model): The model to be saved.
+            model (keras.Model): The model to be saved.
         """
         if self.save_model:
             file_path = f"keras_models/tensorflow/{self.name}_{self.id}.keras"
@@ -159,6 +167,10 @@ class NetworkConfiguration(PrunableNetwork, BuildModelFromGraph):
                 os.makedirs("keras_models/tensorflow/")
 
             export_model = self.get_export_model(model)
+            if self.clustering_options:
+                export_model = self.clustering_options.get_cluster_export_model(
+                    export_model
+                )
 
             export_model.save(file_path, save_format="keras")
 
