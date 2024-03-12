@@ -3,7 +3,7 @@ import asyncio
 import numpy as np
 import tensorflow as tf
 
-from helper_scripts.power_management import get_power_usage
+from helper_scripts.power_management import get_gpu_power_usage, get_cpu_power_usage
 from runs.models.training import Run, TrainingMetric
 
 keras = tf.keras
@@ -21,7 +21,10 @@ def start_async_measuring(stop_event, run: Run, database_lock):
 async def measure_power(stop_event, run: Run):
     power = []
     while not stop_event.is_set():
-        power.append(get_power_usage(run.gpu))
+        if run.gpu.startswith("GPU"):
+            power.append(get_gpu_power_usage(run.gpu))
+        elif run.gpu.startswith("CPU"):
+            power.append(get_cpu_power_usage(run.gpu))
         await asyncio.sleep(2)
     return power
 
