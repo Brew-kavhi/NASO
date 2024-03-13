@@ -77,6 +77,7 @@ class NeuralNetwork:
     celery_callback = None
     train_dataset = None
     test_dataset = None
+    eval_dataset = None
 
     def __init__(self, training_config: NetworkTraining = None):
         """
@@ -163,6 +164,7 @@ class NeuralNetwork:
         (
             self.train_dataset,
             self.test_dataset,
+            self.eval_dataset,
         ) = self.training_config.dataset.get_data()
 
         logger.success("Data is loaded.")
@@ -234,7 +236,7 @@ class NeuralNetwork:
         logger.info("Started evaluation of the network...")
         timing_callback = TimingCallback()
         metrics = self.model.evaluate(
-            self.test_dataset.batch(64),
+            self.eval_dataset.batch(64),
             batch_size=batch_size,
             steps=steps,
             verbose=2,
