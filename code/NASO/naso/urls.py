@@ -26,6 +26,7 @@ urlpatterns = [
     ),
     path("runs/", include(("runs.urls", "runs"), namespace="runs")),
     path("inference/", include(("inference.urls", "inference"), namespace="inference")),
+    path("workers/", include(("workers.urls", "workers"), namespace="workers")),
     path(
         "comparison/",
         include(("comparisons.urls", "comparions"), namespace="comparisons"),

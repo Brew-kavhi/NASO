@@ -10,6 +10,7 @@ from inference.models.inference import Inference
 from neural_architecture.helper_scripts.architecture import calculate_flops
 from neural_architecture.models.autokeras import AutoKerasRun
 from runs.models.training import NetworkTraining, TrainingMetric
+from workers.helper_scripts.celery import get_compute_device_name
 
 K = tf.keras.backend
 
@@ -48,7 +49,7 @@ class BaseCallback(tf.keras.callbacks.Callback):
         try:
             device = self.get_physical_device(run.gpu)
             if device:
-                run.compute_device = self.get_compute_device_name(device)
+                run.compute_device = get_compute_device_name(device)
             run.save()
         except ValueError:
             print("not available")
@@ -59,12 +60,6 @@ class BaseCallback(tf.keras.callbacks.Callback):
             if device.name.split("physical_device:")[1] == device_name:
                 return device
         return None
-
-    def get_compute_device_name(self, device):
-        details = tf.config.experimental.get_device_details(device)
-        if "device_name" in details:
-            return details["device_name"]
-        return ""
 
     def get_total_time(self):
         """

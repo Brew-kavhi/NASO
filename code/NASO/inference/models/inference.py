@@ -37,6 +37,7 @@ class Inference(models.Model):
         related_name="inference_prediction_metrics",
     )
     gpu = models.CharField(max_length=20, default="/gpu:0")
+    worker = models.CharField(max_length=70)
     compute_device = models.CharField(max_length=20, default="")
     network_training = models.ForeignKey(
         NetworkTraining, on_delete=models.deletion.DO_NOTHING, null=True, blank=True

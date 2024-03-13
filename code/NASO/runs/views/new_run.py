@@ -41,6 +41,7 @@ from runs.models.training import (
     Optimizer,
     TrainingMetric,
 )
+from workers.helper_scripts.celery import get_all_workers
 
 
 class NewRun(TemplateView):
@@ -112,6 +113,7 @@ class NewRun(TemplateView):
         Returns:
             HttpResponse: The HTTP response object.
         """
+        get_all_workers()
         # there is no training going on right now, so show form to start a new one
         form = NewRunForm(
             initial={
@@ -409,7 +411,9 @@ class NewRun(TemplateView):
                 training.network_config = network_config
                 training.fit_parameters = fit_parameters
                 training.evaluation_parameters = eval_parameters
-                training.gpu = form.cleaned_data["gpu"]
+                queue, gpu = form.cleaned_data["gpu"].split("|")
+                training.gpu = gpu
+                training.worker = queue
                 training.description = form.cleaned_data["description"]
 
                 training.save()
@@ -433,7 +437,7 @@ class NewRun(TemplateView):
                         )
                         new_instance.save()
 
-                run_neural_net.delay(training.id)
+                run_neural_net.apply_async(args=(training.id,), queue=queue)
                 messages.add_message(
                     request, messages.SUCCESS, "Training wurde gestartet."
                 )
@@ -674,6 +678,7 @@ class NewAutoKerasRun(TemplateView):
         )
 
     def get(self, request, *args, **kwargs):
+        get_all_workers()
         # there is no training going on right now, so show form to start a new one
         form = NewAutoKerasRunForm()
 
@@ -875,15 +880,17 @@ class NewAutoKerasRun(TemplateView):
 
             model.metrics.set(build_metrics(form.cleaned_data, metrics_arguments))
             model.callbacks.set(build_callbacks(form.cleaned_data, callbacks_arguments))
+            queue, gpu = form.cleaned_data["gpu"].split("|")
 
             run = AutoKerasRun.objects.create(
                 dataset=build_dataset(form.cleaned_data),
                 model=model,
-                gpu=form.cleaned_data["gpu"],
+                gpu=gpu,
+                worker=queue,
                 description=form.cleaned_data["description"],
             )
 
-            run_autokeras.delay(run.id)
+            run_autokeras.delay(args=(run.id,), queue=queue)
             messages.add_message(request, messages.SUCCESS, "Training wurde gestartet.")
             return redirect("dashboard:index")
         return redirect(request.path)

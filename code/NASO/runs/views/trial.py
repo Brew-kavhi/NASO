@@ -253,12 +253,14 @@ class TrialView(TemplateView):
             training.network_config = network_config
             training.fit_parameters = fit_params
             training.evaluation_parameters = eval_params
-            training.gpu = form.cleaned_data["gpu"]
+            queue, gpu = form.cleaned_data["gpu"].split("|")
+            training.gpu = gpu
+            training.worker = queue
             training.description = form.cleaned_data["description"]
 
             training.save()
 
-            run_neural_net.delay(training.id)
+            run_neural_net.apply_async(args=(training.id,), queue=queue)
             messages.add_message(request, messages.SUCCESS, "Training wurde gestartet.")
             return redirect("dashboard:index")
         self.context["form"] = form
