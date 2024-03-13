@@ -78,11 +78,13 @@ class NewInference(TemplateView):
                 metrics_arguments,
                 callbacks_arguments,
             ) = self.get_typewise_arguments(request.POST.items())
+            queue, gpu = form.cleaned_data["gpu"].split("|")
             inference = Inference(
                 name=form.cleaned_data["name"],
                 description=form.cleaned_data["description"],
                 model_file=form.cleaned_data["load_model"],
-                gpu=form.cleaned_data["gpu"],
+                gpu=gpu,
+                worker=queue,
                 batch_size=form.cleaned_data["batch_size"],
             )
             inference.save()
@@ -93,7 +95,7 @@ class NewInference(TemplateView):
             inference.dataset = build_dataset(form.cleaned_data)
             inference.save()
             # now start the inference run
-            run_inference.delay(inference.id)
+            run_inference.apply_async(args=(inference.id,), queue=queue)
 
             return redirect("inference:list")
         print(form.errors)

@@ -10,6 +10,7 @@ from neural_architecture.models.model_optimization import (
     PruningScheduleTypes,
 )
 from neural_architecture.models.types import CallbackType, LossType, MetricType
+from workers.models.celery_workers import CeleryWorker
 
 
 class BaseRun(forms.Form):
@@ -88,23 +89,20 @@ class BaseRun(forms.Form):
         return loss_choices
 
     def get_gpu_choices(self):
-        gpus = tf.config.experimental.list_physical_devices()
+        celery_workers = CeleryWorker.objects.filter(active=True)
         return [
             (
-                gpu.name.split("physical_device:")[1],
-                gpu.name.split("physical_device:")[1]
-                + " ("
-                + self.get_compute_device_name(gpu)
-                + ")",
+                celery_worker.hostname,
+                [
+                    (
+                        f"{celery_worker.queue_name}|{list(device.keys())[0]}",
+                        f"{list(device.keys())[0]} ({list(device.values())[0]})",
+                    )
+                    for device in celery_worker.devices
+                ],
             )
-            for gpu in gpus
+            for celery_worker in celery_workers
         ]
-
-    def get_compute_device_name(self, device):
-        details = tf.config.experimental.get_device_details(device)
-        if "device_name" in details:
-            return details["device_name"]
-        return ""
 
     def load_graph(self, nodes, edges):
         self.extra_context["nodes"] = nodes

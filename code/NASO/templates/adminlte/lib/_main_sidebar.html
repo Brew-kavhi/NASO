@@ -83,6 +83,13 @@
     </li>
     <hr>
     <li class=" nav-item has-tree-view">
+        <a class="{% add_active 'workers:list' exact_match=True %} nav-link"
+           href="{% url 'workers:list' %}">
+            <i class="nav-icon me-3 fa fa-cogs"></i> <span class="ml-3">Workers</span>
+        </a>
+    </li>
+    <hr>
+    <li class=" nav-item has-tree-view">
         <a class="{% add_active 'runs:templates:list' exact_match=True %} nav-link"
            href="{% url 'runs:templates:list' %}">
             <i class="nav-icon me-3 fa fa-file-invoice"></i> <span class="ml-3">Templates</span>

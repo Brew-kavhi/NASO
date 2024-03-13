@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load get_values %}
+{% load humanize %}
+{% block content %}
+    <div class='container pb-3' id='inference_runs'>
+        {% for worker in workers %}
+            <div class="accordion" id="accordion{{ worker.id }}">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between is-align-items-center"
+                         id="heading_{{ worker.id }}">
+                        <h2 class="mb-0">
+                            <button class="btn"
+                                    type="button"
+                                    data-toggle="collapse"
+                                    data-target="#collapse_{{ worker.id }}"
+                                    aria-expanded="true"
+                                    aria-controls="collapse_{{ worker.id }}">{{ worker.hostname }}</button>
+                        </h2>
+                        <div class='d-flex is-align-items-center'>
+                            {% if not worker.active %}<div class='tag is-danger'>inactive</div>{% endif %}
+                        </div>
+                    </div>
+                    <div id="collapse_{{ worker.id }}"
+                         class="collapse"
+                         aria-labelledby="heading_{{ worker.id }}"
+                         data-parent="#accordion{{ worker.id }}">
+                        <div class="card-body has-background-light">
+                            <div class='my-2'>
+                                <strong>Last ping:</strong> {{ worker.last_ping }}
+                            </div>
+                            <div class='my-2'>
+                                <strong>Queue:</strong> {{ worker.queue_name }}
+                            </div>
+                            {% for device in worker.devices %}
+                                <div class='my-2'>
+                                    {% for item in device %}
+                                        <strong>{{ item }}:</strong> {% get_attribute_tag device item %}
+                                    {% endfor %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock content %}

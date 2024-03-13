@@ -273,6 +273,7 @@ class Run(SafeDeleteModel):
     )
 
     gpu = models.CharField(max_length=20, default="/gpu:0")
+    worker = models.CharField(max_length=70)
     compute_device = models.CharField(max_length=20, default="")
 
     power_measurements = models.TextField()
