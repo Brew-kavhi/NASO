@@ -338,6 +338,10 @@ function addInputField(argument, prefix) {
     return '';   
 }
 
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
 function snake_case_string(str) { 
     return str && str.match( 
 /[A-Z]{2,}(?=[A-Z][a-z]+[0-9]*|\b)|[A-Z]?[a-z]+[0-9]*|[A-Z]|[0-9]+/g) 

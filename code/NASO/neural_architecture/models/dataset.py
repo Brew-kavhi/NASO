@@ -84,7 +84,9 @@ class DatasetLoader(models.Model):
             raise Exception("no dataset loaded yet")
         return self.dataset_loader.get_element_size()
 
-    def get_data(self, *args, **kwargs) -> (tf.data.Dataset, tf.data.Dataset):
+    def get_data(
+        self, *args, **kwargs
+    ) -> (tf.data.Dataset, tf.data.Dataset, tf.data.Dataset):
         """
         Returns the training and test datasets.
 
@@ -100,7 +102,11 @@ class DatasetLoader(models.Model):
             test_dataset = data[1]
         else:
             test_dataset = train_dataset
-        return (train_dataset, test_dataset)
+        if len(data) > 2:
+            eval_dataset = data[2]
+        else:
+            eval_dataset = train_dataset
+        return (train_dataset, test_dataset, eval_dataset)
 
     def get_datasets(self):
         """
@@ -221,18 +227,24 @@ class TensorflowDatasetLoader(DatasetLoaderInterface):
             tuple: A tuple containing the train and test datasets.
         """
         (dataset, self.info) = tfds.load(
-            name, split=["train", "test"], as_supervised=as_supervised, with_info=True
+            name,
+            split=["train", "test[:50%]", "test[50%:]"],
+            as_supervised=as_supervised,
+            with_info=True,
         )
-        (train_dataset, test_dataset) = dataset
+        (train_dataset, test_dataset, eval_dataset) = dataset
         train_dataset = train_dataset.map(
             self.normalize_img, num_parallel_calls=tf.data.AUTOTUNE
         )
         test_dataset = test_dataset.map(
             self.normalize_img, num_parallel_calls=tf.data.AUTOTUNE
         )
+        eval_dataset = eval_dataset.map(
+            self.normalize_img, num_parallel_calls=tf.data.AUTOTUNE
+        )
         train_dataset = train_dataset.cache()
         train_dataset = train_dataset.prefetch(tf.data.AUTOTUNE)
-        return (train_dataset, test_dataset)
+        return (train_dataset, test_dataset, eval_dataset)
 
     def get_size(self, *args, **kwargs):
         """
@@ -298,7 +310,7 @@ class SkLearnDatasetLoader(DatasetLoaderInterface):
         "Wines": "load_wine",
         "Breast cancer": "load_breast_cancer",
     }
-    training_split = 0.9
+    training_split = 0.8
     element_size = 0
     dataset_size = 0
 
@@ -357,11 +369,25 @@ class SkLearnDatasetLoader(DatasetLoaderInterface):
         )
         test_set = tf.data.Dataset.from_tensor_slices(
             (
-                data.data[int(size * self.training_split) :],
-                target_values[int(size * self.training_split) :],
+                data.data[
+                    int(size * self.training_split) : int(
+                        size * ((1 + self.training_split) * 0.5)
+                    )
+                ],
+                target_values[
+                    int(size * self.training_split) : int(
+                        size * ((1 + self.training_split) * 0.5)
+                    )
+                ],
             )
         )
-        return (train_set, test_set)
+        eval_set = tf.data.Dataset.from_tensor_slices(
+            (
+                data.data[int(size * ((1 + self.training_split) * 0.5)) :],
+                target_values[int(size * ((1 + self.training_split) * 0.5)) :],
+            )
+        )
+        return (train_set, test_set, eval_set)
 
 
 def get_datasets(request, pk):

@@ -117,19 +117,24 @@ def get_all_metrics(request, pk):
     metrics = autokeras_run.metrics.all()
 
     trial_metrics = {}
+    trial_id = ""
     for metric in metrics:
         epoch = metric.epoch
         for measure in metric.metrics:
+            if "trial_id" in measure:
+                trial_id = measure["trial_id"]
             if "final_metric" not in measure:
-                if measure["trial_id"] in trial_metrics:
+                if trial_id in trial_metrics:
                     # add it to the array
-                    if epoch in trial_metrics[measure["trial_id"]]:
-                        trial_metrics[measure["trial_id"]][epoch] = measure["metrics"]
+                    if epoch in trial_metrics[trial_id]:
+                        trial_metrics[trial_id][epoch] = measure["metrics"]
                     else:
-                        trial_metrics[measure["trial_id"]][epoch] = measure["metrics"]
+                        trial_metrics[trial_id][epoch] = measure["metrics"]
                 else:
-                    trial_metrics[measure["trial_id"]] = {}
-                    trial_metrics[measure["trial_id"]][epoch] = measure["metrics"]
+                    trial_metrics[trial_id] = {}
+                    trial_metrics[trial_id][epoch] = measure["metrics"]
+            else:
+                trial_metrics[trial_id]["final"] = measure["metrics"]
 
     return JsonResponse(trial_metrics, safe=True)
 

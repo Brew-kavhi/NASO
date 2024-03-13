@@ -48,6 +48,7 @@ class Inference(models.Model):
     _model = None
     _train_data = None
     _test_data = None
+    _eval_data = None
 
     def get_callbacks(self):
         """
@@ -103,7 +104,7 @@ class Inference(models.Model):
             self._load_data()
 
     def _load_data(self):
-        (self._train_data, self._test_data) = self.dataset.get_data()
+        (self._train_data, self._test_data, self._eval_data) = self.dataset.get_data()
 
     def predict(self, datapoint):
         """
@@ -121,7 +122,7 @@ class Inference(models.Model):
         self.flops = calculate_flops(self._model, self.batch_size)
         self.save()
         return self._model.predict(
-            self._test_data.batch(self.batch_size),
+            self._train_data.batch(self.batch_size),
             batch_size=self.batch_size,
             verbose=2,
             callbacks=[timer] + self.get_callbacks() + callbacks,
