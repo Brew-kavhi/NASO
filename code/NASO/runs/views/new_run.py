@@ -890,7 +890,7 @@ class NewAutoKerasRun(TemplateView):
                 description=form.cleaned_data["description"],
             )
 
-            run_autokeras.delay(args=(run.id,), queue=queue)
+            run_autokeras.apply_async(args=(run.id,), queue=queue)
             messages.add_message(request, messages.SUCCESS, "Training wurde gestartet.")
             return redirect("dashboard:index")
         return redirect(request.path)
