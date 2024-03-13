@@ -448,6 +448,18 @@
                                     {% endfor %}
                                 {% endfor %}
                             {% endif %}
+                            {% if run.final_metrics %}
+                                {% for metrics in  run.final_metrics.metrics %}
+                                    {% for metric in metrics.metrics %}
+                                        <div class="col-6">
+                                            <p>
+                                                <span class='has-text-weight-bold'>{{ metric }}</span>
+                                                {% get_attribute_tag metrics.metrics metric %}
+                                            </p>
+                                        </div>
+                                    {% endfor %}
+                                {% endfor %}
+                            {% endif %}
                         </div>
                     </div>
                 </div>

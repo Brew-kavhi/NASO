@@ -306,7 +306,7 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         weights_path = self.get_trial_checkpoint_path(trial_id)
 
         # build a dataset to set the inputs size and everything.
-        (train_dataset, test_dataset) = run.dataset.get_data()
+        (train_dataset, test_dataset, _) = run.dataset.get_data()
 
         # need this for the input shapes and so on
         _, hyper_parameters, _, _ = self.prepare_data_for_trial(

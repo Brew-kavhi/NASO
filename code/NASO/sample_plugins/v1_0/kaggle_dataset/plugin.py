@@ -96,7 +96,7 @@ class CaliforniaHousingDataset(DatasetLoaderInterface):
         elif name == "DeepSat (SAT-6)":
             self.element_size = (28, 28, 4)
             return self.get_deepsat()
-        return (None, None)
+        return (None, None, None)
 
     def get_california_housing(self):
         df = pd.read_csv(self.dataset_path + "/housing.csv")
@@ -158,13 +158,20 @@ class CaliforniaHousingDataset(DatasetLoaderInterface):
 
         # training and validation split
         self.size = int(n_data.shape[0] * validation_split)
+        self.test_size = int(n_data.shape[0] * (validation_split + 0.1))
         training_data = n_data[: self.size]
-        test_data = n_data[self.size :]
+        test_data = n_data[self.size : self.test_size]
+        eval_data = n_data[self.test_size :]
 
         training_labels = n_target[: self.size]
-        test_labels = n_target[self.size :]
+        test_labels = n_target[self.size : self.test_size]
+        eval_labels = n_target[self.test_size :]
 
-        return ((training_data, training_labels), (test_data, test_labels))
+        return (
+            (training_data, training_labels),
+            (test_data, test_labels),
+            (eval_data, eval_labels),
+        )
 
     def get_size(self, *args, **kwargs):
         """

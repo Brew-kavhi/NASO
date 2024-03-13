@@ -689,6 +689,7 @@
                         });
 
                     }
+
                     let metrics = [];
                     for (metric in run_metrics[firstTrialID][0]) {
                         metrics.push(metric);
@@ -710,6 +711,12 @@
                         }
                     }
                     $('#best_trial_id_container').html(' ' + bestTrial);
+
+                    var select = $('#sortSelect');
+                    for(metric in run_metrics[firstTrialID]['final']) {
+                        generateOption('eval' + capitalizeFirstLetter(metric) + ':asc', "Test data " + metric + ' (Ascending)', select);
+                        generateOption('eval' + capitalizeFirstLetter(metric) + ':desc', "Test data " + metric + ' (Descending)', select);
+                    }
                 });
             });
             fetch("{% url 'api:celery:is_running' %}", {
@@ -945,6 +952,9 @@
             if (trial_data[0].hasOwnProperty('model_size')) {
                 $("#canvas_configure_" + trial_id).append('<span class="text-bold">Model size:</span> ' + trial_data[0]['model_size'].toLocaleString() + '<br>');
             }
+            for (var metric in trial_data['final']) {
+                $("#canvas_configure_" + trial_id).append('<span class="text-bold">' + metric + ' on eval data</span> ' + trial_data['final'][metric].toLocaleString() + '<br>');
+            }
             $("#canvas_configure_" + trial_id).append('<label>X-Axis</label>');
             $("#canvas_configure_" + trial_id).append(dropdownX);
             $("#canvas_configure_" + trial_id).append('<label>Y-Axis</label>');
@@ -965,6 +975,9 @@
                 if (maxMetrics.hasOwnProperty(metric)) {
                     $('#canvas_configure_' + trial_id).parent().parent().attr('data-max-' + snake_case_string(metric), maxMetrics[metric]);
                 }
+            }
+            for(metric in trial_data['final']) {
+                $('#canvas_configure_' + trial_id).parent().parent().attr('data-eval-' + snake_case_string(metric), trial_data['final'][metric]);
             }
 
             let minMetrics = getMinValuesPerTrial(trial_data);
@@ -1125,14 +1138,32 @@
             const parentDiv = document.getElementById(parentDivId);
             const divs = Array.from(parentDiv.querySelectorAll('div.rounded-lg'));
 
+            usePrefix = true;
+            if (metric.indexOf('eval') >=0) {
+                usePrefix = false;
+            }
             divs.sort((a, b) => {
+                var metricName = metric;
+                console.log(metricName);
                 if (sortOrder === 'asc') {
-                    const aValue = parseFloat(a.dataset[`min${metric}`]);
-                    const bValue = parseFloat(b.dataset[`min${metric}`]);
+                    if (usePrefix) {
+                        metricName = `min${metric}`;
+                    }
+                    if (!metricName in a.dataset || !metricName in b.dataset) {
+                        return 0;
+                }
+                    const aValue = parseFloat(a.dataset[metricName]);
+                    const bValue = parseFloat(b.dataset[metricName]);
                     return aValue - bValue;
                 } else {
-                    const aValue = parseFloat(a.dataset[`max${metric}`]);
-                    const bValue = parseFloat(b.dataset[`max${metric}`]);
+                    if (usePrefix) {
+                        metricName = `max${metric}`;
+                    }
+                    if (!metricName in a.dataset || !metricName in b.dataset) {
+                        return 0;
+                    }
+                    const aValue = parseFloat(a.dataset[metricName]);
+                    const bValue = parseFloat(b.dataset[metricName]);
                     return bValue - aValue;
                 }
             });
@@ -1165,6 +1196,7 @@
 
             parentDiv.append('<label>Sort by</label>');
             parentDiv.append(select);
+
         }
     </script>
 {% endblock %}

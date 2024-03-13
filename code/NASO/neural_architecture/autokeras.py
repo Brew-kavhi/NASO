@@ -39,9 +39,9 @@ def run_autokeras(self, run_id):
 
     # Place the model on the specified GPU
     with tf.device(run.gpu):
-        (train_dataset, test_dataset) = run.dataset.get_data()
+        (train_dataset, test_dataset, eval_dataset) = run.dataset.get_data()
 
-        callback = AutoKerasCallback(self, run)
+        callback = AutoKerasCallback(self, run, eval_dataset)
         timing_callback = TimingCallback()
         base_callback = BaseCallback(self, run, epochs=run.model.epochs, batch_size=32)
 
