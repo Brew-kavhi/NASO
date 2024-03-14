@@ -65,6 +65,7 @@ def run_autokeras(self, run_id):
                 run.save()
                 autokeras_model.fit(
                     train_dataset,
+                    validation_data=eval_dataset,
                     callbacks=[timing_callback]
                     + autokeras_model.get_callbacks(run)
                     + [callback]

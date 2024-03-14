@@ -48,10 +48,6 @@ class AutoKerasCallback(tf.keras.callbacks.Callback):
             if not math.isnan(logs[key]):
                 metrics[key] = logs[key]
         self.timer.stop()
-        _, _, _eval_dataset = self.run.dataset.get_data()
-        results = self.model.evaluate(_eval_dataset, return_dict=True)
-
-        metrics.update(results)
         metric = TrainingMetric(
             epoch=0,
             metrics=[
