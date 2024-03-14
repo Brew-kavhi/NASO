@@ -26,11 +26,10 @@ class AutoKerasCallback(tf.keras.callbacks.Callback):
 
     """
 
-    def __init__(self, celery_task, run: AutoKerasRun, dataset: tf.data.Dataset):
+    def __init__(self, celery_task, run: AutoKerasRun):
         super().__init__()
         self.celery_task = celery_task
         self.run = run
-        self._eval_dataset = dataset
         self.timer = Timer()
 
     def on_train_begin(self, logs=None):
@@ -49,7 +48,8 @@ class AutoKerasCallback(tf.keras.callbacks.Callback):
             if not math.isnan(logs[key]):
                 metrics[key] = logs[key]
         self.timer.stop()
-        results = self.model.evaluate(self._eval_dataset, return_dict=True)
+        _, _, _eval_dataset = self.run.dataset.get_data()
+        results = self.model.evaluate(_eval_dataset, return_dict=True)
 
         metrics.update(results)
         metric = TrainingMetric(

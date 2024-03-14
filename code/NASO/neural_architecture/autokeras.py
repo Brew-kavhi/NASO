@@ -41,7 +41,7 @@ def run_autokeras(self, run_id):
     with tf.device(run.gpu):
         (train_dataset, test_dataset, eval_dataset) = run.dataset.get_data()
 
-        callback = AutoKerasCallback(self, run, eval_dataset)
+        callback = AutoKerasCallback(self, run)
         timing_callback = TimingCallback()
         base_callback = BaseCallback(self, run, epochs=run.model.epochs, batch_size=32)
 
