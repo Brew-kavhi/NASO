@@ -139,6 +139,55 @@ def get_all_metrics(request, pk):
     return JsonResponse(trial_metrics, safe=True)
 
 
+def get_trial_details_short(request, pk):
+    autokeras_run = AutoKerasRun.objects.get(pk=pk)
+    metrics = autokeras_run.metrics.all()
+
+    trial_json = {}
+    trial_id = ""
+    distinct_metrics = []
+
+    for metric in metrics:
+        epoch = metric.epoch
+        for measure in metric.metrics:
+            if "trial_id" in measure:
+                trial_id = measure["trial_id"]
+            if "final_metric" not in measure:
+                # only get the max metrics.
+                if trial_id in trial_json:
+                    # add it to the array
+                    for metric_name in measure["metrics"]:
+                        if (
+                            metric_name in trial_json[trial_id]["min"]
+                            and measure["metrics"][metric_name]
+                            < trial_json[trial_id]["min"][metric_name]
+                        ):
+                            trial_json[trial_id]["min"][metric_name] = measure[
+                                "metrics"
+                            ][metric_name]
+                        if (
+                            metric_name in trial_json[trial_id]["max"]
+                            and measure["metrics"][metric_name]
+                            > trial_json[trial_id]["max"][metric_name]
+                        ):
+                            trial_json[trial_id]["max"][metric_name] = measure[
+                                "metrics"
+                            ][metric_name]
+                else:
+                    trial_json[trial_id] = {"min": {}, "max": {}, "final": {}}
+                    trial_json[trial_id]["min"] = measure["metrics"]
+                    trial_json[trial_id]["max"] = measure["metrics"]
+                    for metric_name in measure["metrics"]:
+                        if not metric_name in distinct_metrics:
+                            distinct_metrics.append(metric_name)
+                    trial_json[trial_id][epoch] = measure["metrics"]
+            else:
+                trial_json[trial_id]["final"] = measure["metrics"]
+
+    trial_json["metrics"] = distinct_metrics
+    return JsonResponse(trial_json, safe=True)
+
+
 def get_all_trial_details(request, pk):
     """
     Retrieve details of all trials for a given AutoKerasRun.

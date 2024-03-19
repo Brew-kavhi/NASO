@@ -653,9 +653,11 @@
                 }
             });
 
-            fetch("{% url 'api:autokeras:all_metrics' run.id %}").then(function(response) {
+            fetch("{% url 'api:autokeras:metrics_short' run.id %}").then(function(response) {
                 response.json().then(function(data) {
                     run_metrics = data;
+                    var run_metrics_names = run_metrics['metrics'];
+                    delete run_metrics.metrics;
                     let firstTrialID = undefined;
 
                     for (trial_id in run_metrics) {
@@ -663,11 +665,10 @@
                             firstTrialID = trial_id;
                         }
                         let trial_data = run_metrics[trial_id];
-                        let canvas_html = "<div class='has-background-white-bis my-5 p-3 rounded-lg'><h6 class='text-center mt-5'>Trial " +
-                            (trial_id) + "</h6><div class='d-flex'><div class='col-9'><canvas class='h-100 w-100' id='canvas_trial_" + trial_id + "' width='400' height='400'></canvas></div><div id='canvas_configure_" + trial_id + "' class='col-3'></div></div>" +
-                            "<div class='row p-3 border-top mt-5' id='trial_details_container_" + trial_id + "'></div></div>";
+                        let canvas_html = "<div class='has-background-white-bis my-5 p-3 rounded-lg'"; for (metric in run_metrics[trial_id]['min']) { canvas_html += " data-min-" + snake_case_string(metric) + "='" + run_metrics[trial_id]['min'][metric] + "'"; } for (metric in run_metrics[trial_id]['max']) { canvas_html += " data-max-" + metric + "='" + run_metrics[trial_id]['max'][metric] + "'"; } canvas_html += "><h6 onclick='loadTrial(`" + trial_id + "`)' class='text-center mt-5' style='cursor: pointer'>Trial " +
+                            (trial_id) + "</h6><div class='d-flex'><div class='col-9'><canvas class='h-100 w-100 d-none' id='canvas_trial_" + trial_id + "' width='400' height='400'></canvas></div><div id='canvas_configure_" + trial_id + "' class='col-3'></div></div>" +
+                            "<div class='row p-3 border-top mt-5 d-none' id='trial_details_container_" + trial_id + "'></div></div>";
                         $("#canvas_container").append(canvas_html);
-                        build_graph(trial_id, trial_data);
 
                         // now add teh checkbox to trial_selection for the trial overview
                         let checkBoxHTML = '<div class="me-2"><input type="checkbox" data-trial=' + trial_id + ' class="form-check-inline" id="trial_checkbox_' + trial_id + '"><label for="trial_checkbox_' + trial_id + '">Trial ' + (trial_id) + '</label></div>';
@@ -675,12 +676,26 @@
                         $('#trial_checkbox_' + trial_id).change(function() {
                             let trial_id = this.getAttribute('data-trial');
                             if (this.checked) {
-                                trialOverviewChart.data.datasets.push({
-                                    label: 'Trial ' + (trial_id),
-                                    data: dictToArray(run_metrics[trial_id], $("#trial_overview_yaxis").val(), $('#trial_overview_xaxis').val()),
-                                    id: trial_id
-                                });
-                                trialOverviewChart.update();
+                                if (! ('data' in run_metrics[trial_id])) {
+                                    fetch("{% url 'api:autokeras:get_metrics' run.id '-1e' %}".replace('-1e', trial_id)).then(function(response) {
+                                        response.json().then(function(data) {
+                                            run_metrics[trial_id]['data'] = data;
+                                            trialOverviewChart.data.datasets.push({
+                                                label: 'Trial ' + (trial_id),
+                                                data: dictToArray(data, $("#trial_overview_yaxis").val(), $('#trial_overview_xaxis').val()),
+                                                id: trial_id
+                                            });
+                                            trialOverviewChart.update();
+                                        });
+                                    });
+                                } else {
+                                    trialOverviewChart.data.datasets.push({
+                                        label: 'Trial ' + (trial_id),
+                                        data: dictToArray(run_metrics[trial_id]['data'], $("#trial_overview_yaxis").val(), $('#trial_overview_xaxis').val()),
+                                        id: trial_id
+                                    });
+                                    trialOverviewChart.update();
+                                }
                             } else {
                                 index = trialOverviewChart.data.datasets.findIndex(x => x.id == trial_id);
                                 trialOverviewChart.data.datasets.splice(index, 1);
@@ -691,7 +706,7 @@
                     }
 
                     let metrics = [];
-                    for (metric in run_metrics[firstTrialID][0]) {
+                    for (metric of run_metrics_names) {
                         metrics.push(snake_case_string(metric));
                         generateOption(metric, metric, $('#trial_overview_xaxis'));
                         generateOption(metric, metric, $('#trial_overview_yaxis'));
@@ -704,7 +719,7 @@
                     let objective = '{{run.model.objective}}'
                     let bestTrial = undefined
                     for (const trial in run_metrics) {
-                        metrics = getMinValuesPerTrial(run_metrics[trial]);
+                        metrics = run_metrics[trial]['min'];
                         if (!minObjective || metrics[objective] < minObjective) {
                             minObjective = metrics[objective];
                             bestTrial = trial;
@@ -719,6 +734,7 @@
                     }
                 });
             });
+
             fetch("{% url 'api:celery:is_running' %}", {
                 method: 'POST',
                 headers: {
@@ -839,7 +855,7 @@
 
                 const tableBody = document.createElement('tbody');
                 bodyLines.forEach((body, i) => {
-                    let metrics = run_metrics[tooltip.dataPoints[i].dataset.id][dataIndex];
+                    let metrics = run_metrics[tooltip.dataPoints[i].dataset.id]['data'][dataIndex];
                     const colors = tooltip.labelColors[i];
                     const span = document.createElement('span');
                     span.style.background = colors.backgroundColor;
@@ -915,6 +931,22 @@
             optionY.value = value;
             optionY.text = text;
             parent.append(optionY);
+        }
+
+        function loadTrial(trialId) {
+            $("#canvas_trial_" + trialId).toggleClass("d-none");
+            if ($("#canvas_configure_" + trialId).children().length === 0) {
+                if ('data' in run_metrics[trialId]) {
+                    build_graph(trialId, run_metrics[trialId]['data']);
+                } else {
+                    fetch("{% url 'api:autokeras:get_metrics' run.id '-1e' %}".replace('-1e', trialId)).then(function(response) {
+                        response.json().then(function(data) {
+                            run_metrics[trialId]['data'] = data;
+                            build_graph(trialId, data);
+                        });
+                    });
+                }
+            }
         }
 
         function build_graph(trial_id, trial_data) {
