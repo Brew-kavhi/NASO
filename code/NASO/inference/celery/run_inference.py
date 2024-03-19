@@ -27,8 +27,8 @@ def run_inference(self, inference_id):
         if gpu.name.split("physical_device:")[1] == inference.gpu:
             inference.compute_device = get_compute_device_name(gpu)
             inference.save()
-            if inference.gpu.startswith("GPU"):
-                tf.config.experimental.set_memory_growth(gpu, True)
+        if gpu.name.startswith("physical_device:GPU"):
+            tf.config.experimental.set_memory_growth(gpu, True)
 
     try:
         with tf.device(inference.gpu):

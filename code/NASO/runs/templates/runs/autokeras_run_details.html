@@ -692,7 +692,7 @@
 
                     let metrics = [];
                     for (metric in run_metrics[firstTrialID][0]) {
-                        metrics.push(metric);
+                        metrics.push(snake_case_string(metric));
                         generateOption(metric, metric, $('#trial_overview_xaxis'));
                         generateOption(metric, metric, $('#trial_overview_yaxis'));
                     }
