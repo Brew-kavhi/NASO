@@ -489,6 +489,9 @@
                      data-parent="#trial_overview">
                     <div class="card-body d-flex">
                         <div class="col-9" id='trial_overview_container'>
+                            <button class='btn btn-primary position-absolute'
+                                    style='right: 1%'
+                                    onclick='resetTrialOverview()'>Reset Zoom</button>
                             <canvas class='h-100 w-100'
                                     style='max-height:85vh'
                                     id='canvas_trial_overview'
@@ -906,6 +909,50 @@
             tooltipEl.style.left = positionX + tooltip.caretX + 'px';
             tooltipEl.style.top = positionY + tooltip.caretY + 'px';
         };
+
+        function fitAxesToData(chart) {
+            // Get the datasets from the chart
+            const datasets = chart.data.datasets;
+
+            // Initialize min and max values for x and y axes
+            let minX = Infinity, minY = Infinity;
+            let maxX = -Infinity, maxY = -Infinity;
+
+            // Loop through each dataset to find min and max values
+            datasets.forEach(dataset => {
+                dataset.data.forEach(point => {
+                    // Update min and max values for x axis
+                    if (point.x < minX) minX = point.x;
+                    if (point.x > maxX) maxX = point.x;
+
+                    // Update min and max values for y axis
+                    if (point.y < minY) minY = point.y;
+                    if (point.y > maxY) maxY = point.y;
+                });
+            });
+            let paddingFactor = 0.05;
+            const xPadding = (maxX - minX) * paddingFactor;
+            const yPadding = (maxY - minY) * paddingFactor;
+
+            // Apply padding
+            minX -= xPadding;
+            maxX += xPadding;
+            minY -= yPadding;
+            maxY += yPadding;
+
+            // Update the chart's scales with new min and max values
+            chart.options.scales.x.min = minX;
+            chart.options.scales.x.max = maxX;
+            chart.options.scales.y.min = minY;
+            chart.options.scales.y.max = maxY;
+
+            // Update the chart
+            chart.update();
+        }
+
+        function resetTrialOverview() {
+            fitAxesToData(trialOverviewChart);
+        }
 
         function trialOverviewX(event) {
             let xaxis = $('#trial_overview_xaxis').val();
