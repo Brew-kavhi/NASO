@@ -515,7 +515,7 @@
                                             onchange="trialOverviewY(this)"></select>
                                 </div>
                             </div>
-                            <div id="trial_selection" class="d-flex flex-wrap"></div>
+                            <div id="trial_selection" class="d-flex flex-wrap justify-content-around"></div>
                         </div>
                     </div>
                 </div>
@@ -997,7 +997,7 @@
         }
 
         function build_graph(trial_id, trial_data) {
-            $("#trial_details_container_" + trial_id).toggleClass("d-none");
+            //$("#trial_details_container_" + trial_id).toggleClass("d-none");
 
             let canvas = document.getElementById("canvas_trial_" + trial_id).getContext('2d');
             var data = [];
