@@ -6,6 +6,7 @@ from inference.forms.new import NewInferenceForm
 from inference.models.inference import Inference
 from naso.models.page import PageSetup
 from runs.views.new_run import build_callbacks, build_dataset, build_metrics
+from workers.helper_scripts.celery import get_all_workers
 
 
 class NewInference(TemplateView):
@@ -50,6 +51,7 @@ class NewInference(TemplateView):
         )
 
     def get(self, request, *args, **kwargs):
+        get_all_workers()
         self.page.actions = []
         self.context["page"] = self.page.get_context()
         form = NewInferenceForm()
