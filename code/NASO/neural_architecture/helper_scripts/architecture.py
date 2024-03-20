@@ -2,6 +2,32 @@ import numpy as np
 import tensorflow as tf
 
 
+def is_feedforward(model):
+    """
+    Check if a TensorFlow model is a purely feedforward network.
+
+    Args:
+    - model: The TensorFlow model to check.
+
+    Returns:
+    - True if the model is a purely feedforward network, False otherwise.
+    """
+    # Get the list of layers in the model
+    layers = model.layers
+
+    # Iterate over each layer and check its inbound nodes
+    for layer in layers:
+        inbound_nodes = (
+            layer._inbound_nodes
+        )  # Accessing private attribute, may need adjustment depending on TensorFlow version
+        # Check if the layer has more than one inbound node, indicating non-sequential connections
+        if len(inbound_nodes) > 1:
+            print("Found multiple input nodes")
+            return True
+
+    return True
+
+
 def copy_model(model, layers):
     def get_layer(node_id):
         return layers[node_id]

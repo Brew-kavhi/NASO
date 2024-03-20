@@ -7,6 +7,7 @@ from tensorflow.python.ops import variables
 from tensorflow_model_optimization.python.core.sparsity.keras import pruning_wrapper
 
 from plugins.interfaces.pruning_method import PruningInterface
+from neural_architecture.helper_scripts.architecture import is_feedforward
 
 keras = tf.keras
 K = keras.backend
@@ -76,7 +77,7 @@ def smart_cond(
     return smart_module.smart_cond(pred, true_fn=true_fn, false_fn=false_fn, name=name)
 
 
-def strip_pruning(model):
+def strip_low_magnitude_model(model):
     if not isinstance(model, keras.Model):
         raise ValueError(
             "Expected model to be a `tf.keras.Model` instance but got: ", model
@@ -97,10 +98,44 @@ def strip_pruning(model):
             ):
                 layer.layer._batch_input_shape = layer._batch_input_shape
             return layer.layer
-        if issubclass(layer.__class__, PruningInterface):
-            return layer.strip_pruning()
         return layer
 
     return keras.models.clone_model(
         model, input_tensors=None, clone_function=_strip_pruning_wrapper
     )
+
+
+def strip_pruning(model):
+    if not isinstance(model, keras.Model):
+        raise ValueError(
+            "Expected model to be a `tf.keras.Model` instance but got: ", model
+        )
+
+    contains_pruning_layers = False
+    for layer in model.layers:
+        if isinstance(layer, pruning_wrapper.PruneLowMagnitude):
+            return strip_low_magnitude_model(model)
+        elif issubclass(layer.__class__, PruningInterface):
+            contains_pruning_layers = True
+            break
+    if not contains_pruning_layers:
+        return model
+
+    if not is_feedforward(model):
+        raise ValueError(
+            "Expected model to e purely feedforward sequential model, but one layer seems to have multiple inputs"
+        )
+
+    x = model.inputs[0]
+
+    for i, layer in enumerate(model.layers):
+        if i == 0 and layer.name.startswith("input"):
+            continue
+        if issubclass(layer.__class__, PruningInterface):
+            x = layer.get_reduced_layer(x)
+        else:
+            config = tf.keras.layers.serialize(layer)
+            # TODO instantiate new layer from this config.from
+            new_layer = tf.keras.layers.deserialize(config)
+            x = new_layer(x)
+    return tf.keras.Model(inputs=model.inputs[0], outputs=x)

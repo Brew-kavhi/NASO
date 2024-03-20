@@ -235,7 +235,7 @@ class PrunableNetwork(models.Model):
     class Meta:
         abstract = True
 
-    def build_pruning_model(self, model, include_last_layer=True):
+    def build_pruning_model(self, model, include_last_layer=False):
         """
         Builds a pruning model based on the specified pruning method, schedule, and policy.
 

@@ -78,8 +78,9 @@ class SimilarityPruning(Wrapper, PruningInterface):
     _sparsity = 0
     _weights = None
     _biases = None
-    _is_dense_layer = False
     _is_conv_layer = False
+    _pruned_filters = []
+    _kept_filters = []
 
     def __init__(
         self,
@@ -95,7 +96,6 @@ class SimilarityPruning(Wrapper, PruningInterface):
         )
         super().__init__(layer=to_prune, **kwargs)
         self._threshold = tf.constant(threshold)
-        self._is_dense_layer = isinstance(self.layer, keras.layers.Dense)
         self._is_conv_layer = isinstance(self.layer, keras.layers.Conv2D)
         if similarity_metric not in ["EUC", "COS", "IoU"]:
             raise ValueError(
@@ -120,7 +120,9 @@ class SimilarityPruning(Wrapper, PruningInterface):
             )  # Adding small epsilon to avoid division by zero
         elif self._similiarity_measure == "EUC":
             # this gives the euclidian simliary = 1 - distance
-            similarity = tf.nn.relu(1 - tf.norm(weight1 - weight2))
+            similarity = tf.nn.relu(
+                1 - tf.norm(weight1 - weight2) / (tf.norm(weight1) * tf.norm(weight2))
+            )
         elif self._similiarity_measure == "IoU":
             intersection = tf.reduce_sum(tf.minimum(weight1, weight2))
             union = tf.reduce_sum(tf.maximum(weight1, weight2))
@@ -129,7 +131,7 @@ class SimilarityPruning(Wrapper, PruningInterface):
 
     def build(self, input_shape):
         super().build(input_shape)
-        if self._is_conv_layer or self._is_dense_layer:
+        if self._is_conv_layer:
             weight_vars, mask_vars = [], []
 
             self.prunable_weights = [
@@ -186,7 +188,7 @@ class SimilarityPruning(Wrapper, PruningInterface):
         def no_op():
             return tf.no_op("no_update")
 
-        if self._is_dense_layer or self._is_conv_layer:
+        if self._is_conv_layer:
             # Increment the 'pruning_step' after each step.
             # this function just registers it in the graph basically
             update_pruning_step = smart_cond(training, increment_step, no_op)
@@ -213,29 +215,38 @@ class SimilarityPruning(Wrapper, PruningInterface):
         similarity_mask = np.full(
             weights.shape, 1, dtype=np.float32
         )  # multiply by big number because we are not setting the whole matrix
-        if self._is_dense_layer or self._is_conv_layer:
+        if self._is_conv_layer:
             num_filters = weights.shape[-1]
 
-            pruned_filters = []
+            self._pruned_filters = []
+            self._kept_filters = [0]
             for i in range(num_filters):
-                if i in pruned_filters:
+                if i in self._pruned_filters:
                     continue
+                if i not in self._kept_filters:
+                    self._kept_filters.append(i)
                 for j in range(i + 1, num_filters):
-                    if j in pruned_filters:
+                    if j in self._pruned_filters:
                         continue
-                    if self._is_dense_layer:
-                        similarity = self._calc_similarity(weights[:, i], weights[:, j])
-                        if tf.math.greater_equal(similarity, self._threshold):
-                            pruned_filters.append(j)
-                            similarity_mask[:, j] = 0
-                    elif self._is_conv_layer:
+                    if self._is_conv_layer:
                         similarity = self._calc_similarity(
                             weights[:, :, :, i], weights[:, :, :, j]
                         )
                         if tf.math.greater_equal(similarity, self._threshold):
-                            pruned_filters.append(j)
+                            self._pruned_filters.append(j)
+                            if j in self._kept_filters:
+                                self._kept_filters.remove(j)
                             similarity_mask[:, :, :, j] = 0
+                        else:
+                            if (
+                                j not in self._kept_filters
+                                and j not in self._pruned_filters
+                            ):
+                                self._kept_filters.append(j)
 
+            print(
+                f"{self.layer.name} has {num_filters} many filters, {len(self._pruned_filters)} of which are pruned"
+            )
             self._sparsity = 1 - np.mean(similarity_mask)
             # Update the layer with pruned self._weights
         return tf.constant(similarity_mask)
@@ -248,6 +259,8 @@ class SimilarityPruning(Wrapper, PruningInterface):
         return self.layer.count_params()
 
     def compute_output_shape(self, input_shape):
+        if self._is_conv_layer:
+            self.layer.filters = self.layer.filters - len(self._pruned_filters)
         return self.layer.compute_output_shape(input_shape)
 
     def get_config(self):
@@ -369,7 +382,7 @@ class SimilarityPruning(Wrapper, PruningInterface):
         return assign_objs
 
     def weight_mask_op(self):
-        if self._is_dense_layer or self._is_conv_layer:
+        if self._is_conv_layer:
             return tf.group(self._weight_assign_objs())
         return tf.no_op("update")
 
@@ -414,7 +427,7 @@ class SimilarityPruning(Wrapper, PruningInterface):
 
             return update_distributed()
 
-        if self._is_dense_layer or self._is_conv_layer:
+        if self._is_conv_layer:
             if tf.distribute.get_replica_context():
                 return tf.distribute.get_replica_context().merge_call(
                     mask_update_distributed
@@ -422,9 +435,19 @@ class SimilarityPruning(Wrapper, PruningInterface):
             else:
                 return mask_update()
 
+    def get_reduced_layer(self, input):
+        config = self.layer.get_config()
+        if self._is_conv_layer:
+            config["filters"] = len(self._kept_filters)
+            new_layer = tf.keras.layers.Conv2D(**config)
+            return new_layer(input)
+
+        return self.layer(input)
+
     def strip_pruning(self):
         if not hasattr(self.layer, "_batch_input_shape") and hasattr(
             self, "_batch_input_shape"
         ):
             self.layer._batch_input_shape = self._batch_input_shape
+
         return self.layer
