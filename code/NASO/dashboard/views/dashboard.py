@@ -52,9 +52,12 @@ class Dashboard(TemplateView):
                     "runs:autokeras:details", kwargs={"pk": run.id}
                 )
             else:
-                run = NetworkTraining.objects.get(id=task["run_id"])
-                task["name"] = run.network_config.name
-                task["link"] = reverse_lazy("runs:details", kwargs={"pk": run.id})
+                try:
+                    run = NetworkTraining.objects.get(id=task["run_id"])
+                    task["name"] = run.network_config.name
+                    task["link"] = reverse_lazy("runs:details", kwargs={"pk": run.id})
+                except NetworkTraining.DoesNotExist:
+                    print("network not found")
 
         self.context["run"] = []
         for running_tasks in self.context["celery"]:
