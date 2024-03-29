@@ -611,22 +611,44 @@
                         x: {
                             type: 'linear',
                             position: 'bottom',
+                            title: {
+                                text: "Trial",
+                                display: true
+                            }
                         },
                         y: {
-                            type: 'linear'
+                            type: 'linear',
+                            title: {
+                                text: "Trial",
+                                display: true
+                            }
                         },
                         y2: {
                             type: 'linear',
                             position: 'right',
                             grid: {
                                 drawOnChartArea: false
+                            },
+                            title: {
+                                text: "Trial",
+                                display: true
                             }
+                        },
+                        y3: {
+                            display: false
                         }
                     },
                     plugins: {
                         title: {
                             display: true,
                             text: '{{ run.model.project_name }}',
+                        },
+                        legend: {
+                            labels: {
+                                filter: function(legendItem, data) {
+                                    return !legendItem.hidden;
+                                }
+                            }
                         },
                     }
                 }
@@ -702,7 +724,11 @@
                     var runDatasets = [];
                     for (trial_id in data) {
                         let x = Number(trial_id);
+
                         for (const metric in data[trial_id]) {
+                            if (metric === 'trial_id') {
+                                continue;
+                            }
                             let y = data[trial_id][metric];
                             if (metric in runDatasets) {
                                 runDatasets[metric].data.push({'x': x, "y": y});
@@ -734,9 +760,39 @@
                             for (dataset of runOverviewChart.data.datasets) {
                                 if (metric === snake_case_string(dataset.label)) {
                                     dataset.hidden = !dataset.hidden;
-                                    if (shownCount >= 1) {
+                                    if (dataset.hidden) {
+                                        shownCount -= 1;
+                                    }
+                                    dataset.borderColor = SetTwo8[shownCount % 8];
+                                    dataset.backgroundColor = SetTwo8[shownCount % 8];
+                                    if (shownCount == 1) {
+                                        runOverviewChart.options.scales.y3.display = false;
+                                        runOverviewChart.options.scales.y2.display = true;
+                                        runOverviewChart.options.scales.y2.ticks.color = dataset.borderColor;
+                                        runOverviewChart.options.scales.y2.title.color = dataset.borderColor;
+                                        runOverviewChart.options.scales.y2.title.text = metric;
                                         dataset.yAxisID = 'y2';
+                                    } else if (shownCount > 1) {
+                                        dataset.backgroundColor = SetTwo8[shownCount % 8];
+                                        runOverviewChart.options.scales['y3'] = {
+                                            display: true,
+                                            position: 'right',
+                                            ticks: {
+                                                color: dataset.borderColor
+                                            },
+                                            title: {
+                                                display: true,
+                                                text: metric,
+                                                color: dataset.borderColor
+                                            }
+                                        };
+                                        dataset.yAxisID = 'y3';
                                     } else {
+                                        runOverviewChart.options.scales.y2.display = false;
+                                        runOverviewChart.options.scales.y3.display = false;
+                                        runOverviewChart.options.scales.y.ticks.color = dataset.borderColor;
+                                        runOverviewChart.options.scales.y.title.color = dataset.borderColor;
+                                        runOverviewChart.options.scales.y.title.text = metric;
                                         dataset.yAxisID = 'y';
                                     }
                                 }
