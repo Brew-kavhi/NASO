@@ -487,35 +487,43 @@
                      class="collapse"
                      aria-labelledby="heading_trials"
                      data-parent="#trial_overview">
-                    <div class="card-body d-flex">
-                        <div class="col-9" id='trial_overview_container'>
-                            <button class='btn btn-primary position-absolute'
-                                    style='right: 1%'
-                                    onclick='resetTrialOverview()'>Reset Zoom</button>
-                            <canvas class='h-100 w-100'
-                                    style='max-height:85vh'
-                                    id='canvas_trial_overview'
-                                    width="400"
-                                    height="400"></canvas>
-                        </div>
-                        <div class="col-3">
-                            <div class="axis-selection">
-                                <div>
-                                    <label>X-Axis</label>
-                                    <select class="form-control"
-                                            id="trial_overview_xaxis"
-                                            onchange="trialOverviewX(this)">
-                                        <option value="epochs">epochs</option>
-                                    </select>
-                                </div>
-                                <div class="my-5">
-                                    <label>Y-Axis</label>
-                                    <select class="form-control"
-                                            id="trial_overview_yaxis"
-                                            onchange="trialOverviewY(this)"></select>
-                                </div>
+                    <div class="card-body">
+                        <div class='row'>
+                            <div class="col-9" id='trial_overview_container'>
+                                <button class='btn btn-primary position-absolute'
+                                        style='right: 1%'
+                                        onclick='resetTrialOverview()'>Reset Zoom</button>
+                                <canvas class='h-100 w-100'
+                                        style='max-height:85vh'
+                                        id='canvas_trial_overview'
+                                        width="400"
+                                        height="400"></canvas>
                             </div>
-                            <div id="trial_selection" class="d-flex flex-wrap justify-content-around"></div>
+                            <div class="col-3">
+                                <div class="axis-selection">
+                                    <div>
+                                        <label>X-Axis</label>
+                                        <select class="form-control"
+                                                id="trial_overview_xaxis"
+                                                onchange="trialOverviewX(this)">
+                                            <option value="epochs">epochs</option>
+                                        </select>
+                                    </div>
+                                    <div class="my-5">
+                                        <label>Y-Axis</label>
+                                        <select class="form-control"
+                                                id="trial_overview_yaxis"
+                                                onchange="trialOverviewY(this)"></select>
+                                    </div>
+                                </div>
+                                <div id="trial_selection" class="d-flex flex-wrap justify-content-around"></div>
+                            </div>
+                        </div>
+                        <div class='row bg-gray-light p-5'>
+                            <div id="run_overview" class="col-9" style='min-height: 40vh'>
+                                <canvas id='canvas_run_overview' width='400' height='400' class='w-100'></canvas>
+                            </div>
+                            <div id='run_overview_selection' class='col-3'></div>
                         </div>
                     </div>
                 </div>
@@ -590,6 +598,39 @@
                 }
             });
             let canvas = document.getElementById("canvas_trial_overview").getContext('2d');
+            let runOverview = document.getElementById("canvas_run_overview").getContext('2d');
+            runOverviewChart = new Chart(runOverview,{
+                type: 'scatter',
+                data: {
+                    datasets: [],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                        },
+                        y: {
+                            type: 'linear'
+                        },
+                        y2: {
+                            type: 'linear',
+                            position: 'right',
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '{{ run.model.project_name }}',
+                        },
+                    }
+                }
+            });
             trialOverviewChart = new Chart(canvas, {
                 type: 'line',
                 data: {
@@ -654,6 +695,56 @@
                         }
                     }
                 }
+            });
+
+            fetch("{% url 'api:autokeras:final_metrics' run.id %}").then(function(response) {
+                response.json().then(function(data) {
+                    var runDatasets = [];
+                    for (trial_id in data) {
+                        let x = Number(trial_id);
+                        for (const metric in data[trial_id]) {
+                            let y = data[trial_id][metric];
+                            if (metric in runDatasets) {
+                                runDatasets[metric].data.push({'x': x, "y": y});
+                            }
+                            else {
+                                runDatasets[metric] = {'label': metric, 'data':[{'x': x, "y": y}], 'hidden': true};
+                            }
+                        }
+
+                    }
+                    runOverviewChart.data.datasets = Object.values(runDatasets);
+                    runOverviewChart.update();
+
+                    let selectionContainer = $('#run_overview_selection');
+                    let selectionHTML = "";
+                    for (dataset in runDatasets) {
+                        selectionHTML += "<div class='me-2'><input type='checkbox' data-metric='" + snake_case_string(dataset) + "' id='run_metric_" + snake_case_string(dataset) + "'><label for='run_metric_" + dataset + "'>" + dataset + "</label></div>";
+                    }
+                    selectionContainer.append(selectionHTML);
+                    for (dataset in runDatasets) {
+                        $('#run_metric_' + snake_case_string(dataset)).change(function() {
+                            let metric = this.getAttribute('data-metric');
+                            let shownCount = 0;
+                            for (dataset of runOverviewChart.data.datasets) {
+                                if (!dataset.hidden) {
+                                    shownCount ++;
+                                }
+                            }
+                            for (dataset of runOverviewChart.data.datasets) {
+                                if (metric === snake_case_string(dataset.label)) {
+                                    dataset.hidden = !dataset.hidden;
+                                    if (shownCount >= 1) {
+                                        dataset.yAxisID = 'y2';
+                                    } else {
+                                        dataset.yAxisID = 'y';
+                                    }
+                                }
+                            }
+                            runOverviewChart.update();
+                        });
+                    }
+                });
             });
 
             fetch("{% url 'api:autokeras:metrics_short' run.id %}").then(function(response) {

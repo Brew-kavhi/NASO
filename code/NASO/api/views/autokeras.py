@@ -102,6 +102,32 @@ def download_metrics(request, pk, trial_id):
     return response
 
 
+def get_final_metrics(request, pk):
+    """
+    This view returns the last metrics for all trials of the run.
+
+    Args:
+        request (Request): The request object.
+        pk (int): The primary key of the run.
+
+    Returns:
+        JsonResponse: Dict of metrics given by trial_id and epoch
+    """
+    autokeras_run = AutoKerasRun.objects.get(pk=pk)
+    metrics = autokeras_run.metrics.all()
+
+    trial_metrics = {}
+    trial_id = ""
+    for metric in metrics:
+        for measure in metric.metrics:
+            if "trial_id" in measure:
+                trial_id = measure["trial_id"]
+            if "final_metric" not in measure:
+                trial_metrics[trial_id] = measure["metrics"]
+
+    return JsonResponse(trial_metrics, safe=True)
+
+
 def get_all_metrics(request, pk):
     """
     This view returns the metrics for all trials of the run.
@@ -160,6 +186,7 @@ def get_trial_details_short(request, pk):
                         if (
                             metric_name in trial_json[trial_id]["min"]
                             and measure["metrics"][metric_name]
+                            and measure["metrics"][metric_name]
                             < trial_json[trial_id]["min"][metric_name]
                         ):
                             trial_json[trial_id]["min"][metric_name] = measure[
@@ -167,6 +194,7 @@ def get_trial_details_short(request, pk):
                             ][metric_name]
                         if (
                             metric_name in trial_json[trial_id]["max"]
+                            and measure["metrics"][metric_name]
                             and measure["metrics"][metric_name]
                             > trial_json[trial_id]["max"][metric_name]
                         ):
