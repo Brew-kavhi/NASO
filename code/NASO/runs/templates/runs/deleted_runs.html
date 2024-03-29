@@ -241,7 +241,7 @@
                                 <button class="button is-danger ml-2"
                                         onclick='harddelete(this)'
                                         data-runtype="autokeras"
-                                        data-item-id="{{ keras_run.id }}"
+                                        data-id="{{ keras_run.id }}"
                                         data-target='#confirmDeleteModal'
                                         data-action='{% url 'api:autokeras:delete_run' keras_run.id %}'
                                         data-tooltip='Endgültig löschen? Dies kann nicht rückgängig gemacht werden'
