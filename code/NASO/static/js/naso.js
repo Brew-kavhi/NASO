@@ -348,4 +348,45 @@ function snake_case_string(str) {
         .map(s => s.toLowerCase()) 
         .join('_'); 
 }
+function fitAxesToData(chart) {
+    // Get the datasets from the chart
+    const datasets = chart.data.datasets;
+
+    // Initialize min and max values for x and y axes
+    let minX = Infinity, minY = Infinity;
+    let maxX = -Infinity, maxY = -Infinity;
+
+    // Loop through each dataset to find min and max values
+    datasets.forEach(dataset => {
+        dataset.data.forEach(point => {
+            // Update min and max values for x axis
+            if (point.x < Number(minX)) minX = Number(point.x);
+            if (point.x > Number(maxX)) maxX = Number(point.x);
+
+            // Update min and max values for y axis
+            if (point.y < Number(minY)) minY = Number(point.y);
+            if (point.y > Number(maxY)) maxY = Number(point.y);
+        });
+    });
+    let paddingFactor = 0.02;
+    const xPadding = (maxX - minX) * paddingFactor;
+    const yPadding = (maxY - minY) * paddingFactor;
+
+    // Apply padding
+    minX -= xPadding;
+    maxX += xPadding;
+    minY -= yPadding;
+    maxY += yPadding;
+    
+
+    // Update the chart's scales with new min and max values
+    chart.options.scales.x.min = minX;
+    chart.options.scales.x.max = maxX;
+    chart.options.scales.y.min = minY;
+    chart.options.scales.y.max = maxY;
+
+    // Update the chart
+    chart.update();
+}
+
 metricWeights = new Map();

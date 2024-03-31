@@ -18,7 +18,7 @@ class ComparisonDetailView(TemplateView):
         # get the ComparisonDetailsView
         # then the the etails and append to the runs
         self.context["runs"] = comparison.get_details()
-        self.context["comparison_id"] = comparison.id
+        self.context["comparison"] = comparison
         self.context["add_form"] = AddRunForm()
         return self.render_to_response(self.context)
 

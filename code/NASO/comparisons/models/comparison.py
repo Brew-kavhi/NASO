@@ -152,6 +152,7 @@ def get_comparison_details(comparisons):
             model, run = get_autokerastrial_details(autokeras_id, trial_id)
         model["rating"] = run.rate
         model["device"] = run.compute_device
+        model["dataset"] = str(run.dataset)
         model["description"] = run.description
         model["size_on_disk"] = run.size_on_disk
         model["run_type"] = comparisons[comparison_id]

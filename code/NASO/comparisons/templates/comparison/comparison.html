@@ -284,6 +284,9 @@
             </div>
         </div>
         <div id="all_plot" class='d-flex justify-content-center mx-6 px-6 mb-5'>
+            <button class='btn btn-primary position-absolute'
+                    style='right: 1%'
+                    onclick='resetAllPlot()'>Reset Zoom</button>
             <canvas class='h-100 w-100 shadow has-background-white-ter p-5 mx-5'
                     style="min-height: 60vh;
                            max-height:60vh"
@@ -320,6 +323,8 @@
                 "run_type": '{{ run.run_type }}',
                 "run_id": '{{ run.id }}',
                 "name": '{{ run.name }}',
+                "dataset":'{{run.dataset}}',
+                "device":'{{run.device}}',
                 "model_size":'{{run.size}}',
                 "loss":'{{run.loss}}',
                 "val_loss":'{{run.val_loss}}',
@@ -360,6 +365,28 @@
               currentCardIndex = (currentCardIndex - 1 + cards.length) % cards.length;
               showCard(currentCardIndex);
             }
+
+        function updateTable(label, run, data) {
+            let content = $('#table thead>tr')[0].innerHTML;
+            var dataRows = $('#table tbody>tr');
+            var length = dataRows.length;
+            if (content.indexOf(label) < 0) {
+                content += '<th class="text-center"><input type="checkbox" class="column-checkbox" data-column="' + label + '">' + label + '</th>';
+
+                for (var i = 0; i< length; i++) {
+                    dataRows[i].innerHTML += '<td>-</td>';
+                }
+            }
+
+            for (var i = 0; i< length; i++) {
+                if (dataRows[i].innerHTML.indexOf(run) > 0) {
+                    console.log(run,data);
+                    var cells = dataRows[i].querySelectorAll('td');
+                    cells[cells.length - 1].innerHTML = '<td>' + data + '</td>';
+                }
+            }
+            $('#table thead')[0].innerHTML = content;
+        }
 
         document.addEventListener("DOMContentLoaded", () => {
             document.getElementById('generate-latex-btn').addEventListener('click', getLatexCode);
@@ -571,6 +598,10 @@
                                 generateOption(metric, metric, $('#graph_yaxis_all_plot'), yLabelsAllPlot);
                                 generateOption(metric, metric, $('#graph_xaxis_all_plot'), xLabelsAllPlot);
                             }
+                            if ("flops" in run_metrics[0].metrics) {
+                                COMPARISONS[run]['flops'] = run_metrics[0].metrics['flops'];
+                                updateTable("flops", run, run_metrics[0].metrics['flops']);
+                            }
                             COMPARISONS[run]['metrics'] = data;
                             build_graph(run_metrics, graphChart);
                             let index = Object.keys(COMPARISONS).indexOf(run);
@@ -653,22 +684,23 @@
               selectedColumns.push(checkbox.dataset.column);
             });
 
-            let latexCode = "\\begin{table}\n\\begin{tabular}{|c|" + "c|".repeat(selectedColumns.length) + "}\n\\hline\n";
+            let latexCode = "\\begin{table}[h]\n\t\\centering\n\t\\begin{tabular}{|p{2cm}|" + "p{2cm}|".repeat(selectedColumns.length) + "}\n\t\t\\hline\n";
 
             // Adding column headers
-            latexCode += "& " + selectedColumns.join(" & ") + " \\\\\n\\hline\n";
+            latexCode += "\t\t & \\textbf{" + selectedColumns.join("} & \\textbf{").replaceAll("_", " ") + "} \\\\\n\t\t\\hline\n";
 
             // Adding row data
             selectedRows.forEach(rowLabel => {
-                latexCode += COMPARISONS[rowLabel]['name'];
+                latexCode += "\t\t";
+                latexCode += COMPARISONS[rowLabel]['name'].replaceAll("_", "\_");
                 selectedColumns.forEach(columnLabel => {
                     const value = COMPARISONS[rowLabel][columnLabel];
                     latexCode += " & " + value;
                 });
-                latexCode += " \\\\\n\\hline\n";
+                latexCode += " \\\\\n\t\t\\hline\n";
             });
 
-            latexCode += "\\end{tabular}\n\\end{table}";
+            latexCode += "\t\\end{tabular}\n\t\\caption{ {{ comparison.description }} }\n\t \\label{tab:{{ comparison.name}}}\n\\end{table}";
             var codeContainer = document.getElementById('latex-code-container')
             codeContainer.innerHTML = latexCode;
             codeContainer.focus();
@@ -767,11 +799,14 @@
             allPlots.update();
         }
 
+        function resetAllPlot() {
+            fitAxesToData(allPlots);
+        }
+
         function allGraphY(event) {
             let yaxis = $('#graph_yaxis_all_plot').val();
             allPlots.data.datasets.forEach(function(dataset) {
                 dataset.data = dictToArray(allMetrics[dataset.cardIndex], yaxis, $('#graph_xaxis_all_plot').val());
-                dataset.label = yaxis;
             });
             allPlots.options.scales.y.title.text = yaxis;
             allPlots.update();
@@ -823,9 +858,13 @@
           // Add table body with checkboxes for rows and data values
           tableHTML += '<tbody>';
           data.labels.forEach(function(label, index) {
-            tableHTML += '<tr><td class="d-flex"><input type="checkbox" class="row-checkbox" data-row="' + Object.keys(COMPARISONS)[index] + '">' + label + '</td>'; // Checkbox for each row
+            tableHTML += '<tr><td><input type="checkbox" class="row-checkbox" data-row="' + Object.keys(COMPARISONS)[index] + '">' + label + '</td>'; // Checkbox for each row
             data.datasets.forEach(function(dataset) {
-              tableHTML += '<td>' + dataset.data[index] + '</td>'; // Display data values
+                if(index in dataset.data) {
+                    tableHTML += '<td>' + dataset.data[index] + '</td>'; // Display data values
+                } else {
+                    tableHTML += "<td>-</td>";
+                }
             });
             tableHTML += '</tr>';
           });
@@ -836,8 +875,8 @@
 
 
         function removeComparisonFromView(element) {
-            {% if comparison_id %}
-            fetch("{% url 'api:comparisons:remove_run' comparison_id 0 %}".replace(0,element.dataset.id),{
+            {% if comparison.id %}
+            fetch("{% url 'api:comparisons:remove_run' comparison.id 0 %}".replace(0,element.dataset.id),{
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
