@@ -162,6 +162,9 @@ class EnergyCallback(tf.keras.callbacks.Callback):
         average_power_usage = sum(self.measurements) / len(self.measurements)
         logs["power_consumption"] = average_power_usage
         logs["power_consumption_var"] = np.var(self.measurements)
+        logs["power_consumption_max"] = np.max(self.measurements)
+        logs["power_consumption_min"] = np.min(self.measurements)
+        logs["power_consumption_median"] = np.median(self.measurements)
         if "execution_time_mean" in logs:
             logs["energy_consumption [Ws]"] = (
                 average_power_usage * logs["execution_time_mean"]
