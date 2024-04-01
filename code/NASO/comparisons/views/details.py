@@ -27,9 +27,17 @@ class ComparisonDetailView(TemplateView):
         add_form = AddRunForm(request.POST)
         if add_form.is_valid():
             # ad the run here
-            comparison.runs[
-                "tensorflow:" + str(add_form.cleaned_data["run"].id)
-            ] = "tensorflow"
+            if "run" in add_form.cleaned_data and add_form.cleaned_data["run"]:
+                comparison.runs[
+                    "tensorflow:" + str(add_form.cleaned_data["run"].id)
+                ] = "tensorflow"
+            if (
+                "inference" in add_form.cleaned_data
+                and add_form.cleaned_data["inference"]
+            ):
+                comparison.runs[
+                    "inference:" + str(add_form.cleaned_data["inference"].id)
+                ] = "inference"
             comparison.save()
             self.context["runs"] = comparison.get_details()
             self.context["add_form"] = AddRunForm()

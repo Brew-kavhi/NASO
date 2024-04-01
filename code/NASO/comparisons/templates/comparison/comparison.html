@@ -876,7 +876,7 @@
 
         function removeComparisonFromView(element) {
             {% if comparison.id %}
-            fetch("{% url 'api:comparisons:remove_run' comparison.id 0 %}".replace(0,element.dataset.id),{
+            fetch("{% url 'api:comparisons:remove_run' comparison.id 'run_id' %}".replace('run_id' ,element.dataset.id),{
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',

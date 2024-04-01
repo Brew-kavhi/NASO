@@ -4,6 +4,7 @@ from django.urls import reverse_lazy
 from api.views.autokeras import get_trial_details
 from neural_architecture.models.autokeras import AutoKerasRun
 from runs.models.training import NetworkTraining, TrainingMetric
+from inference.models.inference import Inference
 
 
 class Comparison(models.Model):
@@ -16,6 +17,48 @@ class Comparison(models.Model):
 
     def get_details(self):
         return get_comparison_details(self.runs)
+
+
+def get_inference_details(run_id):
+    model = {}
+    run = Inference.objects.filter(pk=run_id).first()
+    if not run:
+        return {}, None
+    metrics = run.prediction_metrics.last().metrics[0]["metrics"]
+
+    loss, val_loss, sparsity, memory_consumption, power_consumption = (
+        "-",
+        "-",
+        "-",
+        "-",
+        "-",
+    )
+    if "loss" in metrics:
+        loss = metrics["loss"]
+    if "val_loss" in metrics:
+        val_loss = metrics["val_loss"]
+    if "sparsity" in metrics:
+        sparsity = metrics["sparsity"]
+    if "memory_consumption" in metrics:
+        memory_consumption = metrics["memory_consumption"]
+    if "power_consumption" in metrics:
+        power_consumption = metrics["power_consumption"]
+    model = {
+        "id": run_id,
+        "name": run.name,
+        "memory_usage": memory_consumption,
+        "power_consumption": power_consumption,
+        "link": reverse_lazy("runs:details", kwargs={"pk": run_id}),
+        "pruning_method": "-",
+        "pruning_schedule": "-",
+        "pruning_policy": "-",
+        "optimizer": "-",
+        "prediction_metrics": run.prediction_metrics,
+        "loss": loss,
+        "val_loss": val_loss,
+        "sparsity": sparsity,
+    }
+    return model, run
 
 
 def get_tensorflow_details(run_id):
@@ -145,16 +188,25 @@ def get_comparison_details(comparisons):
         model = {}
         if comparisons[comparison_id] == "tensorflow":
             model, run = get_tensorflow_details(run_id)
+            model["rating"] = run.rate
+            model["size_on_disk"] = run.size_on_disk
         elif comparisons[comparison_id] == "autokeras":
             model, run = get_autokeras_details(run_id)
+            model["rating"] = run.rate
+            model["size_on_disk"] = run.size_on_disk
         elif comparisons[comparison_id] == "autokeras_trial":
             [autokeras_id, trial_id] = comparison_id.split("_")
             model, run = get_autokerastrial_details(autokeras_id, trial_id)
-        model["rating"] = run.rate
+            model["rating"] = run.rate
+            model["size_on_disk"] = run.size_on_disk
+        elif comparisons[comparison_id] == "inference":
+            model, run = get_inference_details(run_id)
+            model["rating"] = 0
+            model["size_on_disk"] = run.network_training.size_on_disk
+            model["size"] = run.network_training.network_config.size
         model["device"] = run.compute_device
         model["dataset"] = str(run.dataset)
         model["description"] = run.description
-        model["size_on_disk"] = run.size_on_disk
         model["run_type"] = comparisons[comparison_id]
         model["comparison_id"] = comparison_id
         details.append(model)

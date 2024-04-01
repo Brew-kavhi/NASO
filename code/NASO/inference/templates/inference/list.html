@@ -24,6 +24,22 @@
                                     {% endfor %}
                                 {% endfor %}
                             </div>
+                            {% with "inference:"|addstr:inference.id as run_id %}
+                                {% if run_id in COMPARISON %}
+                                    <div class='button is-success'>
+                                        <i class='fa fa-balance-scale-left'></i>
+                                    </div>
+                                {% else %}
+                                    <button data-id='{{ run_id }}'
+                                            data-name='{{ inference.name }}'
+                                            data-runtype='inference'
+                                            data-link='{% url 'inference:details' inference.id %}'
+                                            class='button'
+                                            onclick='addRunToComparison(this)'>
+                                        <i class='fas fa-balance-scale'></i>
+                                    </button>
+                                {% endif %}
+                            {% endwith %}
                             <a class="button is-info ml-2 has-tooltip-arrow has-tooltip-left"
                                href="{% url 'inference:new' %}?rerun={{ inference.id }}"
                                data-tooltip='Dieses Experiment neu starten'>

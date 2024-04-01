@@ -50,6 +50,9 @@ class Inference(models.Model):
     _test_data = None
     _eval_data = None
 
+    def __str__(self):
+        return self.name
+
     def get_callbacks(self):
         """
         Get the evaluation callbacks for the given network training run.

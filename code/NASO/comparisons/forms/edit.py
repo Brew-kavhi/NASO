@@ -3,14 +3,22 @@ from crispy_forms.layout import HTML, Field, Layout, Submit
 from django import forms
 
 from runs.models.training import NetworkTraining
+from inference.models.inference import Inference
 
 
 class AddRunForm(forms.Form):
     run = forms.ModelChoiceField(
-        required=True,
+        required=False,
         label="Netzwerk",
         widget=forms.Select(attrs={"class": "select-2 form-control w-100"}),
         queryset=NetworkTraining.objects.all(),
+    )
+
+    inference = forms.ModelChoiceField(
+        required=False,
+        label="inference",
+        widget=forms.Select(attrs={"class": "select-2 form-control w-100"}),
+        queryset=Inference.objects.all(),
     )
 
     def __init__(self, *args, **kwargs):
@@ -25,5 +33,6 @@ class AddRunForm(forms.Form):
         self.helper.layout = Layout(
             HTML('<div class="row mb-3"><h2>Vergleich hinzufügen</h2></div>'),
             Field("run"),
+            Field("inference"),
             Submit("Save", "speichern"),
         )

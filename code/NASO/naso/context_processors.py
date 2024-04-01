@@ -5,6 +5,7 @@ from django.urls import reverse_lazy
 from api.views.celery import get_workers_information
 from neural_architecture.models.autokeras import AutoKerasRun
 from runs.models.training import NetworkTraining
+from inference.models.inference import Inference
 
 
 def get_celery_workers(request):
@@ -52,6 +53,13 @@ def get_comparison_runs(request):
             if run:
                 runs[comparison_id] = {
                     "link": reverse_lazy("runs:details", kwargs={"pk": run.id}),
+                    "model": run,
+                }
+        elif comparison[comparison_id] == "inference":
+            run = Inference.objects.filter(pk=run_id).first()
+            if run:
+                runs[comparison_id] = {
+                    "link": reverse_lazy("inference:details", kwargs={"pk": run.id}),
                     "model": run,
                 }
         elif comparison[comparison_id] == "autokeras":
