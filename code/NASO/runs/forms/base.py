@@ -70,7 +70,7 @@ class BaseRun(forms.Form):
 
         self.fields["loss"].widget.attrs["onchange"] = "handleLossChange(this)"
         self.fields["loss"].widget.choices = self.get_loss_choices()
-        self.fields["gpu"].widget.choices = self.get_gpu_choices()
+        self.fields["gpu"].widget.choices = get_gpu_choices()
 
     def load_metric_configs(self, arguments):
         self.extra_context["metric_configs"] = arguments
@@ -87,22 +87,6 @@ class BaseRun(forms.Form):
             loss_choices.append((module, [(loss.id, loss.name) for loss in losses]))
 
         return loss_choices
-
-    def get_gpu_choices(self):
-        celery_workers = CeleryWorker.objects.filter(active=True)
-        return [
-            (
-                celery_worker.hostname,
-                [
-                    (
-                        f"{celery_worker.queue_name}|{list(device.keys())[0]}",
-                        f"{list(device.keys())[0]} ({list(device.values())[0]})",
-                    )
-                    for device in celery_worker.devices
-                ],
-            )
-            for celery_worker in celery_workers
-        ]
 
     def load_graph(self, nodes, edges):
         self.extra_context["nodes"] = nodes
@@ -399,3 +383,20 @@ class BaseRunWithCallback(BaseRun):
             ),
             HTML("<div id='callbacks-arguments' class='card rounded-3'></div>"),
         )
+
+
+def get_gpu_choices():
+    celery_workers = CeleryWorker.objects.filter(active=True)
+    return [
+        (
+            celery_worker.hostname,
+            [
+                (
+                    f"{celery_worker.queue_name}|{list(device.keys())[0]}",
+                    f"{list(device.keys())[0]} ({list(device.values())[0]})",
+                )
+                for device in celery_worker.devices
+            ],
+        )
+        for celery_worker in celery_workers
+    ]

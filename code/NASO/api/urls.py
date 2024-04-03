@@ -23,4 +23,8 @@ urlpatterns = [
         "comparisons/",
         include(("api.comparisons_urls", "comparisons"), namespace="comparisons"),
     ),
+    path(
+        "inference/",
+        include(("api.inference_urls", "inference"), namespace="inference"),
+    ),
 ]

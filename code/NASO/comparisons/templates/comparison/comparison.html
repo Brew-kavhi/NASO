@@ -150,7 +150,28 @@
                                         height="400"></canvas>
                             </div>
                         </div>
-                        <div class='card-footer has-background-white-ter'>{{ run.description }}</div>
+                        <div class='card-footer has-background-white-ter d-block'>
+                            {{ run.description }}
+                            <hr style='background:lightgray'>
+                            <form action=""
+                                  class='align-items-center form-row inferenceform'
+                                  data-id='{{ run.comparison_id }}'>
+                                Run inference on
+                                <select class='select select2 w-25'>
+                                    {% for worker in gpus %}
+                                        <optgroup label='{{ worker.0 }}'>
+                                            {% for devices in worker.1 %}<option value='{{ devices.0 }}'>{{ devices.1 }}</option>{% endfor %}
+                                        </optgroup>
+                                    {% endfor %}
+                                </select>
+                                with batch size
+                                <input type='number'
+                                       name='batch_size'
+                                       value='1'
+                                       class='m-3 form-control w-25'>
+                                <input type='submit' class='btn btn-primary' value="Starten">
+                            </form>
+                        </div>
                     </div>
                 {% endfor %}
             </div>
@@ -295,6 +316,23 @@
                     height="400"></canvas>
         </div>
     </div>
+    <form action=""
+          class='card p-5 m-5 align-items-center form-row allinferenceform'>
+        Run all inferences on
+        <select class='select select2 w-25' style='max-width:25%'>
+            {% for worker in gpus %}
+                <optgroup label='{{ worker.0 }}'>
+                    {% for devices in worker.1 %}<option value='{{ devices.0 }}'>{{ devices.1 }}</option>{% endfor %}
+                </optgroup>
+            {% endfor %}
+        </select>
+        with batch size
+        <input type='number'
+               name='batch_size'
+               value='1'
+               class='m-3 form-control w-25'>
+        <input type='submit' class='btn btn-primary' value="Starten">
+    </form>
     <div id="bar_chart"
          class='mb-auto pb-4 d-flex justify-content-center mx-6 px-6 mb-5'>
         <canvas class='h-100 w-100 shadow has-background-white-ter p-5 mx-5'
@@ -349,6 +387,73 @@
         let currentCardIndex = 0;
         let cards = [];
         let allPlots = undefined;
+
+        async function runInference(event, id){
+            event.preventDefault();
+            var select = event.target.querySelector("select");
+            var formData = {
+                run_id: id,
+                gpu: select.value,
+                gpu_name: select.options[select.selectedIndex].text,
+                batch_size: event.target.querySelector("input[name='batch_size']").value
+            };
+            console.log(formData);
+            const response = await fetch('{% url "api:inference:run_from_id" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Token ${token}`,
+                    },
+                    body: JSON.stringify(formData),
+                });
+            const result = await response.json();
+            if(result.success) {
+                toastr.success("inference gestartet");
+            }
+            else {
+                toastr.error("Fehler");
+            }
+        }
+
+        async function runAllInference(event){
+            event.preventDefault();
+            for(const id of Object.keys(COMPARISONS)) {
+                var select = event.target.querySelector("select");
+                var formData = {
+                    run_id: id,
+                    gpu: select.value,
+                    gpu_name: select.options[select.selectedIndex].text,
+                    batch_size: event.target.querySelector("input[name='batch_size']").value
+                };
+                console.log(formData);
+                const response = await fetch('{% url "api:inference:run_from_id" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Token ${token}`,
+                        },
+                        body: JSON.stringify(formData),
+                    });
+                const result = await response.json();
+                if(result.success) {
+                    toastr.success("inference gestartet");
+                }
+                else {
+                    toastr.error("Fehler");
+                }
+            }
+        }
+
+        document.addEventListener("submit", function(event) {
+          if (event.target && event.target.classList.contains("inferenceform")) {
+              event.preventDefault();
+              runInference(event, event.target.dataset.id);
+          }
+          else if (event.target && event.target.classList.contains("allinferenceform")) {
+              event.preventDefault();
+              runAllInference(event);
+          }
+        });
 
             function showCard(index) {
               cards.forEach((card, i) => {

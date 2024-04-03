@@ -1,9 +1,12 @@
 from django.views.generic.base import TemplateView
+from django.shortcuts import redirect
 
+from api.views.comparisons import clear_session
 from comparisons.forms.create import SaveSession
 from comparisons.forms.edit import AddRunForm
 from comparisons.models.comparison import Comparison, get_comparison_details
 from naso.models.page import PageSetup
+from runs.forms.base import get_gpu_choices
 
 
 class ComparisonDetailView(TemplateView):
@@ -20,6 +23,7 @@ class ComparisonDetailView(TemplateView):
         self.context["runs"] = comparison.get_details()
         self.context["comparison"] = comparison
         self.context["add_form"] = AddRunForm()
+        self.context["gpus"] = get_gpu_choices()
         return self.render_to_response(self.context)
 
     def post(self, request, pk):
@@ -42,6 +46,7 @@ class ComparisonDetailView(TemplateView):
             self.context["runs"] = comparison.get_details()
             self.context["add_form"] = AddRunForm()
             self.context["comparison_id"] = comparison.id
+            self.context["gpus"] = get_gpu_choices()
             return self.render_to_response(self.context)
 
 
@@ -61,6 +66,7 @@ class SessionComparisonView(TemplateView):
         save_form = SaveSession()
         self.context["session"] = save_form
         self.context["runs"] = details
+        self.context["gpus"] = get_gpu_choices()
         return self.render_to_response(self.context)
 
     def post(self, request):
@@ -72,6 +78,8 @@ class SessionComparisonView(TemplateView):
             )
             comparison.runs = request.session["comparison"]
             comparison.save()
+            clear_session(request)
+            return redirect("comparisons:details", pk=comparison.id)
         self.context["session"] = save_form
         self.context["runs"] = get_comparison_details(request.session["comparison"])
         return self.render_to_response(self.context)
