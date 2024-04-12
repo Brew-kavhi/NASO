@@ -92,14 +92,16 @@
                 });
             var tagContainer = document.getElementById('tags_'+trainingId);
             if (tagContainer) {
-            var lastMetric = data.filter((point) => {
-                return 'current' in point
-            }).slice(-1)[0].metrics;
-            Object.entries(lastMetric).forEach((metric) => {
-                if (!metric[0].includes('val') && !metric[0].includes('power') && !metric[0].includes('time')) {
-                    tagContainer.innerHTML = '<span class="my-1 mx-1 is-info is-light tag">' + metric[0] + ': ' + metric[1].toFixed(5) + '</span>' + tagContainer.innerHTML;
+                var lastMetric = data.filter((point) => {
+                    return 'current' in point
+                }).slice(-1)[0].metrics;
+                if (tagContainer.innerHTML == '') {
+                    Object.entries(lastMetric).forEach((metric) => {
+                        if (!metric[0].includes('val') && !metric[0].includes('power') && !metric[0].includes('time')) {
+                            tagContainer.innerHTML = '<span class="my-1 mx-1 is-info is-light tag">' + metric[0] + ': ' + metric[1].toFixed(5) + '</span>' + tagContainer.innerHTML;
+                        }
+                    });
                 }
-            });
             }
 
             // next create chart:
