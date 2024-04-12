@@ -389,4 +389,25 @@ function fitAxesToData(chart) {
     chart.update();
 }
 
+function calculateRegressionLine(data) {
+                var sumX = 0;
+    var sumY = 0;
+    var sumXY = 0;
+    var sumX2 = 0;
+
+    var n = data.length;
+
+    for (var i = 0; i < n; i++) {
+        sumX += data[i].x;
+        sumY += data[i].y;
+        sumXY += data[i].x * data[i].y;
+        sumX2 += data[i].x ** 2;
+    }
+
+    var slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX ** 2);
+    var intercept = (sumY - slope * sumX) / n;
+
+    return { slope: slope, intercept: intercept };
+
+}
 metricWeights = new Map();
