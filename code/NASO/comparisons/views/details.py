@@ -7,6 +7,67 @@ from comparisons.forms.edit import AddRunForm
 from comparisons.models.comparison import Comparison, get_comparison_details
 from naso.models.page import PageSetup
 from runs.forms.base import get_gpu_choices
+from django.http import HttpResponse
+import os
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import numpy as np
+from naso import settings
+
+
+def plot_points(request):
+    # Example 3D points
+    loss = np.array([0.2381, 0.0673, 0.1961, 0.1835, 0.1521, 2.3013, 0.2225])
+    sparsity = np.array([0.5, 0, 0.25, 0.75, 0.90, 0.95, 0.33])
+    energy = np.array([0.208, 0.222, 0.227, 0.224, 0.2338, 0.2227, 0.2225])
+
+    memory = np.array([27574, 40207, 27574, 27574, 27574, 27574, 27574])
+
+    checkpoint = np.array([3640, 16064, 4954, 2218, 1250, 870, 3713])
+    labels = ["50%", "Baseline", "25%", "75%", "90%", "95%", "75% Block"]
+
+    # PlotSIZEoints
+    fig = plt.figure()
+    ax = fig.add_subplot(221)
+    ax.scatter(sparsity, memory)
+    for i, txt in enumerate(labels):
+        ax.text(sparsity[i], memory[i], txt, rotation=40, rotation_mode="anchor")
+    ax.set_xlabel("SPARSITY")
+    ax.set_ylabel("MEMORY")
+
+    ax = fig.add_subplot(224)
+    ax.scatter(sparsity, energy)
+    for i, txt in enumerate(labels):
+        ax.text(sparsity[i], energy[i], txt, rotation=40, rotation_mode="anchor")
+    ax.set_xlabel("SPARSITY")
+    ax.set_ylabel("ENERGY")
+
+    ax = fig.add_subplot(223)
+    ax.scatter(sparsity, checkpoint)
+    for i, txt in enumerate(labels):
+        ax.text(sparsity[i], checkpoint[i], txt, rotation=40, rotation_mode="anchor")
+    ax.set_xlabel("SPARSITY")
+    ax.set_ylabel("CHECKPOINT SIZE")
+
+    ax = fig.add_subplot(222)
+    ax.scatter(sparsity, loss)
+    for i, txt in enumerate(labels):
+        ax.text(sparsity[i], loss[i], txt, rotation=40, rotation_mode="anchor")
+    ax.set_xlabel("SPARSITY")
+    ax.set_ylabel("VAL LOSS")
+
+    # Save the plot to a temporary file
+    filename = "MNIST_ENERGY_CHECKPOINT.png"
+    fig.tight_layout()
+    plt.savefig(filename)
+    filepath = filename  # os.path.join(settings.MEDIA_ROOT, filename)
+
+    # Open the image file for reading
+    with open(filepath, "rb") as f:
+        response = HttpResponse(f.read(), content_type="image/png")
+        response["Content-Disposition"] = 'attachment; filename="' + filename + '"'
+        return response
+    return filename
 
 
 class ComparisonDetailView(TemplateView):
