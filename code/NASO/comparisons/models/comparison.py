@@ -20,11 +20,13 @@ class Comparison(models.Model):
 
 
 def get_inference_details(run_id):
-    model = {}
+    model, metrics = {}, {}
+
     run = Inference.objects.filter(pk=run_id).first()
     if not run:
         return {}, None
-    metrics = run.prediction_metrics.last().metrics[0]["metrics"]
+    if run.prediction_metrics.last():
+        metrics = run.prediction_metrics.last().metrics[0]["metrics"]
 
     loss, val_loss, sparsity, memory_consumption, power_consumption = (
         "-",
@@ -188,25 +190,35 @@ def get_comparison_details(comparisons):
         model = {}
         if comparisons[comparison_id] == "tensorflow":
             model, run = get_tensorflow_details(run_id)
-            model["rating"] = run.rate
-            model["size_on_disk"] = run.size_on_disk
+            if run:
+                model["rating"] = run.rate
+                model["size_on_disk"] = run.size_on_disk
         elif comparisons[comparison_id] == "autokeras":
             model, run = get_autokeras_details(run_id)
-            model["rating"] = run.rate
-            model["size_on_disk"] = run.size_on_disk
+            if run:
+                model["rating"] = run.rate
+                model["size_on_disk"] = run.size_on_disk
         elif comparisons[comparison_id] == "autokeras_trial":
             [autokeras_id, trial_id] = comparison_id.split("_")
             model, run = get_autokerastrial_details(autokeras_id, trial_id)
-            model["rating"] = run.rate
-            model["size_on_disk"] = run.size_on_disk
+            if run:
+                model["rating"] = run.rate
+                model["size_on_disk"] = run.size_on_disk
         elif comparisons[comparison_id] == "inference":
             model, run = get_inference_details(run_id)
             model["rating"] = 0
-            model["size_on_disk"] = run.network_training.size_on_disk
-            model["size"] = run.network_training.network_config.size
-        model["device"] = run.compute_device
-        model["dataset"] = str(run.dataset)
-        model["description"] = run.description
+            if run.network_training:
+                model["size_on_disk"] = run.network_training.size_on_disk
+                model["size"] = run.network_training.network_config.size
+            else:
+                model["size_on_disk"] = "0"
+                model["size"] = "0"
+        if run:
+            model["device"] = run.compute_device
+            model["dataset"] = str(run.dataset)
+            model["description"] = run.description
+        else:
+            model["size_on_disk"] = "0"
         model["run_type"] = comparisons[comparison_id]
         model["comparison_id"] = comparison_id
         details.append(model)

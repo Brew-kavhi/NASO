@@ -144,7 +144,7 @@
                                 <h5 class='mt-4 text-center'>Graph</h5>
                                 <canvas class='h-100 w-100'
                                         style="min-height: 40vh;
-                                               max-height:60vh"
+                                               max-height:50vh"
                                         id='canvas_{{ run.run_type }}_{{ run.comparison_id }}'
                                         width="400"
                                         height="400"></canvas>
@@ -152,25 +152,27 @@
                         </div>
                         <div class='card-footer has-background-white-ter d-block'>
                             {{ run.description }}
-                            <hr style='background:lightgray'>
-                            <form action=""
-                                  class='align-items-center form-row inferenceform'
-                                  data-id='{{ run.comparison_id }}'>
-                                Run inference on
-                                <select class='select select2 w-25'>
-                                    {% for worker in gpus %}
-                                        <optgroup label='{{ worker.0 }}'>
-                                            {% for devices in worker.1 %}<option value='{{ devices.0 }}'>{{ devices.1 }}</option>{% endfor %}
-                                        </optgroup>
-                                    {% endfor %}
-                                </select>
-                                with batch size
-                                <input type='number'
-                                       name='batch_size'
-                                       value='1'
-                                       class='m-3 form-control w-25'>
-                                <input type='submit' class='btn btn-primary' value="Starten">
-                            </form>
+                            {% if run.run_type == 'tensorflow' %}
+                                <hr style='background:lightgray'>
+                                <form action=""
+                                      class='align-items-center form-row inferenceform'
+                                      data-id='{{ run.comparison_id }}'>
+                                    Run inference on
+                                    <select class='select select2 w-25'>
+                                        {% for worker in gpus %}
+                                            <optgroup label='{{ worker.0 }}'>
+                                                {% for devices in worker.1 %}<option value='{{ devices.0 }}'>{{ devices.1 }}</option>{% endfor %}
+                                            </optgroup>
+                                        {% endfor %}
+                                    </select>
+                                    with batch size
+                                    <input type='number'
+                                           name='batch_size'
+                                           value='1'
+                                           class='m-3 form-control w-25'>
+                                    <input type='submit' class='btn btn-primary' value="Starten">
+                                </form>
+                            {% endif %}
                         </div>
                     </div>
                 {% endfor %}
@@ -394,7 +396,7 @@
             var formData = {
                 run_id: id,
                 gpu: select.value,
-                gpu_name: select.options[select.selectedIndex].text,
+                gpu_name: select.options[select.selectedIndex].text.split(" (")[1],
                 batch_size: event.target.querySelector("input[name='batch_size']").value
             };
             console.log(formData);
@@ -422,7 +424,7 @@
                 var formData = {
                     run_id: id,
                     gpu: select.value,
-                    gpu_name: select.options[select.selectedIndex].text,
+                    gpu_name: select.options[select.selectedIndex].text.split(" (")[1],
                     batch_size: event.target.querySelector("input[name='batch_size']").value
                 };
                 console.log(formData);
