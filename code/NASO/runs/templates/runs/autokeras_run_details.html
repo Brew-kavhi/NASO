@@ -613,14 +613,20 @@
                             position: 'bottom',
                             title: {
                                 text: "Trial",
-                                display: true
+                                display: true,
+                                font: {
+                                    size: 20
+                                }
                             }
                         },
                         y: {
                             type: 'linear',
                             title: {
                                 text: "Trial",
-                                display: true
+                                display: true,
+                                font: {
+                                    size: 20
+                                }
                             }
                         },
                         y2: {
@@ -631,22 +637,53 @@
                             },
                             title: {
                                 text: "Trial",
-                                display: true
+                                display: true,
+                                font: {
+                                    size: 20
+                                }
                             }
                         },
                         y3: {
-                            display: false
+                            display: false,
+                            title: {
+                                font: {
+                                    size: 20
+                                }
+                            }
                         }
                     },
                     plugins: {
                         title: {
-                            display: true,
+                            display: false,
                             text: '{{ run.model.project_name }}',
                         },
                         legend: {
                             labels: {
                                 filter: function(legendItem, data) {
-                                    return !legendItem.hidden;
+                                    return legendItem && !legendItem.hidden;
+                                },
+                                generateLabels: function(chart) {
+                                    var data = chart.data;
+                                    if (data.datasets.length) {
+                                        let labels = data.datasets.map(function(dataset, index) {
+                                            if(!dataset.hidden) {
+                                                return {
+                                                    text: dataset.label ==='metrics'? "objective" : dataset.label.replaceAll("_", " "),
+                                                    fillStyle: dataset.backgroundColor, // Assuming only one dataset
+                                                    fontColor: dataset.backgroundColor,
+                                                    strokeStyle: dataset.borderColor,
+                                                    hidden: false,
+                                                    index: index
+                                                };
+                                            }
+                                        });
+                                        return labels;
+                                    }
+                                    return [];
+                                },
+                                parse: true,
+                                font: {
+                                    size: 20
                                 }
                             }
                         },
@@ -768,21 +805,21 @@
                                     if (shownCount == 1) {
                                         runOverviewChart.options.scales.y3.display = false;
                                         runOverviewChart.options.scales.y2.display = true;
-                                        runOverviewChart.options.scales.y2.ticks.color = dataset.borderColor;
                                         runOverviewChart.options.scales.y2.title.color = dataset.borderColor;
-                                        runOverviewChart.options.scales.y2.title.text = metric;
+                                        runOverviewChart.options.scales.y2.title.text = metric === 'metrics' ? "objective" : metric.replaceAll("_", " ");
+                                        runOverviewChart.options.scales.y2.title.font.size = 20;
                                         dataset.yAxisID = 'y2';
                                     } else if (shownCount > 1) {
                                         dataset.backgroundColor = SetTwo8[shownCount % 8];
                                         runOverviewChart.options.scales['y3'] = {
                                             display: true,
                                             position: 'right',
-                                            ticks: {
-                                                color: dataset.borderColor
-                                            },
                                             title: {
                                                 display: true,
-                                                text: metric,
+                                                text: metric === 'metric' ? "objective" :metric,
+                                                font: {
+                                                   size: 20
+                                                },
                                                 color: dataset.borderColor
                                             }
                                         };
@@ -790,9 +827,9 @@
                                     } else {
                                         runOverviewChart.options.scales.y2.display = false;
                                         runOverviewChart.options.scales.y3.display = false;
-                                        runOverviewChart.options.scales.y.ticks.color = dataset.borderColor;
                                         runOverviewChart.options.scales.y.title.color = dataset.borderColor;
-                                        runOverviewChart.options.scales.y.title.text = metric;
+                                        runOverviewChart.options.scales.y.title.text = metric === 'metrics' ? "objective" : metric.replaceAll("_", " ");
+                                        runOverviewChart.options.scales.y.title.font.size = 20;
                                         dataset.yAxisID = 'y';
                                     }
                                 }
