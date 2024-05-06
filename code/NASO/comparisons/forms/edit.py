@@ -8,9 +8,9 @@ from inference.models.inference import Inference
 
 class AddRunForm(forms.Form):
     run = forms.ModelMultipleChoiceField(
-        required=True,
+        required=False,
         label="Netzwerk",
-        widget=forms.SelectMultiple(attrs={"class": "select2 w-100"}),
+        widget=forms.SelectMultiple(attrs={"class": "select2 form-control w-100"}),
         queryset=NetworkTraining.objects.all(),
     )
 

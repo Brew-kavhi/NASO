@@ -121,7 +121,6 @@ def is_merge_node(layer_name, connections):
 
 
 def calculate_flops(model, batch_size):
-    # problem is that for pruned model, we have different layer types.
     total_flops = 0
 
     for layer in model.layers:

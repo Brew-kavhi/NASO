@@ -102,7 +102,6 @@ class ComparisonDetailView(TemplateView):
                 comparison.runs[
                     "inference:" + str(add_form.cleaned_data["inference"].id)
                 ] = "inference"
-            # add the run here
             comparison.save()
             self.context["runs"] = comparison.get_details()
             self.context["add_form"] = AddRunForm()
