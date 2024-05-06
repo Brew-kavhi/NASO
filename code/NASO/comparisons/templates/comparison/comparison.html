@@ -1044,7 +1044,7 @@
           // Add table body with checkboxes for rows and data values
           tableHTML += '<tbody>';
           data.labels.forEach(function(label, index) {
-            tableHTML += '<tr><td><input type="checkbox" class="row-checkbox" data-row="' + Object.keys(COMPARISONS)[index] + '">' + label + '</td>'; // Checkbox for each row
+              tableHTML += '<tr id="table_' + Object.keys(COmPARISONS)[index] + '"><td><input type="checkbox" class="row-checkbox" data-row="' + Object.keys(COMPARISONS)[index] + '">' + label + '</td>'; // Checkbox for each row
             data.datasets.forEach(function(dataset) {
                 if(index in dataset.data) {
                     tableHTML += '<td>' + dataset.data[index] + '</td>'; // Display data values
@@ -1071,6 +1071,7 @@
             }).then(function(response) {
                 if (response.ok) {
                         document.getElementById(element.dataset.id).remove();
+                        document.getElementById("table_" + element.dataset.id).remove();
                         COMPARISONS[element.dataset.id] = {};
                     toastr.success("Vergleich entfernt", "INFO");
                 }
