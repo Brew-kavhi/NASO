@@ -14,6 +14,9 @@ from runs.models.training import (
     TrainingMetric,
 )
 
+from sklearn.metrics import accuracy_score
+import numpy as np
+
 
 class Inference(models.Model):
     """
@@ -124,9 +127,25 @@ class Inference(models.Model):
         timer = TimingCallback()
         self.flops = calculate_flops(self._model, self.batch_size)
         self.save()
-        return self._model.predict(
+        predictions = self._model.predict(
             self._train_data.batch(self.batch_size),
             batch_size=self.batch_size,
             verbose=2,
             callbacks=[timer] + self.get_callbacks() + callbacks,
         )
+        try:
+            predicted_classes = tf.argmax(
+                predictions[list(predictions.keys())[0]], axis=1
+            )
+
+            true_labels = np.concatenate(
+                [y for x, y in self._train_data.batch(self.batch_size)], axis=0
+            )
+            print(predicted_classes[0])
+            print(true_labels[0])
+
+            accuracy = accuracy_score(true_labels, predicted_classes)
+            print("accuracy:", accuracy)
+        except:
+            print("Something went wrong with calculating the accuracy")
+        return predictions
