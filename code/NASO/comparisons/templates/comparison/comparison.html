@@ -4,6 +4,13 @@
 {% load humanize %}
 {% block content %}
     <style>
+    .asc:after {
+        content: '\25B2';
+    }
+
+    .desc:after {
+        content: '\25BC';
+    }
     #gallery-container {
       position: relative;
     }
@@ -951,22 +958,94 @@
             }
         }
 
+        function sortTable(colIndex) {
+            var table = document.getElementById("table").querySelector('table');
+            var rows = table.rows;
+            var switching = true;
+            var shouldSwitch = false;
+            var i, x, y;
+            var direction = "asc"; // Set the default sorting direction to ascending
+            var switchcount = 0;
+
+            // Check if the sorting direction needs to be reversed
+            if (table.getAttribute("data-sort-dir") === "asc" && table.getAttribute("data-sort-col") === colIndex.toString()) {
+                direction = "desc";
+            }
+
+            // Set the data-sort-dir and data-sort-col attributes on the table
+            table.setAttribute("data-sort-dir", direction);
+            table.setAttribute("data-sort-col", colIndex.toString());
+
+            var headers = document.querySelectorAll('.sortable');
+            headers.forEach(header => {
+                header.classList.remove('asc', 'desc');
+            });
+
+            // Add sorting indicator to the clicked header
+            var clickedHeader = document.querySelector('.sortable:nth-child(' + (colIndex + 1) + ')');
+            clickedHeader.classList.add(direction);
+
+            // Loop to sort the table rows
+            while (switching) {
+                switching = false;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("td")[colIndex];
+                    y = rows[i + 1].getElementsByTagName("td")[colIndex];
+                    if (Number(x.innerHTML)) {
+                        x = Number(x.innerHTML);
+                        y = Number(y.innerHTML);
+                    }
+                    else {
+                        x = x.innerText.toLowerCase();
+                        y = y.innerText.toLowerCase();
+                    }
+
+                    // Check if the two rows should switch places
+                    if (direction === "asc") {
+                        if (x > y) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    } else if (direction === "desc") {
+                        if (x < y) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+                }
+                if (shouldSwitch) {
+                    // If a switch has been marked, make the switch and mark that a switch has been done
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                    switchcount++;
+                } else {
+                    // If no switching has been done AND the direction is ascending, set the direction to descending and run the while loop again
+                    if (switchcount === 0 && direction === "asc") {
+                        direction = "desc";
+                        table.setAttribute("data-sort-dir", direction);
+                        switching = true;
+                    }
+                }
+            }
+        }
+
         // Function to generate the table HTML
         function generateTable(data) {
           var tableHTML = '<table>';
           
           // Add table headers with checkboxes above columns
-          tableHTML += '<thead><tr><th></th>'; // Empty cell for checkboxes above columns
-          data.datasets.forEach(function(dataset) {
-            tableHTML += '<th class="text-center"><input type="checkbox" class="column-checkbox" data-column="' + dataset.label + '">' + dataset.label + '</th>';
+          tableHTML += '<thead><tr><th onclick="sortTable(0)" class="sortable"></th>'; // Empty cell for checkboxes above columns
+          data.datasets.forEach(function(dataset, index) {
+            tableHTML += '<th class="text-center sortable" onclick="sortTable(' + (index + 1) + ')"><input type="checkbox" class="column-checkbox" data-column="' + dataset.label + '">' + dataset.label + '</th>';
           });
           tableHTML += '</tr></thead>';
           
           // Add table body with checkboxes for rows and data values
           tableHTML += '<tbody>';
           data.labels.forEach(function(label, index) {
-            tableHTML += '<tr><td><input type="checkbox" class="row-checkbox" data-row="' + Object.keys(COMPARISONS)[index] + '">' + label + '</td>'; // Checkbox for each row
-            data.datasets.forEach(function(dataset) {
+              tableHTML += '<tr id="table_' + Object.keys(COmPARISONS)[index] + '"><td><input type="checkbox" class="row-checkbox" data-row="' + Object.keys(COMPARISONS)[index] + '">' + label + '</td>'; // Checkbox for each row
+              data.datasets.forEach(function(dataset) {
                 if(index in dataset.data) {
                     tableHTML += '<td>' + dataset.data[index] + '</td>'; // Display data values
                 } else {
@@ -992,6 +1071,7 @@
             }).then(function(response) {
                 if (response.ok) {
                         document.getElementById(element.dataset.id).remove();
+                        document.getElementById("table_" + element.dataset.id).remove();
                         COMPARISONS[element.dataset.id] = {};
                     toastr.success("Vergleich entfernt", "INFO");
                 }
