@@ -1,5 +1,9 @@
 import numpy as np
 import tensorflow as tf
+from tensorflow_model_optimization.python.core.sparsity.keras import pruning_wrapper
+
+from plugins.interfaces.pruning_method import PruningInterface
+from collections import namedtuple
 
 
 def is_feedforward(model):
@@ -117,6 +121,7 @@ def is_merge_node(layer_name, connections):
 
 
 def calculate_flops(model, batch_size):
+    # problem is that for pruned model, we have different layer types.
     total_flops = 0
 
     for layer in model.layers:
@@ -128,6 +133,14 @@ def calculate_flops(model, batch_size):
             total_flops += pooling_flops(layer, batch_size)
         elif isinstance(layer, tf.keras.layers.Dense):
             total_flops += fc_flops(layer, batch_size)
+        elif isinstance(layer, pruning_wrapper.PruneLowMagnitude) or issubclass(
+            layer.__class__, PruningInterface
+        ):
+            model_layer = layer.layer
+            model_struct = namedtuple("Model", "layers")
+            total_flops += calculate_flops(
+                model_struct(layers=[model_layer]), batch_size
+            )
 
     return total_flops
 
