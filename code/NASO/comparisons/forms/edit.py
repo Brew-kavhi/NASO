@@ -7,10 +7,10 @@ from inference.models.inference import Inference
 
 
 class AddRunForm(forms.Form):
-    run = forms.ModelChoiceField(
-        required=False,
+    run = forms.ModelMultipleChoiceField(
+        required=True,
         label="Netzwerk",
-        widget=forms.Select(attrs={"class": "select-2 form-control w-100"}),
+        widget=forms.SelectMultiple(attrs={"class": "select2 w-100"}),
         queryset=NetworkTraining.objects.all(),
     )
 
@@ -36,3 +36,13 @@ class AddRunForm(forms.Form):
             Field("inference"),
             Submit("Save", "speichern"),
         )
+        self.fields["run"].widget.choices = self.get_runs()
+
+    def get_runs(self):
+        runs_choices = []
+        runs = NetworkTraining.objects.all()
+
+        for run in runs:
+            runs_choices.append((run.id, str(run)))
+
+        return runs_choices

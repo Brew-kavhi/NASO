@@ -93,9 +93,8 @@ class ComparisonDetailView(TemplateView):
         if add_form.is_valid():
             # ad the run here
             if "run" in add_form.cleaned_data and add_form.cleaned_data["run"]:
-                comparison.runs[
-                    "tensorflow:" + str(add_form.cleaned_data["run"].id)
-                ] = "tensorflow"
+                for run in add_form.cleaned_data["run"]:
+                    comparison.runs["tensorflow:" + str(run.id)] = "tensorflow"
             if (
                 "inference" in add_form.cleaned_data
                 and add_form.cleaned_data["inference"]
@@ -103,6 +102,7 @@ class ComparisonDetailView(TemplateView):
                 comparison.runs[
                     "inference:" + str(add_form.cleaned_data["inference"].id)
                 ] = "inference"
+            # add the run here
             comparison.save()
             self.context["runs"] = comparison.get_details()
             self.context["add_form"] = AddRunForm()
