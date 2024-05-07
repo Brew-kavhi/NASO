@@ -2,6 +2,10 @@ import abc
 
 from django.core.exceptions import ValidationError
 from django.db import models
+import inspect
+
+from helper_scripts.importing import get_class
+import tensorflow as tf
 
 from neural_architecture.helper_scripts.architecture import (
     build_connected_layer,
@@ -132,6 +136,36 @@ class ActivationFunctionType(BaseType):
     """
 
     keras_native_activation = models.BooleanField(default=True)
+
+
+class TensorFlowModelType(BaseType):
+    """
+    This represents the available preconfigured network.
+    The Model must be a subclass of tf.Keras.Model
+    """
+
+    description = models.TextField()
+
+    def save(self, *args, **kwargs):
+        """
+        Saves the type instance to the database.
+
+        Args:
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+        """
+        # load the model and heck if its a subclass of tf.keras.model
+        model = get_class(self.module_name, self.name)
+        if inspect.isclass(model):
+            if issubclass(model, tf.keras.Model):
+                super().save(*args, **kwargs)
+            else:
+                raise ValidationError("Model should be subclass of tf.keras.Model")
+        else:
+            if issubclass(model().__class__, tf.keras.Model):
+                super().save(*args, **kwargs)
+            else:
+                raise ValidationError("Model should be subclass of tf.keras.Model")
 
 
 class TypeInstance(models.Model):
