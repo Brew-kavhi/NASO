@@ -8,6 +8,7 @@ from django.views.generic.base import TemplateView
 from naso.models.page import PageSetup
 from neural_architecture.models.autokeras import AutoKerasRun
 from runs.models.training import NetworkTraining
+from decouple import config
 
 
 class DeletedRuns(TemplateView):
@@ -73,7 +74,7 @@ def harddelete_run(id: int, run_type: str):
         run = AutoKerasRun.objects.deleted_only().get(pk=id)
         # Delete the folder:
         if len(run.model.directory) > 0:
-            folder = "auto_model/" + run.model.directory
+            folder = config("NAS_MODEL_PATH") + run.model.directory
             if os.path.exists(folder):
                 shutil.rmtree(folder)
         run.delete(force_policy=safedelete.models.HARD_DELETE)

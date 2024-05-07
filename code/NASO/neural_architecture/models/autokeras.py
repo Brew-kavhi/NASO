@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from keras import backend as K
 from loguru import logger
+from decouple import config
 
 from helper_scripts.extensions import (
     custom_hypermodel_build,
@@ -227,7 +228,7 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
             overwrite=True,
             max_trials=self.max_trials,
             project_name=self.project_name,
-            directory="auto_model/" + self.directory,
+            directory=config("NAS_MODEL_PATH") + self.directory,
             tuner=self.tuner_object,
             metrics=self.get_metrics(),
             objective=keras_tuner.Objective(self.objective, direction="min"),
@@ -279,7 +280,7 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
             overwrite=False,
             max_trials=self.max_trials,
             project_name=self.project_name,
-            directory="auto_model/" + self.directory,
+            directory=config("NAS_MODEL_PATH") + self.directory,
             tuner=self.tuner_object,
             metrics=self.get_metrics(),
             objective=keras_tuner.Objective(self.objective, direction="min"),
@@ -338,14 +339,14 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
             str: The checkpoint path for the specified trial.
         """
         if os.path.exists(
-            f"auto_model/{self.trial_folder}/trial_{trial_id}/checkpoint"
+            f"{config('NAS_MODEL_PATH')}{self.trial_folder}/trial_{trial_id}/checkpoint"
         ):
-            return f"auto_model/{self.trial_folder}/trial_{trial_id}/checkpoint"
+            return f"{config('NAS_MODEL_PATH')}{self.trial_folder}/trial_{trial_id}/checkpoint"
 
-        file_path = f"auto_model/{self.directory}/{self.project_name}/trial_{trial_id}/checkpoint"
+        file_path = f"{config('NAS_MODEL_PATH')}{self.directory}/{self.project_name}/trial_{trial_id}/checkpoint"
         if os.path.exists(file_path):
             return file_path
-        file_path = f"auto_model/{self.project_name}_{self.id}/{self.project_name}/trial_{trial_id}/checkpoint"
+        file_path = f"{config('NAS_MODEL_PATH')}{self.project_name}_{self.id}/{self.project_name}/trial_{trial_id}/checkpoint"
         return file_path
 
     def get_trial_hyperparameters_path(self, trial_id) -> str:
@@ -358,13 +359,15 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         Returns:
             str: The path to the trial hyperparameters file.
         """
-        if os.path.exists(f"auto_model/{self.directory}/trial_{trial_id}/trial.json"):
-            return f"auto_model/{self.directory}/trial_{trial_id}/trial.json"
+        if os.path.exists(
+            f"{config('NAS_MODEL_PATH')}{self.directory}/trial_{trial_id}/trial.json"
+        ):
+            return f"{config('NAS_MODEL_PATH')}{self.directory}/trial_{trial_id}/trial.json"
 
-        file_path = f"auto_model/{self.directory}/{self.project_name}/trial_{trial_id}/trial.json"
+        file_path = f"{config('NAS_MODEL_PATH')}{self.directory}/{self.project_name}/trial_{trial_id}/trial.json"
         if os.path.exists(file_path):
             return file_path
-        file_path = f"auto_model/{self.project_name}_{self.id}/{self.project_name}/trial_{trial_id}/trial.json"
+        file_path = f"{config('NAS_MODEL_PATH')}{self.project_name}_{self.id}/{self.project_name}/trial_{trial_id}/trial.json"
         return file_path
 
     def prepare_data_for_trial(

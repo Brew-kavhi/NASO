@@ -18,6 +18,7 @@ from neural_architecture.models.types import (
     TypeInstance,
 )
 from neural_architecture.validators import validate_dtype
+from decouple import config
 
 keras = tf.keras
 
@@ -162,9 +163,9 @@ class NetworkConfiguration(PrunableNetwork, BuildModelFromGraph):
             model (keras.Model): The model to be saved.
         """
         if self.save_model:
-            file_path = f"keras_models/tensorflow/{self.name}_{self.id}.keras"
-            if not os.path.exists("keras_models/tensorflow/"):
-                os.makedirs("keras_models/tensorflow/")
+            file_path = f"{config('TENSORFLOW_MODEL_PATH')}tensorflow/{self.name}_{self.id}.keras"
+            if not os.path.exists(config("TENSORFLOW_MODEL_PATH") + "tensorflow/"):
+                os.makedirs(config("TENSORFLOW_MODEL_PATH") + "tensorflow/")
 
             export_model = self.get_export_model(model)
             if self.clustering_options:
@@ -175,7 +176,7 @@ class NetworkConfiguration(PrunableNetwork, BuildModelFromGraph):
             export_model.save(file_path, save_format="keras")
 
             with zipfile.ZipFile(
-                f"keras_models/tensorflow/{self.name}_{self.id}.zip",
+                f"{config('TENSORFLOW_MODEL_PATH')}tensorflow/{self.name}_{self.id}.zip",
                 "w",
                 compression=zipfile.ZIP_DEFLATED,
             ) as f:

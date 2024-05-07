@@ -6,6 +6,7 @@ from crispy_forms.layout import HTML, Column, Field, Layout, Row, Submit
 from django import forms
 
 from runs.forms.base import BaseRunWithCallback
+from decouple import config
 
 
 class NewInferenceForm(BaseRunWithCallback):
@@ -46,7 +47,7 @@ class NewInferenceForm(BaseRunWithCallback):
         self.fields["load_model"].choices = self.get_saved_models()
 
     def get_saved_models(self):
-        models_path = "keras_models/tensorflow"
+        models_path = config("TENSORFLOW_MODEL_PATH") + "tensorflow"
         models = [
             (join(models_path, f), f)
             for f in listdir(models_path)

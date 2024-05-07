@@ -13,6 +13,8 @@ from neural_architecture.models.templates import (
 from neural_architecture.models.types import NetworkLayerType, OptimizerType
 from runs.forms.base import BaseRunWithCallback, ClusterableForm, PrunableForm
 
+from decouple import config
+
 
 class NewRunForm(BaseRunWithCallback, PrunableForm, ClusterableForm):
     optimizer = forms.ModelChoiceField(
@@ -194,7 +196,7 @@ class NewRunForm(BaseRunWithCallback, PrunableForm, ClusterableForm):
         self.extra_context["optimizer_config"] = arguments
 
     def get_saved_models(self):
-        models_path = "keras_models/tensorflow"
+        models_path = config("TENSORFLOW_MODEL_PATH") + "tensorflow"
         models = [
             (join(models_path, f), f)
             for f in listdir(models_path)
