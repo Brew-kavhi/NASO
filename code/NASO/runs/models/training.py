@@ -443,7 +443,7 @@ class NetworkTraining(Run):
     @model_size.setter
     def model_size(self, value):
         self.network_model.size = value
-        self.netowkr_model.save()
+        self.network_model.save()
 
 
 class TrainingMetric(models.Model):

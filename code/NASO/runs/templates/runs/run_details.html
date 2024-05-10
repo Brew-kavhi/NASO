@@ -13,7 +13,7 @@
                 </div>
             {% else %}
                 <button data-id='tensorflow:{{ run.id }}'
-                        data-name='{{ run.network_config.name }}'
+                        data-name='{{ run.model_name }}'
                         data-runtype='tensorflow'
                         data-link='{% url 'runs:details' run.id %}'
                         class='button'
@@ -76,7 +76,7 @@
                                 </p>
                                 <p>
                                     <span class='has-text-weight-bold'>Size:</span>
-                                    {{ run.network_config.size|intcomma }}
+                                    {{ run.model_size|intcomma }}
                                 </p>
                                 <p>
                                     <span class='has-text-weight-bold'>Memory:</span>
@@ -172,7 +172,7 @@
                 </div>
             </div>
         </div>
-        {% if run.network_config.pruning_method and run.network_config.pruning_schedule %}
+        {% if run.network_model.pruning_method and run.network_model.pruning_schedule %}
             <div class="accordion" id="accordion_pruning">
                 <div class="card">
                     <div data-toggle="collapse"
@@ -181,7 +181,7 @@
                          id="heading_pruning">
                         <h5 class="my-2">Pruning</h5>
                         <div>
-                            <span class="mx-5 tag is-info is-light text-md">{{ run.network_config.pruning_method.instance_type }}</span>
+                            <span class="mx-5 tag is-info is-light text-md">{{ run.network_model.pruning_method.instance_type }}</span>
                             <i class="fas fa-angle-down"></i>
                         </div>
                     </div>
@@ -191,8 +191,8 @@
                          data-parent="#accordion_pruning">
                         <div class="card-body">
                             <div class="row">
-                                {% if run.network_config.pruning_method.additional_arguments %}
-                                    {% for argument in run.network_config.pruning_method.additional_arguments %}
+                                {% if run.network_model.pruning_method.additional_arguments %}
+                                    {% for argument in run.network_model.pruning_method.additional_arguments %}
                                         <div class="col-6">
                                             <p>
                                                 <span class='has-text-weight-bold'>{{ argument.name }}</span>
@@ -201,7 +201,7 @@
                                         </div>
                                     {% endfor %}
                                 {% else %}
-                                    {% for argument in run.network_config.pruning_method.instance_type.required_arguments %}
+                                    {% for argument in run.network_model.pruning_method.instance_type.required_arguments %}
                                         <div class="col-6">
                                             <p>
                                                 <span class='has-text-weight-bold col-2'>{{ argument.name }}</span>
@@ -214,8 +214,8 @@
                                     <h5 class='w-auto'>Schedule:</h5>
                                     <hr class='w-100 m-3'>
                                 </div>
-                                {% if run.network_config.pruning_schedule.additional_arguments %}
-                                    {% for argument in run.network_config.pruning_schedule.additional_arguments %}
+                                {% if run.network_model.pruning_schedule.additional_arguments %}
+                                    {% for argument in run.network_model.pruning_schedule.additional_arguments %}
                                         <div class="col-6">
                                             <p>
                                                 <span class='has-text-weight-bold'>{{ argument.name }}</span>
@@ -224,7 +224,7 @@
                                         </div>
                                     {% endfor %}
                                 {% else %}
-                                    {% for argument in run.network_config.pruning_schedule.instance_type.required_arguments %}
+                                    {% for argument in run.network_model.pruning_schedule.instance_type.required_arguments %}
                                         <div class="col-6">
                                             <p>
                                                 <span class='has-text-weight-bold col-2'>{{ argument.name }}</span>
@@ -233,13 +233,13 @@
                                         </div>
                                     {% endfor %}
                                 {% endif %}
-                                {% if run.network_config.pruning_policy %}
+                                {% if run.network_model.pruning_policy %}
                                     <div class='w-100 d-flex mt-4'>
                                         <h5 class='w-auto'>Policy:</h5>
                                         <hr class='w-100 m-3'>
                                     </div>
-                                    {% if run.network_config.pruning_policy.additional_arguments %}
-                                        {% for argument in run.network_config.pruning_policy.additional_arguments %}
+                                    {% if run.network_model.pruning_policy.additional_arguments %}
+                                        {% for argument in run.network_model.pruning_policy.additional_arguments %}
                                             <div class="col-6">
                                                 <p>
                                                     <span class='has-text-weight-bold'>{{ argument.name }}</span>
@@ -248,7 +248,7 @@
                                             </div>
                                         {% endfor %}
                                     {% else %}
-                                        {% for argument in run.network_config.pruning_policy.instance_type.required_arguments %}
+                                        {% for argument in run.network_model.pruning_policy.instance_type.required_arguments %}
                                             <div class="col-6">
                                                 <p>
                                                     <span class='has-text-weight-bold col-2'>{{ argument.name }}</span>
@@ -506,9 +506,11 @@
             </div>
         </div>
     </div>
-    {% with run.network_config.connections as edges %}
-        {% include 'components/graph_js.html' %}
-    {% endwith %}
+    {% if run.network_config %}
+        {% with run.network_config.connections as edges %}
+            {% include 'components/graph_js.html' %}
+        {% endwith %}
+    {% endif %}
 {% endblock %}
 {% block javascript %}
     {{ block.super }}

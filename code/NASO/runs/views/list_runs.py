@@ -22,6 +22,7 @@ class ListRuns(TemplateView):
                 "hyper_parameters__loss__instance_type",
                 "final_metrics__metrics",
                 "network_config__name",
+                "tensorflow_model__name",
                 "fit_parameters__epochs",
                 "fit_parameters__batch_size",
             )

@@ -127,7 +127,7 @@ class NewRun(TemplateView):
             # this run should be a rerun from an older config, so load the config
             training_id = request.GET.get("rerun")
             training = NetworkTraining.objects.get(pk=training_id)
-            form.initial["name"] = training.network_config.name
+            form.initial["name"] = training.model_name
             form.initial["loss"] = training.hyper_parameters.loss.instance_type
             form.initial[
                 "optimizer"
@@ -156,28 +156,29 @@ class NewRun(TemplateView):
             form.initial[
                 "use_multiprocessing"
             ] = training.fit_parameters.use_multiprocessing
-            nodes = [
-                {
-                    "id": layer.name,
-                    "label": f"{layer.name} ({layer.id})",
-                    "x": random.random() / 10.0,
-                    "y": layer.id + random.random() / 5.0,
-                    "size": 3,
-                    "color": "#008cc2",
-                    "naso_type": layer.layer_type.id,
-                    "type": "image",
-                    "additional_arguments": layer.additional_arguments,
-                }
-                for layer in training.network_config.layers.all()
-            ]
-            if training.network_config.pruning_method:
+            if training.network_config:
+                nodes = [
+                    {
+                        "id": layer.name,
+                        "label": f"{layer.name} ({layer.id})",
+                        "x": random.random() / 10.0,
+                        "y": layer.id + random.random() / 5.0,
+                        "size": 3,
+                        "color": "#008cc2",
+                        "naso_type": layer.layer_type.id,
+                        "type": "image",
+                        "additional_arguments": layer.additional_arguments,
+                    }
+                    for layer in training.network_config.layers.all()
+                ]
+                form.load_graph(nodes, training.network_config.connections)
+            if training.network_model.pruning_method:
                 form.initial["enable_pruning"] = True
                 form.load_pruning_config(
-                    training.network_config.pruning_method,
-                    training.network_config.pruning_schedule,
-                    training.network_config.pruning_policy,
+                    training.network_model.pruning_method,
+                    training.network_model.pruning_schedule,
+                    training.network_model.pruning_policy,
                 )
-            form.load_graph(nodes, training.network_config.connections)
             form.load_optimizer_config(
                 training.hyper_parameters.optimizer.additional_arguments
             )
@@ -201,7 +202,7 @@ class NewRun(TemplateView):
                 ]
             )
 
-            if training.network_config.save_model:
+            if training.network_model.save_model:
                 form.rerun_saved_model()
 
             # load dataset:

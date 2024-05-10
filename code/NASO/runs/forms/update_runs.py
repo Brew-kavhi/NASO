@@ -50,15 +50,14 @@ class UpdateNetworkTrainingRun(UpdateRun):
             self.fields["name"].initial = args[0]["name"]
             self.fields["description"].initial = args[0]["description"]
         else:
-            self.fields["name"].initial = run.network_config.name
+            self.fields["name"].initial = run.model_name
             self.fields["description"].initial = run.description
 
     def save(self, *args, **kwargs):
         run = super().save(*args, **kwargs)
-        run.network_config.name = self.cleaned_data["name"]
+        run.model_name = self.cleaned_data["name"]
         run.description = self.cleaned_data["description"]
         run.save()
-        run.network_config.save()
         return run
 
 

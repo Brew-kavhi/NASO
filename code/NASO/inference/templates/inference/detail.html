@@ -33,7 +33,7 @@
                     </div>
                 </div>
                 {% if object.network_training %}
-                    Found a potential matching run: <a href='{% url 'runs:details' object.network_training.id %}'>{{ object.network_training.network_config.name }}</a>
+                    Found a potential matching run: <a href='{% url 'runs:details' object.network_training.id %}'>{{ object.network_training.model_name }}</a>
                 {% endif %}
             </div>
         </div>

@@ -72,49 +72,50 @@ class RunDetails(TemplateView):
         """
         run = NetworkTraining.objects.get(pk=kwargs["pk"])
         self.context["run"] = run
-        self.page.title = run.network_config.name
+        self.page.title = run.model_name
         self.page.actions = []
         self.page.add_pageaction(
             reverse_lazy("runs:new") + "?rerun=" + str(run.pk),
             "Run again",
             color="primary",
         )
-        nodes = [
-            {
-                "id": layer.name,
-                "label": f"{layer.name} ({layer.id})",
-                "x": 0.0,
-                "y": 1,
-                "size": 3,
-                "color": "#008cc2",
-                "naso_type": layer.layer_type.id,
-                "type": "image",
-                "additional_arguments": layer.additional_arguments,
-            }
-            for layer in run.network_config.layers.all()
-        ]
-        nodes.append(
-            {
-                "id": "input_node",
-                "label": "Input",
-                "x": 0,
-                "y": nodes[0]["y"] - 1,
-                "size": 3,
-                "color": "#008cc2",
-                "type": "image",
-            }
-        )
+        if run.network_config:
+            nodes = [
+                {
+                    "id": layer.name,
+                    "label": f"{layer.name} ({layer.id})",
+                    "x": 0.0,
+                    "y": 1,
+                    "size": 3,
+                    "color": "#008cc2",
+                    "naso_type": layer.layer_type.id,
+                    "type": "image",
+                    "additional_arguments": layer.additional_arguments,
+                }
+                for layer in run.network_config.layers.all()
+            ]
+            nodes.append(
+                {
+                    "id": "input_node",
+                    "label": "Input",
+                    "x": 0,
+                    "y": nodes[0]["y"] - 1,
+                    "size": 3,
+                    "color": "#008cc2",
+                    "type": "image",
+                }
+            )
 
-        layers = [
-            {
-                "id": layer.layer_type.id,
-                "name": layer.layer_type.name,
-                "required_arguments": layer.layer_type.required_arguments,
-            }
-            for layer in run.network_config.layers.all()
-        ]
-        self.context["layers"] = layers
-        self.context["nodes"] = nodes
+            layers = [
+                {
+                    "id": layer.layer_type.id,
+                    "name": layer.layer_type.name,
+                    "required_arguments": layer.layer_type.required_arguments,
+                }
+                for layer in run.network_config.layers.all()
+            ]
+            self.context["layers"] = layers
+            self.context["nodes"] = nodes
         self.context["page"] = self.page.get_context()
 
         update_form = UpdateNetworkTrainingRun(instance=run)

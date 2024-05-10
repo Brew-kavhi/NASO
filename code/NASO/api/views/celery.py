@@ -160,7 +160,7 @@ def get_workers_information():
                         run = NetworkTraining.objects.filter(id=task_details["run_id"])
                         if run.exists():
                             run = run.first()
-                            task["name"] = run.network_config.name
+                            task["name"] = run.model_name
                             task["link"] = reverse_lazy(
                                 "runs:details", kwargs={"pk": run.id}
                             )

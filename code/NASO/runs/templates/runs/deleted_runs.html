@@ -159,7 +159,7 @@
                                        class='d-none'
                                        id='checked_tensorflow_{{ network_training.id }}'>
                                 <button class="btn" type="button">
-                                    {{ network_training.network_config.name }} (ID: {{ network_training.network_config.id }})
+                                    {{ network_training.model_name }} (ID: {{ network_training.network_model.id }})
                                 </button>
                             </h2>
                             <div class='d-flex is-align-items-center'>
@@ -177,7 +177,7 @@
                                         onclick='undelete(this)'
                                         data-runtype="tensorflow"
                                         data-id="{{ network_training.id }}"
-                                        data-item-name="{{ network_training.network_config.name }}">
+                                        data-item-name="{{ network_training.model_name }}">
                                     <i class="fas fa-redo"></i>
                                 </button>
                                 <button class="button is-danger ml-2 delete-btn"
