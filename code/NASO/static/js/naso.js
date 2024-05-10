@@ -262,6 +262,24 @@ function renderMetricWeights() {
     
 }
 
+function handleTensorflowModelChange(selectElement) {
+    var selectedModelId = $(selectElement).val();
+    var selectedModel = modelOptions.find(function(opt) {
+        return opt.id == selectedModelId;
+    });
+
+    $('#tensorflow_model-arguments').empty();
+    $('#tensorflow_model-arguments').removeClass('p-4 mb-3');
+    
+    if (!selectedModel) {
+        return ;
+    }
+    // Display input fields for each argument
+    for (const argumentName of selectedModel.jsonConfig) {
+        $('#tensorflow_model-arguments').append(addInputField(argumentName, 'tensorflow_model_argument_'));  // Append input fields
+        $('#tensorflow_model-arguments').addClass('p-4 mb-3');
+    }
+}
 function handleKerasTunerChange(selectElement) {
     var selectedTunerId = $(selectElement).val();
     var selectedTuner = kerasTunerOptions.find(function(opt) {

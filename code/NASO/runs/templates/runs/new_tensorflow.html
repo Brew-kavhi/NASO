@@ -34,7 +34,24 @@
             handlePruningMethodChange($('#{{form.pruning_method.auto_id}}'));
             handlePruningSchedulerChange($('#{{form.pruning_scheduler.auto_id}}'));
             handlePruningPolicyChange($('#{{form.pruning_policy.auto_id}}'));
+            handleTensorflowModelChange($('#{{form.tensorflow_model.auto_id}}'));
 
+            if ($("#id_use_model_definition").prop("checked")) {
+                $('#tensorflow_models').removeClass('d-none');
+                $('#networkgraph').addClass('d-none');
+                $('#networkgraph').removeClass('d-block');
+            }
+            $('#id_use_model_definition').change(function() {
+                if($(this).prop('checked')) {
+                    $('#tensorflow_models').removeClass('d-none');
+                    $('#networkgraph').addClass('d-none');
+                    $('#networkgraph').removeClass('d-block');
+                } else {
+                    $('#tensorflow_models').addClass('d-none');
+                    $('#networkgraph').removeClass('d-none');
+                    $('#networkgraph').addClass('d-block');
+                }
+            });
             $('#id_fine_tune_saved_model').change(function() {
                 if($(this).prop('checked')) {
                     $('#load_model').removeClass('d-none');
@@ -78,6 +95,14 @@
                 delete existing_optimizer;
             {% endif %}
 
+            {% if tensorflow_model_config %}
+                // load the loss values
+                let existing_models = {{tensorflow_model_config | safe}};
+                for (const argument of existing_models) {
+                    document.getElementsByName('tensorflow_model_argument_' + argument.name)[0].value = argument.value
+                }
+                delete existing_loss;
+            {% endif %}
             {% if loss_config %}
                 // load the loss values
                 let existing_loss = {{loss_config | safe}};
@@ -159,6 +184,15 @@ var optimizerOptions = [
                 "id": {{ optimizer.id }},
                 "name": "{{ optimizer.name }}",
                 "jsonConfig": {{ optimizer.required_arguments|safe|default:"{}" }},
+            },
+        {% endfor %}
+    ];
+    var modelOptions = [
+        {% for model in form.tensorflow_model.field.queryset %}
+            {
+                "id": {{ model.id }},
+                "name": "{{ model.name }}",
+                "jsonConfig": {{ model.required_arguments|safe|default:"{}" }},
             },
         {% endfor %}
     ];

@@ -172,6 +172,14 @@ class NewRun(TemplateView):
                     for layer in training.network_config.layers.all()
                 ]
                 form.load_graph(nodes, training.network_config.connections)
+            elif training.tensorflow_model:
+                form.initial["use_model_definition"] = True
+                form.initial[
+                    "tensorflow_model"
+                ] = training.tensorflow_model.instance_type
+                form.load_tensorflow_model_config(
+                    training.tensorflow_model.additional_arguments
+                )
             if training.network_model.pruning_method:
                 form.initial["enable_pruning"] = True
                 form.load_pruning_config(
