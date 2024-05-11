@@ -48,10 +48,25 @@ class NewInferenceForm(BaseRunWithCallback):
 
     def get_saved_models(self):
         models_path = config("TENSORFLOW_MODEL_PATH") + "tensorflow"
+        keras_models_path = config("TENSORFLOW_MODEL_PATH") + "kerasModel"
         models = [
-            (join(models_path, f), f)
-            for f in listdir(models_path)
-            if isfile(join(models_path, f))
-            and (f.endswith(".h5") or f.endswith(".keras"))
+            (
+                "Manual Designs",
+                [
+                    (join(models_path, f), f)
+                    for f in listdir(models_path)
+                    if isfile(join(models_path, f))
+                    and (f.endswith(".h5") or f.endswith(".keras"))
+                ],
+            ),
+            (
+                "Keras Models",
+                [
+                    (join(keras_models_path, f), f)
+                    for f in listdir(keras_models_path)
+                    if isfile(join(keras_models_path, f))
+                    and (f.endswith(".h5") or f.endswith(".keras"))
+                ],
+            ),
         ]
         return models
