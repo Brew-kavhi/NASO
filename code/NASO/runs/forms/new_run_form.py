@@ -11,7 +11,11 @@ from neural_architecture.models.templates import (
     AutoKerasNetworkTemplate,
     KerasNetworkTemplate,
 )
-from neural_architecture.models.types import NetworkLayerType, OptimizerType
+from neural_architecture.models.types import (
+    NetworkLayerType,
+    OptimizerType,
+    TensorFlowModelType,
+)
 from runs.forms.base import BaseRunWithCallback, ClusterableForm, PrunableForm
 
 
@@ -57,6 +61,16 @@ class NewRunForm(BaseRunWithCallback, PrunableForm, ClusterableForm):
     )
 
     save_model = forms.BooleanField(required=False, initial=False, label="Save model")
+    use_model_definition = forms.BooleanField(
+        required=False, initial=False, label="Load model from Tensorflow Class"
+    )
+    tensorflow_model = forms.ModelChoiceField(
+        required=False,
+        queryset=TensorFlowModelType.objects.all(),
+        widget=forms.Select(attrs={"class": "select2 w-100"}),
+        label="Model auswählen",
+    )
+
     fine_tune_saved_model = forms.BooleanField(
         required=False, initial=False, label="Load saved model from disk"
     )
@@ -113,26 +127,36 @@ class NewRunForm(BaseRunWithCallback, PrunableForm, ClusterableForm):
                 ),
                 css_class="mt-5 pt-3",
             ),
+            Row(
+                Column(Field("use_model_definition"), css_class="col-4"),
+                Column(
+                    Field("tensorflow_model"),
+                    css_class="d-none col-8",
+                    id="tensorflow_models",
+                ),
+            ),
+            HTML("<div id='tensorflow_model-arguments' class='card rounded-3'></div>"),
             HTML(
                 """<br>
-            <div class='d-flex mb-5' id='networkgraph'>            
-                <div id="graph-container" style="height:30em; border-radius: 10px" class='bg-white mr-3 col-lg-8'>
-                <h2 id='graph_header' class='m-2' >Graph</h2>
-                </div>
-                <div id="form-container" class='col-lg-4'>
-                    <div class='row'>
-                    <h2 id='node_header'>Details</h2>
+            <div class='d-block mb-5' id='networkgraph'>            
+                <div class='d-flex mb-5'>
+                    <div id="graph-container" style="height:30em; border-radius: 10px" class='bg-white mr-3 col-lg-8'>
+                    <h2 id='graph_header' class='m-2' >Graph</h2>
                     </div>
-                    <div class='row'>
-                        <label class="col-form-label col-lg-2" for="existing_nodes">Select Nodes:</label>
-                        <div class="col-lg-10"> 
-                        <select id="existing_nodes" class='select2 w-100' multiple>
-                            <!-- Populate with existing nodes -->
-                            <option value="node1">Node 1</option>
-                            <option value="node2">Node 2</option>
-                            <!-- Add more options as needed -->
-                        </select></div>
-                    </div>"""
+                    <div id="form-container" class='col-lg-4'>
+                        <div class='row'>
+                        <h2 id='node_header'>Details</h2>
+                        </div>
+                        <div class='row'>
+                            <label class="col-form-label col-lg-2" for="existing_nodes">Select Nodes:</label>
+                            <div class="col-lg-10"> 
+                            <select id="existing_nodes" class='select2 w-100' multiple>
+                                <!-- Populate with existing nodes -->
+                                <option value="node1">Node 1</option>
+                                <option value="node2">Node 2</option>
+                                <!-- Add more options as needed -->
+                            </select></div>
+                </div>"""
             ),
             Field("layers", css_class="select2 w-100 mt-3"),
             HTML(
@@ -150,7 +174,7 @@ class NewRunForm(BaseRunWithCallback, PrunableForm, ClusterableForm):
                     <input type='hidden' name='nodes' id='architecture_nodes'>
                     <input type='hidden' name='edges' id='architecture_edges'>
                 </div>
-            </div>
+                    </div>
             """
             ),
             Row(
@@ -158,6 +182,7 @@ class NewRunForm(BaseRunWithCallback, PrunableForm, ClusterableForm):
                 Column(Field("network_template_name")),
                 Column(Field("network_template")),
             ),
+            HTML("</div>"),
             self.dataloader_html(),
             self.gpu_field(),
             self.get_pruning_fields(),
@@ -177,6 +202,9 @@ class NewRunForm(BaseRunWithCallback, PrunableForm, ClusterableForm):
         ] = "handleOptimizerChange(this)"
 
         self.fields["layers"].widget.attrs["onchange"] = "handleLayerChange(this)"
+        self.fields["tensorflow_model"].widget.attrs[
+            "onchange"
+        ] = "handleTensorflowModelChange(this)"
 
         self.fields["optimizer"].widget.choices = self.get_optimizer_choices()
         self.fields["layers"].widget.choices = self.get_layer_choices()
@@ -191,16 +219,34 @@ class NewRunForm(BaseRunWithCallback, PrunableForm, ClusterableForm):
         """
         self.helper.layout[-2][1].css_class = "d-block"
 
+    def load_tensorflow_model_config(self, arguments):
+        self.extra_context["tensorflow_model_config"] = arguments
+
     def load_optimizer_config(self, arguments):
         self.extra_context["optimizer_config"] = arguments
 
     def get_saved_models(self):
         models_path = config("TENSORFLOW_MODEL_PATH") + "tensorflow"
+        keras_models_path = config("TENSORFLOW_MODEL_PATH") + "kerasModel"
         models = [
-            (join(models_path, f), f)
-            for f in listdir(models_path)
-            if isfile(join(models_path, f))
-            and (f.endswith(".h5") or f.endswith(".keras"))
+            (
+                "Manual Designs",
+                [
+                    (join(models_path, f), f)
+                    for f in listdir(models_path)
+                    if isfile(join(models_path, f))
+                    and (f.endswith(".h5") or f.endswith(".keras"))
+                ],
+            ),
+            (
+                "Keras Models",
+                [
+                    (join(keras_models_path, f), f)
+                    for f in listdir(keras_models_path)
+                    if isfile(join(keras_models_path, f))
+                    and (f.endswith(".h5") or f.endswith(".keras"))
+                ],
+            ),
         ]
         return models
 

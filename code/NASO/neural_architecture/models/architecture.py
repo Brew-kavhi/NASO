@@ -91,24 +91,71 @@ class NetworkLayer(TypeInstance):
         )
 
 
-class NetworkConfiguration(PrunableNetwork, BuildModelFromGraph):
+class NetworkModel(PrunableNetwork):
+    model_type = "tensorflow"
+
+    class Meta:
+        abstract = True
+
+    size = models.IntegerField(default=0)
+    name = models.CharField(max_length=50)
+    save_model = models.BooleanField(default=False)
+    model_file = models.CharField(max_length=100)
+    clustering_options = models.ForeignKey(
+        ClusterableNetwork, null=True, on_delete=models.deletion.CASCADE
+    )
+    load_model = models.BooleanField(default=False)
+
+    def save_model_on_disk(self, model):
+        if self.save_model:
+            file_path = f"{config('TENSORFLOW_MODEL_PATH')}{self.model_type}/{self.name}_{self.id}.keras"
+            if not os.path.exists(
+                config("TENSORFLOW_MODEL_PATH") + self.model_type + "/"
+            ):
+                os.makedirs(config("TENSORFLOW_MODEL_PATH") + self.model_type + "/")
+
+            export_model = self.get_export_model(model)
+            if self.clustering_options:
+                export_model = self.clustering_options.get_cluster_export_model(
+                    export_model
+                )
+
+            export_model.save(file_path, save_format="keras")
+
+            with zipfile.ZipFile(
+                f"{config('TENSORFLOW_MODEL_PATH')}{self.model_type}/{self.name}_{self.id}.zip",
+                "w",
+                compression=zipfile.ZIP_DEFLATED,
+            ) as f:
+                f.write(file_path)
+
+            self.model_file = file_path
+            self.save()
+            logger.success(f"Saved model to {self.name}_{self.id}.keras")
+        else:
+            logger.info(f"Not saving model, but save is {self.save}")
+
+    def build_model(self, input_shape):
+        """
+        Builds/returns a tf.Keras.Model that is used for training and evaluation and everything
+        """
+        pass
+
+    def get_gzipped_model_size(self) -> int:
+        if self.save_model:
+            return os.path.getsize(os.path.splitext(self.model_file)[0] + ".zip")
+        return -1
+
+
+class NetworkConfiguration(BuildModelFromGraph, NetworkModel):
     """
     Represents a network configuration with layers, connections, and model-related information.
     """
 
     layers = models.ManyToManyField(NetworkLayer)
-    name = models.CharField(max_length=50)
     connections = models.JSONField(default=dict)
     node_to_layer_id = models.JSONField(default=dict)
     model = None
-    size = models.IntegerField(default=0)
-
-    save_model = models.BooleanField(default=False)
-    model_file = models.CharField(max_length=100)
-    load_model = models.BooleanField(default=False)
-    clustering_options = models.ForeignKey(
-        ClusterableNetwork, null=True, on_delete=models.deletion.CASCADE
-    )
 
     inputs: dict = {}
 
@@ -154,44 +201,6 @@ class NetworkConfiguration(PrunableNetwork, BuildModelFromGraph):
             node.layer_type.required_arguments,
         )
         return block
-
-    def save_model_on_disk(self, model):
-        """
-        Saves the model on disk if the `save_model` flag is set to True.
-
-        Args:
-            model (keras.Model): The model to be saved.
-        """
-        if self.save_model:
-            file_path = f"{config('TENSORFLOW_MODEL_PATH')}tensorflow/{self.name}_{self.id}.keras"
-            if not os.path.exists(config("TENSORFLOW_MODEL_PATH") + "tensorflow/"):
-                os.makedirs(config("TENSORFLOW_MODEL_PATH") + "tensorflow/")
-
-            export_model = self.get_export_model(model)
-            if self.clustering_options:
-                export_model = self.clustering_options.get_cluster_export_model(
-                    export_model
-                )
-
-            export_model.save(file_path, save_format="keras")
-
-            with zipfile.ZipFile(
-                f"{config('TENSORFLOW_MODEL_PATH')}tensorflow/{self.name}_{self.id}.zip",
-                "w",
-                compression=zipfile.ZIP_DEFLATED,
-            ) as f:
-                f.write(file_path)
-
-            self.model_file = file_path
-            self.save()
-            logger.success(f"Saved model to {self.name}_{self.id}.keras")
-        else:
-            logger.info(f"Not saving model, but save is {self.save}")
-
-    def get_gzipped_model_size(self) -> int:
-        if self.save_model:
-            return os.path.getsize(os.path.splitext(self.model_file)[0] + ".zip")
-        return -1
 
 
 class ActivationFunction(TypeInstance):

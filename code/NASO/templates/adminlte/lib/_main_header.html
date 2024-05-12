@@ -59,7 +59,7 @@
                 <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
                     <div id='comparison_container'>
                         {% for id, model in COMPARISON.items %}
-                            <div id='comparison_{{ id }}_{% if model.model.network_config %}tensorflow{% else %}autokeras{% endif %}'
+                            <div id='comparison_{{ id }}_{% if model.model.network_model %}tensorflow{% else %}autokeras{% endif %}'
                                  class='border-bottom p-3 d-flex align-items-center justify-content-between'>
                                 <a href="{{ model.link }}" class='pr-3'>{{ model.model }}</a>
                                 <button onclick='removeComparison(this)'

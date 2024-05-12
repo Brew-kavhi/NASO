@@ -16,6 +16,7 @@ from neural_architecture.models.types import (
     MetricType,
     NetworkLayerType,
     OptimizerType,
+    TensorFlowModelType,
 )
 
 
@@ -59,6 +60,8 @@ class Command(BaseCommand):
 
         # load the Datasetloaders, that come preconfigured with the system:
         load_dataset_loaders()
+
+        load_keras_models()
 
         # next load pruning utilities:
         load_pruning_utilities()
@@ -109,6 +112,55 @@ class Command(BaseCommand):
                         f"Class {class_name} from {module_name}.{class_name} has errors: {exc}"
                     )
                 )
+
+
+def load_keras_models():
+    _, _ = TensorFlowModelType.objects.get_or_create(
+        module_name="keras.applications",
+        name="MobileNet",
+        description="""
+        This function returns a Keras image classification model, optionally loaded with weights pre-trained on ImageNet.
+
+        For image classification use cases, see this page for detailed examples.
+
+        For transfer learning use cases, make sure to read the guide to transfer learning & fine-tuning.
+
+        Note: each Keras Application expects a specific kind of input preprocessing. For MobileNet, call keras.applications.mobilenet.preprocess_input on your inputs before passing them to the model. mobilenet.preprocess_input will scale input pixels between -1 and 1.
+        """,
+        required_arguments=[
+            {"name": "input_shape", "default": "None", "dtype": "tuple(int,int,int)"},
+            {"name": "alpha", "default": "1.0", "dtype": "float"},
+            {"name": "depth_multiplier", "default": "1", "dtype": "float"},
+            {"name": "dropout", "default": "0.001", "dtype": "float"},
+            {"name": "include_top", "default": "True", "dtype": "bool"},
+            {"name": "weights", "default": "imagenet", "dtype": "str"},
+            {"name": "pooling", "default": "None", "dtype": "ENUM(avg,max)"},
+            {"name": "classes", "default": "1000", "dtype": "int"},
+            {"name": "classifier_activation", "default": "softmax", "dtype": "str"},
+        ],
+    )
+
+    _, _ = TensorFlowModelType.objects.get_or_create(
+        module_name="keras.applications",
+        name="VGG19",
+        description="""
+        For image classification use cases, see this page for detailed examples.
+
+        For transfer learning use cases, make sure to read the guide to transfer learning & fine-tuning.
+
+        The default input size for this model is 224x224.
+
+        Note: each Keras Application expects a specific kind of input preprocessing. For VGG19, call keras.applications.vgg19.preprocess_input on your inputs before passing them to the model. vgg19.preprocess_input will convert the input images from RGB to BGR, then will zero-center each color channel with respect to the ImageNet dataset, without scaling.
+        """,
+        required_arguments=[
+            {"name": "include_top", "default": "True", "dtype": "bool"},
+            {"name": "weights", "default": "imagenet", "dtype": "str"},
+            {"name": "input_shape", "default": "None", "dtype": "tuple(int,int,int)"},
+            {"name": "pooling", "default": "None", "dtype": "ENUM(avg,max)"},
+            {"name": "classes", "default": "1000", "dtype": "int"},
+            {"name": "classifier_activation", "default": "softmax", "dtype": "str"},
+        ],
+    )
 
 
 def load_dataset_loaders():

@@ -14,6 +14,7 @@ from neural_architecture.models.types import (
     LossType,
     MetricType,
     OptimizerType,
+    TensorFlowModelType,
     TypeInstance,
 )
 from neural_architecture.validators import validate_dtype
@@ -62,6 +63,22 @@ class Metric(TypeInstance):
     instance_type = models.ForeignKey(MetricType, on_delete=models.deletion.DO_NOTHING)
     name = models.CharField(max_length=100)
     dtype = models.CharField(max_length=20, validators=[validate_dtype])
+
+
+class TensorFlowModel(TypeInstance, NetworkModel):
+    instance_type = models.ForeignKey(
+        TensorFlowModelType, on_delete=models.deletion.DO_NOTHING
+    )
+    model_type = "kerasModel"
+
+    def build_model(self, input_shape):
+        model = get_object(
+            self.instance_type.module_name,
+            self.instance_type.name,
+            self.additional_arguments,
+            self.instance_type.required_arguments,
+        )
+        return model
 
 
 class NetworkHyperparameters(models.Model):
@@ -332,7 +349,10 @@ class NetworkTraining(Run):
     """
 
     network_config = models.ForeignKey(
-        NetworkConfiguration, on_delete=models.deletion.DO_NOTHING
+        NetworkConfiguration, on_delete=models.deletion.DO_NOTHING, null=True
+    )
+    tensorflow_model = models.ForeignKey(
+        TensorFlowModel, on_delete=models.deletion.DO_NOTHING, null=True
     )
     hyper_parameters = models.ForeignKey(
         NetworkHyperparameters, on_delete=models.deletion.CASCADE
@@ -351,7 +371,77 @@ class NetworkTraining(Run):
     )
 
     def __str__(self):
-        return self.network_config.name
+        return self.model_name
+
+    def save(self, *args, **kwargs):
+        if not self.network_config and not self.tensorflow_model:
+            raise ValidationError(
+                "Either network configuration or a tensorflow model must be provided"
+            )
+        elif self.network_config and self.tensorflow_model:
+            raise ValidationError(
+                "Only one network option can be given: either network configuration or a tensorflow model"
+            )
+        super().save(*args, **kwargs)
+
+    def build_model(self, input_shape):
+        return self.network_model.build_model(input_shape)
+
+    @property
+    def network_model(self) -> NetworkModel:
+        if self.network_config:
+            # load the network config network...
+            return self.network_config
+        elif self.tensorflow_model:
+            # load the class of the model.
+            return self.tensorflow_model
+        raise ValidationError("NO Network is given")
+
+    def get_gzipped_model_size(self):
+        return self.network_model.get_gzipped_model_size()
+
+    def save_model_on_disk(self, model):
+        self.network_model.save_model_on_disk(model)
+
+    @property
+    def save_model(self):
+        """The save_model property."""
+        return self.network_model.save_model
+
+    @save_model.setter
+    def save_model(self, value):
+        self.network_model.save_model = value
+        self.network_model.save()
+
+    @property
+    def model_file(self) -> str:
+        """The model_file property."""
+        return self.network_model.model_file
+
+    @model_file.setter
+    def model_file(self, value: str):
+        self.network_model.model_file = value
+        self.network_model.save()
+
+    @property
+    def model_name(self) -> str:
+        """The model_name property."""
+        return self.network_model.name
+
+    @model_name.setter
+    def model_name(self, value: str):
+        self.network_model.name = value
+        self.network_model.save()
+
+    @property
+    def model_size(self):
+        """The model_size property."""
+        return self.network_model.size
+
+    @model_size.setter
+    def model_size(self, value):
+        self.network_model.size = value
+        self.network_model.save()
 
 
 class TrainingMetric(models.Model):

@@ -40,8 +40,28 @@ from runs.models.training import (
     NetworkTraining,
     Optimizer,
     TrainingMetric,
+    TensorFlowModel,
 )
 from workers.helper_scripts.celery import get_all_workers
+
+
+def get_model_options(request_params):
+    """
+    Extracts and organizes the arguments from the request parameters.
+
+    Args:
+        request_params (dict): The request parameters.
+
+    Returns:
+        array: Array containing the arguments for building the tensorflow_model
+    """
+    arguments = []
+    for key, value in request_params:
+        if key.startswith("tensorflow_model_argument_"):
+            argument_name = key[len("tensorflow_model_argument_") :]
+            argument = {"name": argument_name, "value": value}
+            arguments.append(argument)
+    return arguments
 
 
 class NewRun(TemplateView):
@@ -127,7 +147,7 @@ class NewRun(TemplateView):
             # this run should be a rerun from an older config, so load the config
             training_id = request.GET.get("rerun")
             training = NetworkTraining.objects.get(pk=training_id)
-            form.initial["name"] = training.network_config.name
+            form.initial["name"] = training.model_name
             form.initial["loss"] = training.hyper_parameters.loss.instance_type
             form.initial[
                 "optimizer"
@@ -156,28 +176,37 @@ class NewRun(TemplateView):
             form.initial[
                 "use_multiprocessing"
             ] = training.fit_parameters.use_multiprocessing
-            nodes = [
-                {
-                    "id": layer.name,
-                    "label": f"{layer.name} ({layer.id})",
-                    "x": random.random() / 10.0,
-                    "y": layer.id + random.random() / 5.0,
-                    "size": 3,
-                    "color": "#008cc2",
-                    "naso_type": layer.layer_type.id,
-                    "type": "image",
-                    "additional_arguments": layer.additional_arguments,
-                }
-                for layer in training.network_config.layers.all()
-            ]
-            if training.network_config.pruning_method:
+            if training.network_config:
+                nodes = [
+                    {
+                        "id": layer.name,
+                        "label": f"{layer.name} ({layer.id})",
+                        "x": random.random() / 10.0,
+                        "y": layer.id + random.random() / 5.0,
+                        "size": 3,
+                        "color": "#008cc2",
+                        "naso_type": layer.layer_type.id,
+                        "type": "image",
+                        "additional_arguments": layer.additional_arguments,
+                    }
+                    for layer in training.network_config.layers.all()
+                ]
+                form.load_graph(nodes, training.network_config.connections)
+            elif training.tensorflow_model:
+                form.initial["use_model_definition"] = True
+                form.initial[
+                    "tensorflow_model"
+                ] = training.tensorflow_model.instance_type
+                form.load_tensorflow_model_config(
+                    training.tensorflow_model.additional_arguments
+                )
+            if training.network_model.pruning_method:
                 form.initial["enable_pruning"] = True
                 form.load_pruning_config(
-                    training.network_config.pruning_method,
-                    training.network_config.pruning_schedule,
-                    training.network_config.pruning_policy,
+                    training.network_model.pruning_method,
+                    training.network_model.pruning_schedule,
+                    training.network_model.pruning_policy,
                 )
-            form.load_graph(nodes, training.network_config.connections)
             form.load_optimizer_config(
                 training.hyper_parameters.optimizer.additional_arguments
             )
@@ -201,7 +230,7 @@ class NewRun(TemplateView):
                 ]
             )
 
-            if training.network_config.save_model:
+            if training.network_model.save_model:
                 form.rerun_saved_model()
 
             # load dataset:
@@ -334,27 +363,52 @@ class NewRun(TemplateView):
                     build_callbacks(form.cleaned_data, callbacks_arguments)
                 )
 
-                network_config = self.build_config(
-                    form_data=form.cleaned_data,
-                    layers=json.loads(request.POST.get("nodes")),
-                    connections=json.loads(request.POST.get("edges")),
-                )
+                if form.cleaned_data["use_model_definition"]:
+                    model_options = get_model_options(request.POST.items())
+                    network_model = TensorFlowModel.objects.create(
+                        instance_type=form.cleaned_data["tensorflow_model"],
+                        name=form.cleaned_data["name"],
+                        additional_arguments=model_options,
+                    )
+                    network_model.save()
+                    if form.cleaned_data["save_model"]:
+                        network_model.save_model = True
+                        network_model.save()
+                else:
+                    network_model = self.build_config(
+                        form_data=form.cleaned_data,
+                        layers=json.loads(request.POST.get("nodes")),
+                        connections=json.loads(request.POST.get("edges")),
+                    )
+                    if form.cleaned_data["save_network_as_template"]:
+                        create_network_template(
+                            form.cleaned_data["network_template_name"],
+                            False,
+                            network_model.layers.all(),
+                            network_model.connections,
+                            network_model.node_to_layer_id,
+                        )
 
                 if (
                     "rerun" in request.GET
                     and form.cleaned_data["fine_tune_saved_model"]
                 ):
-                    network_config.load_model = True
-                    network_config.model_file = form.cleaned_data["load_model"]
+                    network_model.load_model = True
+                    network_model.model_file = form.cleaned_data["load_model"]
                     id = os.path.splitext(
-                        network_config.model_file[
-                            network_config.model_file.rfind("_") + 1 :
+                        network_model.model_file[
+                            network_model.model_file.rfind("_") + 1 :
                         ]
                     )[0]
                     try:
-                        old_training = NetworkTraining.objects.filter(
-                            network_config__id=id
-                        ).first()
+                        if network_model.model_file.rfind("/tensorflow/") > 0:
+                            old_training = NetworkTraining.objects.filter(
+                                network_config__id=id
+                            ).first()
+                        else:
+                            old_training = NetworkTraining.objects.filter(
+                                tensorflow_model__id=id
+                            ).first()
                         fit_parameters.initial_epoch = (
                             old_training.fit_parameters.epochs
                         )
@@ -371,7 +425,7 @@ class NewRun(TemplateView):
                         cluster_centroids_init=centroids_init,
                     )
                     clustering_options.save()
-                    network_config.clustering_options = clustering_options
+                    network_model.clustering_options = clustering_options
                 if form.cleaned_data["enable_pruning"]:
                     (
                         method_arguments,
@@ -382,33 +436,27 @@ class NewRun(TemplateView):
                         instance_type=form.cleaned_data["pruning_method"],
                         additional_arguments=method_arguments,
                     )
-                    network_config.pruning_method = method
+                    network_model.pruning_method = method
                     if form.cleaned_data["pruning_scheduler"]:
                         scheduler, _ = PruningSchedule.objects.get_or_create(
                             instance_type=form.cleaned_data["pruning_scheduler"],
                             additional_arguments=scheduler_arguments,
                         )
-                        network_config.pruning_schedule = scheduler
+                        network_model.pruning_schedule = scheduler
 
                     if form.cleaned_data["pruning_policy"]:
                         policy, _ = PruningPolicy.objects.get_or_create(
                             instance_type=form.cleaned_data["pruning_policy"],
                             additional_arguments=policy_arguments,
                         )
-                        network_config.pruning_policy = policy
-                network_config.save()
-
-                if form.cleaned_data["save_network_as_template"]:
-                    create_network_template(
-                        form.cleaned_data["network_template_name"],
-                        False,
-                        network_config.layers.all(),
-                        network_config.connections,
-                        network_config.node_to_layer_id,
-                    )
+                        network_model.pruning_policy = policy
+                network_model.save()
 
                 training.dataset = build_dataset(form.cleaned_data)
-                training.network_config = network_config
+                if form.cleaned_data["use_model_definition"]:
+                    training.tensorflow_model = network_model
+                else:
+                    training.network_config = network_model
                 training.fit_parameters = fit_parameters
                 training.evaluation_parameters = eval_parameters
                 queue, gpu = form.cleaned_data["gpu"].split("|")
@@ -418,17 +466,23 @@ class NewRun(TemplateView):
 
                 training.save()
 
-                if network_config.load_model:
+                if network_model.load_model:
                     # copy all the existing metrics to this training as well
                     # but first get id of run from model:
                     id = os.path.splitext(
-                        network_config.model_file[
-                            network_config.model_file.rfind("_") + 1 :
+                        network_model.model_file[
+                            network_model.model_file.rfind("_") + 1 :
                         ]
                     )[0]
-                    source_queryset = TrainingMetric.objects.filter(
-                        neural_network__network_config__id=id
-                    )
+
+                    if network_model.model_file.rfind("/tensorflow/") > 0:
+                        source_queryset = TrainingMetric.objects.filter(
+                            neural_network__network_config__id=id
+                        )
+                    else:
+                        source_queryset = TrainingMetric.objects.filter(
+                            neural_network__tensorflow_model__id=id
+                        )
                     for source_instance in source_queryset:
                         new_instance = TrainingMetric.objects.create(
                             neural_network=training,

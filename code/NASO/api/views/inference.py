@@ -31,13 +31,13 @@ def run_from_id(request):
         batch_size = request.data.get("batch_size")
         inference = Inference(
             description=run.description,
-            name=run.network_config.name + "_" + request.data.get("gpu_name"),
+            name=run.model_name + "_" + request.data.get("gpu_name"),
             dataset=run.dataset,
             gpu=gpu,
             worker=queue,
             network_training=run,
             batch_size=batch_size,
-            model_file=run.network_config.model_file,
+            model_file=run.model_file,
         )
         inference.save()
         inference.callbacks.set(run.evaluation_parameters.callbacks.all())

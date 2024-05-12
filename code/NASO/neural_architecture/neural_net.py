@@ -93,7 +93,7 @@ class NeuralNetwork:
         if training_config:
             self.training_config = training_config
             self.load_data()
-            self.build_model_from_config(training_config.network_config)
+            self.build_model_from_config()
 
     def run_from_config(self, config: NetworkTraining, celery_callback):
         """
@@ -115,10 +115,10 @@ class NeuralNetwork:
 
         self.train()
         self.validate()
-        config.size_on_disk = config.network_config.get_gzipped_model_size()
+        config.size_on_disk = config.get_gzipped_model_size()
         config.save()
 
-    def build_model_from_config(self, config: NetworkConfiguration = None) -> None:
+    def build_model_from_config(self) -> None:
         """
         Builds a neural network model based on the provided configuration.
 
@@ -141,16 +141,19 @@ class NeuralNetwork:
             input_shape = (28, 28)
             logger.warning("Using default input shape")
 
-        model = config.build_model(input_shape)
+        model = self.training_config.build_model(input_shape)
 
-        model = config.build_pruning_model(model)
-        if config.clustering_options:
-            model = config.clustering_options.build_clustered_model(model)
+        model = self.training_config.network_model.build_pruning_model(model)
+        if self.training_config.network_model.clustering_options:
+            model = self.training_config.network_model.clustering_options.build_clustered_model(
+                model
+            )
         model.compile(**self.training_config.hyper_parameters.get_as_dict())
         logger.success("Model is initiated.")
         model.summary()
-        config.size = int(np.sum([K.count_params(w) for w in model.trainable_weights]))
-        config.save()
+        self.training_config.model_size = int(
+            np.sum([K.count_params(w) for w in model.trainable_weights])
+        )
 
         self.model = model
 
@@ -193,7 +196,7 @@ class NeuralNetwork:
             [timing_callback]
             + self.training_config.fit_parameters.get_callbacks(self.training_config)
             + (
-                self.training_config.network_config.get_pruning_callbacks()
+                self.training_config.network_model.get_pruning_callbacks()
                 + [self.celery_callback]
             )
         )
@@ -212,7 +215,7 @@ class NeuralNetwork:
             workers=fit_parameters.workers,
             use_multiprocessing=fit_parameters.use_multiprocessing,
         )
-        self.training_config.network_config.save_model_on_disk(self.model)
+        self.training_config.save_model_on_disk(self.model)
         if self.training_config.gpu.startswith("GPU"):
             self.training_config.memory_usage = tf.config.experimental.get_memory_info(
                 self.training_config.gpu
@@ -278,9 +281,9 @@ class NeuralNetwork:
         time.sleep(1)
         timing_callback = TimingCallback()
         batch_size = 1
-        predict_model = self.training_config.network_config.get_export_model(self.model)
-        if self.training_config.network_config.clustering_options:
-            predict_model = self.training_config.network_config.clustering_options.get_cluster_export_model(
+        predict_model = self.training_config.network_model.get_export_model(self.model)
+        if self.training_config.network_model.clustering_options:
+            predict_model = self.training_config.network_model.clustering_options.get_cluster_export_model(
                 predict_model
             )
         return predict_model.predict(

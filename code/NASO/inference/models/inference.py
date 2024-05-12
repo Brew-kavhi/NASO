@@ -95,9 +95,15 @@ class Inference(models.Model):
         )[0]
         if not model_file_id:
             return
-        matching_networks = NetworkTraining.objects.filter(
-            network_config__id=model_file_id
-        )
+
+        if self.model_file.rfind("/tensorflow/") > 0:
+            matching_networks = NetworkTraining.objects.filter(
+                network_config__id=model_file_id
+            )
+        else:
+            matching_networks = NetworkTraining.objects.filter(
+                tensorflow_model__id=model_file_id
+            )
         if matching_networks.exists():
             self.network_training = matching_networks.first()
             self.save()

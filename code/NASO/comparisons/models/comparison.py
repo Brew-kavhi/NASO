@@ -84,14 +84,14 @@ def get_tensorflow_details(run_id):
         sparsity = metrics["sparsity"]
     model = {
         "id": run_id,
-        "name": run.network_config.name,
-        "size": run.network_config.size,
+        "name": run.model_name,
+        "size": run.model_size,
         "memory_usage": run.memory_usage,
         "power_consumption": run.get_average_power_consumption,
         "link": reverse_lazy("runs:details", kwargs={"pk": run_id}),
-        "pruning_method": run.network_config.pruning_method,
-        "pruning_schedule": run.network_config.pruning_schedule,
-        "pruning_policy": run.network_config.pruning_policy,
+        "pruning_method": run.network_model.pruning_method,
+        "pruning_schedule": run.network_model.pruning_schedule,
+        "pruning_policy": run.network_model.pruning_policy,
         "optimizer": run.hyper_parameters.optimizer,
         "prediction_metrics": run.prediction_metrics,
         "loss": loss,
@@ -101,17 +101,17 @@ def get_tensorflow_details(run_id):
     model["optimizer"].additional_arguments = get_arguments_as_dict(
         run.hyper_parameters.optimizer.additional_arguments
     )
-    if run.network_config.pruning_method:
+    if run.network_model.pruning_method:
         model["pruning_method"].additional_arguments = get_arguments_as_dict(
-            run.network_config.pruning_method.additional_arguments
+            run.network_model.pruning_method.additional_arguments
         )
-    if run.network_config.pruning_schedule:
+    if run.network_model.pruning_schedule:
         model["pruning_schedule"].additional_arguments = get_arguments_as_dict(
-            run.network_config.pruning_schedule.additional_arguments
+            run.network_model.pruning_schedule.additional_arguments
         )
-    if run.network_config.pruning_policy:
+    if run.network_model.pruning_policy:
         model["pruning_policy"].additional_arguments = get_arguments_as_dict(
-            run.network_config.pruning_policy.additional_arguments
+            run.network_model.pruning_policy.additional_arguments
         )
     return model, run
 
@@ -209,7 +209,7 @@ def get_comparison_details(comparisons):
             model["rating"] = 0
             if run.network_training:
                 model["size_on_disk"] = run.network_training.size_on_disk
-                model["size"] = run.network_training.network_config.size
+                model["size"] = run.network_training.model_size
             else:
                 model["size_on_disk"] = "0"
                 model["size"] = "0"
