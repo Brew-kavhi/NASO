@@ -7,7 +7,7 @@ from safedelete.models import SafeDeleteModel
 from helper_scripts.git import get_current_git_hash
 from helper_scripts.importing import get_object
 from naso.settings import APP_VERSION
-from neural_architecture.models.architecture import NetworkConfiguration
+from neural_architecture.models.architecture import NetworkConfiguration, NetworkModel
 from neural_architecture.models.dataset import Dataset
 from neural_architecture.models.types import (
     CallbackType,
