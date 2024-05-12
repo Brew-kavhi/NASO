@@ -1,8 +1,8 @@
 from django.views.generic.base import TemplateView
 
-from workers.models.celery_workers import CeleryWorker
 from naso.models.page import PageSetup
 from workers.helper_scripts.celery import get_all_workers
+from workers.models.celery_workers import CeleryWorker
 
 
 class ListWorkers(TemplateView):

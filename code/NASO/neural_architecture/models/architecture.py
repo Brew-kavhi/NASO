@@ -2,6 +2,7 @@ import os
 import zipfile
 
 import tensorflow as tf
+from decouple import config
 from django.db import models
 from loguru import logger
 
@@ -18,7 +19,6 @@ from neural_architecture.models.types import (
     TypeInstance,
 )
 from neural_architecture.validators import validate_dtype
-from decouple import config
 
 keras = tf.keras
 

@@ -2,6 +2,7 @@ from os import listdir
 from os.path import isfile, join
 
 from crispy_forms.layout import HTML, Column, Field, Layout, Row, Submit
+from decouple import config
 from django import forms
 from django.urls import reverse_lazy
 
@@ -12,8 +13,6 @@ from neural_architecture.models.templates import (
 )
 from neural_architecture.models.types import NetworkLayerType, OptimizerType
 from runs.forms.base import BaseRunWithCallback, ClusterableForm, PrunableForm
-
-from decouple import config
 
 
 class NewRunForm(BaseRunWithCallback, PrunableForm, ClusterableForm):

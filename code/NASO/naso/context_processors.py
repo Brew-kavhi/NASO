@@ -3,9 +3,9 @@ from django.conf import settings
 from django.urls import reverse_lazy
 
 from api.views.celery import get_workers_information
+from inference.models.inference import Inference
 from neural_architecture.models.autokeras import AutoKerasRun
 from runs.models.training import NetworkTraining
-from inference.models.inference import Inference
 
 
 def get_celery_workers(request):

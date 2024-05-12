@@ -1,18 +1,19 @@
-from django.views.generic.base import TemplateView
+import os
+
+import matplotlib.pyplot as plt
+import numpy as np
+from django.http import HttpResponse
 from django.shortcuts import redirect
+from django.views.generic.base import TemplateView
+from mpl_toolkits.mplot3d import Axes3D
 
 from api.views.comparisons import clear_session
 from comparisons.forms.create import SaveSession
 from comparisons.forms.edit import AddRunForm
 from comparisons.models.comparison import Comparison, get_comparison_details
+from naso import settings
 from naso.models.page import PageSetup
 from runs.forms.base import get_gpu_choices
-from django.http import HttpResponse
-import os
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-import numpy as np
-from naso import settings
 
 
 def plot_points(request):

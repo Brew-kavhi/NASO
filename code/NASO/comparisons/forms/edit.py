@@ -2,8 +2,8 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import HTML, Field, Layout, Submit
 from django import forms
 
-from runs.models.training import NetworkTraining
 from inference.models.inference import Inference
+from runs.models.training import NetworkTraining
 
 
 class AddRunForm(forms.Form):

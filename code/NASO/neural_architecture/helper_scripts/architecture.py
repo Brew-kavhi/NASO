@@ -1,9 +1,10 @@
+from collections import namedtuple
+
 import numpy as np
 import tensorflow as tf
 from tensorflow_model_optimization.python.core.sparsity.keras import pruning_wrapper
 
 from plugins.interfaces.pruning_method import PruningInterface
-from collections import namedtuple
 
 
 def is_feedforward(model):

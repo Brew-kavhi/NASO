@@ -1,7 +1,9 @@
 import os
 
+import numpy as np
 import tensorflow as tf
 from django.db import models
+from sklearn.metrics import accuracy_score
 
 from helper_scripts.importing import get_object
 from neural_architecture.helper_scripts.architecture import calculate_flops
@@ -13,9 +15,6 @@ from runs.models.training import (
     NetworkTraining,
     TrainingMetric,
 )
-
-from sklearn.metrics import accuracy_score
-import numpy as np
 
 
 class Inference(models.Model):

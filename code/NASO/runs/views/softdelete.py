@@ -2,13 +2,13 @@ import os
 import shutil
 
 import safedelete
+from decouple import config
 from django.urls import reverse_lazy
 from django.views.generic.base import TemplateView
 
 from naso.models.page import PageSetup
 from neural_architecture.models.autokeras import AutoKerasRun
 from runs.models.training import NetworkTraining
-from decouple import config
 
 
 class DeletedRuns(TemplateView):

@@ -3,9 +3,9 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from runs.models.training import NetworkTraining
-from inference.models.inference import Inference
 from inference.celery.run_inference import run_inference
+from inference.models.inference import Inference
+from runs.models.training import NetworkTraining
 
 
 @api_view(["POST"])

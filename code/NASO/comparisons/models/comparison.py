@@ -2,9 +2,9 @@ from django.db import models
 from django.urls import reverse_lazy
 
 from api.views.autokeras import get_trial_details
+from inference.models.inference import Inference
 from neural_architecture.models.autokeras import AutoKerasRun
 from runs.models.training import NetworkTraining, TrainingMetric
-from inference.models.inference import Inference
 
 
 class Comparison(models.Model):

@@ -6,8 +6,8 @@ from tensorflow.python.framework import smart_cond as smart_module
 from tensorflow.python.ops import variables
 from tensorflow_model_optimization.python.core.sparsity.keras import pruning_wrapper
 
-from plugins.interfaces.pruning_method import PruningInterface
 from neural_architecture.helper_scripts.architecture import is_feedforward
+from plugins.interfaces.pruning_method import PruningInterface
 
 keras = tf.keras
 K = keras.backend

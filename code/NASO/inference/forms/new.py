@@ -3,10 +3,10 @@ from os.path import isfile, join
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import HTML, Column, Field, Layout, Row, Submit
+from decouple import config
 from django import forms
 
 from runs.forms.base import BaseRunWithCallback
-from decouple import config
 
 
 class NewInferenceForm(BaseRunWithCallback):
