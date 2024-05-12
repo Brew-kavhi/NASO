@@ -350,7 +350,7 @@
                 <div class="accordion"
                      id="accordion{{ network_training.id }}"
                      data-nasoversion='{{ network_training.naso_app_version }}'
-                     data-name='{{ network_training.network_config.name }}'
+                     data-name='{{ network_training.model_name }}'
                      data-optimizer='{{ network_training.hyper_parameters.optimizer.instance_type.name }}'
                      data-time="{% get_metric network_training.final_metrics.metrics 'time' %}"
                      data-rating="{{ network_training.rate }}">
@@ -369,7 +369,7 @@
                                         onClick='fetchTensorflowData({{ network_training.id }})'
                                         aria-expanded="true"
                                         aria-controls="collapse{{ network_training.id }}">
-                                    {{ network_training.network_config.name }} (ID:{{ network_training.id }})
+                                    {{ network_training.model_name }} (ID:{{ network_training.id }})
                                 </button>
                             </h2>
                             <div class='d-flex is-align-items-center'>
@@ -401,7 +401,7 @@
                                         data-target="#confirmDeleteModal"
                                         data-action="{% url 'runs:delete' network_training.id %}"
                                         data-item-id="{{ network_training.id }}"
-                                        data-item-name="{{ network_training.network_config.name }}">
+                                        data-item-name="{{ network_training.model_name }}">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
@@ -440,7 +440,7 @@
                                             </p>
                                             <p>
                                                 <span class='has-text-weight-bold'>Parametercount:</span>
-                                                {{ network_training.network_config.size }}
+                                                {{ network_training.model_size }}
                                             </p>
                                         </div>
                                         <div>

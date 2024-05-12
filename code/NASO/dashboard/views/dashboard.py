@@ -54,7 +54,7 @@ class Dashboard(TemplateView):
             else:
                 try:
                     run = NetworkTraining.objects.get(id=task["run_id"])
-                    task["name"] = run.network_config.name
+                    task["name"] = run.model_name
                     task["link"] = reverse_lazy("runs:details", kwargs={"pk": run.id})
                 except NetworkTraining.DoesNotExist:
                     print("network not found")
@@ -99,7 +99,7 @@ class Dashboard(TemplateView):
                         else:
                             run = NetworkTraining.objects.get(
                                 id=run_details["run_id"]
-                            ).network_config
+                            ).network_model
                             self.context["run"].append(
                                 {
                                     "name": run.name,

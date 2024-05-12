@@ -23,6 +23,7 @@ class DeletedRuns(TemplateView):
             NetworkTraining.objects.deleted_only().only(
                 "id",
                 "network_config__name",
+                "tensorflow_model__name",
             )
         )
         autokeras_runs = reversed(
@@ -62,10 +63,10 @@ def undelete_run(id: int, run_type: str):
 def harddelete_run(id: int, run_type: str):
     if run_type == "tensorflow":
         run = NetworkTraining.objects.deleted_only().get(pk=id)
-        if len(run.network_config.model_file) > 0:
-            if os.path.exists(run.network_config.model_file):
-                os.remove(run.network_config.model_file)
-            zip_path = os.path.splitext(run.network_config.model_file)[0] + ".zip"
+        if len(run.model_file) > 0:
+            if os.path.exists(run.model_file):
+                os.remove(run.model_file)
+            zip_path = os.path.splitext(run.model_file)[0] + ".zip"
             if os.path.exists(zip_path):
                 os.remove(zip_path)
         run.delete(force_policy=safedelete.models.HARD_DELETE)
