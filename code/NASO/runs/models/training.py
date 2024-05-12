@@ -72,7 +72,6 @@ class TensorFlowModel(TypeInstance, NetworkModel):
     model_type = "kerasModel"
 
     def build_model(self, input_shape):
-        # TODO: load the model class here an return an instance of the model here
         model = get_object(
             self.instance_type.module_name,
             self.instance_type.name,
@@ -80,7 +79,6 @@ class TensorFlowModel(TypeInstance, NetworkModel):
             self.instance_type.required_arguments,
         )
         return model
-        raise NotImplementedError()
 
 
 class NetworkHyperparameters(models.Model):

@@ -96,8 +96,7 @@ class Inference(models.Model):
         )[0]
         if not model_file_id:
             return
-        # TODO: if the model file leis in the tensorflow dierctory then lookfor the network_config__id
-        # otherwise look for tensorflow_model__id
+
         if self.model_file.rfind("/tensorflow/") > 0:
             matching_networks = NetworkTraining.objects.filter(
                 network_config__id=model_file_id

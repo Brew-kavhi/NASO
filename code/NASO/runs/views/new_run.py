@@ -47,13 +47,13 @@ from workers.helper_scripts.celery import get_all_workers
 
 def get_model_options(request_params):
     """
-    Extracts and organizes the typewise arguments from the request parameters.
+    Extracts and organizes the arguments from the request parameters.
 
     Args:
         request_params (dict): The request parameters.
 
     Returns:
-        tuple: A tuple containing optimizer arguments, loss arguments, metrics arguments, and callbacks arguments.
+        array: Array containing the arguments for building the tensorflow_model
     """
     arguments = []
     for key, value in request_params:
