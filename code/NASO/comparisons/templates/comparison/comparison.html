@@ -390,7 +390,7 @@
         let yLabelsAllPlot = [];
         let xLabelsAllPlot = [];
 
-        const tensorflowMetricAPI = "{% url 'api:tensorflow:get_metrics_for_run' 0 %}";
+        const tensorflowMetricAPI = "{% url 'api:tensorflow:metrics' 0 %}";
         const autokerasMetricAPI = "{% url 'api:autokeras:get_metrics_for_run' 0 %}";
         const autokerasTrialMetricAPI = "{% url 'api:autokeras:get_metrics' 0 '-1'%}";
         let currentCardIndex = 0;
@@ -701,7 +701,13 @@
                 });
                 COMPARISONS[run]['canvas'] = graphChart;
                 if (COMPARISONS[run].run_type === 'tensorflow') {
-                    fetch(tensorflowMetricAPI.replace(0, COMPARISONS[run].run_id)).then(function(response) {
+                    fetch(tensorflowMetricAPI.replace(0, COMPARISONS[run].run_id), {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Token ${token}`
+                        }
+                    }).then(function(response) {
                         response.json().then(function(data) {
                             run_metrics = data;
                             let metrics = [];
@@ -746,7 +752,13 @@
                 }
                 else if (COMPARISONS[run].run_type === 'autokeras_trial') {
                     [runID, trialID] = run.split('_');
-                    fetch(autokerasTrialMetricAPI.replace(0, runID).replace('-1',trialID)).then(function(response) {
+                    fetch(autokerasTrialMetricAPI.replace(0, runID).replace('-1',trialID), {
+                        method: "GET",
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Token ${token}`
+                        }
+                    }).then(function(response) {
                         response.json().then(function(data) {
                             run_metrics = data;
                             let metrics = [];

@@ -6,22 +6,28 @@ from .views import autokeras
 urlpatterns = [
     path(
         "<int:pk>/metrics/<str:trial_id>/",
-        autokeras.get_metrics_json,
+        autokeras.MetricAPIView.as_view(),
         name="get_metrics",
     ),
+    # same as above, just as downloadable CSV
     path(
         "<int:pk>/metrics/<str:trial_id>/download",
         autokeras.download_metrics,
         name="download_metrics",
     ),
+    # all metrics of run including the final ones. sorted by trial and epoch
     path("<int:pk>/metrics/", autokeras.get_all_metrics, name="all_metrics"),
+    # just the final metrics of all trials
     path("<int:pk>/finalmetrics/", autokeras.get_final_metrics, name="final_metrics"),
+    # only gets extremum values for all trials
     path(
         "<int:pk>/metrics_short/",
         autokeras.get_trial_details_short,
         name="metrics_short",
     ),
+    # gets the configuration details of all trials
     path("<int:pk>/trials/", autokeras.get_all_trial_details, name="trial_details"),
+    # should be deprecated, all_metrics
     path(
         "<int:pk>/metricdata/",
         autokeras.get_metrics_for_run,

@@ -5,6 +5,8 @@ from django.http import HttpResponse, JsonResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import status
 
 from neural_architecture.models.autokeras import AutoKerasRun
 from runs.views.softdelete import harddelete_run, undelete_run
@@ -316,3 +318,16 @@ def undelete(request, pk):
     """
     success = undelete_run(pk, "autokeras")
     return Response({"success": success, "id": pk})
+
+
+class MetricAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk, trial_id, format=None):
+        return JsonResponse(get_metrics(pk, trial_id), safe=True)
+
+    def post(self, request, pk, trial_id, format=None):
+        run = AutoKerasRun.objects.get(pk=pk)
+        data = request.data
+
+        return Response(data, status=status.HTTP_201_created)

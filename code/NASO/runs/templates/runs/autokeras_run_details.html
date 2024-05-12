@@ -914,7 +914,13 @@
                             let trial_id = this.getAttribute('data-trial');
                             if (this.checked) {
                                 if (! ('data' in run_metrics[trial_id])) {
-                                    fetch("{% url 'api:autokeras:get_metrics' run.id '-1e' %}".replace('-1e', trial_id)).then(function(response) {
+                                    fetch("{% url 'api:autokeras:get_metrics' run.id '-1e' %}".replace('-1e', trial_id), {
+                                        method: "GET",
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'Authorization': `Token ${token}`
+                                        }
+                                    }).then(function(response) {
                                         response.json().then(function(data) {
                                             run_metrics[trial_id]['data'] = data;
                                             trialOverviewChart.data.datasets.push({
@@ -1186,7 +1192,13 @@
                 if ('data' in run_metrics[trialId]) {
                     build_graph(trialId, run_metrics[trialId]['data']);
                 } else {
-                    fetch("{% url 'api:autokeras:get_metrics' run.id '-1e' %}".replace('-1e', trialId)).then(function(response) {
+                    fetch("{% url 'api:autokeras:get_metrics' run.id '-1e' %}".replace('-1e', trialId), {
+                        method: "GET",
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Token ${token}`
+                        }
+                    }).then(function(response) {
                         response.json().then(function(data) {
                             run_metrics[trialId]['data'] = data;
                             build_graph(trialId, data);
