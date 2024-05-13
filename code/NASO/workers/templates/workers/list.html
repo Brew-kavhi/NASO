@@ -16,8 +16,17 @@
                                     aria-expanded="true"
                                     aria-controls="collapse_{{ worker.id }}">{{ worker.hostname }}</button>
                         </h2>
-                        <div class='d-flex is-align-items-center'>
-                            {% if not worker.active %}<div class='tag is-danger'>inactive</div>{% endif %}
+                        <div class='d-flex'>
+                            <div class='d-flex is-align-items-center'>
+                                {% if not worker.active %}<div class='tag is-danger'>inactive</div>{% endif %}
+                            </div>
+                            <button class="button is-danger ml-2 delete-btn"
+                                    data-target="#confirmDeleteModal"
+                                    data-action="{% url 'workers:delete' worker.id %}"
+                                    data-item-id="{{ worker.id }}"
+                                    data-item-name="{{ worker.hostname }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </div>
                     </div>
                     <div id="collapse_{{ worker.id }}"
@@ -44,4 +53,5 @@
             </div>
         {% endfor %}
     </div>
+    {% include 'components/delete_modal.html' %}
 {% endblock content %}
