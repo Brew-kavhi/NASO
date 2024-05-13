@@ -47,6 +47,14 @@
                                     {% endfor %}
                                 </div>
                             {% endfor %}
+                            <div class='row'>
+                                <button class='button is-link has-tooltip-right'
+                                        name='{{ worker.hostname }}'
+                                        onclick='restart_worker(this)'
+                                        data-tooltip='Restart worker'>
+                                    <i class='fas fa-redo'></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
