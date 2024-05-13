@@ -1,10 +1,8 @@
-from django.http import JsonResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework import status
 
+from api.serializers.tensorflow import NetworkTrainingSerializer
 from runs.models.training import NetworkTraining
 from runs.views.softdelete import harddelete_run, undelete_run
 
@@ -30,34 +28,6 @@ def rate_run(request, pk):
         run.rate = 0
     run.save()
     return Response({"success": True})
-
-
-class MetricAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, pk, format=None):
-        """
-        This view returns the metrics for a run.
-
-        Args:
-            request (Request): The request object.
-            pk (int): The primary key of the run.
-
-        Returns:
-            JsonResponse: Array of metrics for this run
-        """
-        run = NetworkTraining.objects.get(pk=pk)
-        metrics = run.trainingmetric_set.all()
-        data = []
-        for metric in metrics:
-            data.append(metric.metrics[0])
-        return JsonResponse(data, safe=False)
-
-    def post(self, request, pk, format=None):
-        run = NetworkTraining.objects.get(pk=pk)
-        data = request.data
-
-        return Response(data, status=status.HTTP_201_created)
 
 
 @api_view(["GET"])

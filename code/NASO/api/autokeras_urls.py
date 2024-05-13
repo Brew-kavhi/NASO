@@ -7,6 +7,12 @@ urlpatterns = [
     path(
         "<int:pk>/metrics/<str:trial_id>/",
         autokeras.MetricAPIView.as_view(),
+        kwargs={"is_prediction": 0},
+        name="get_metrics",
+    ),
+    path(
+        "<int:pk>/metrics/<str:trial_id>/<int:is_prediction>/",
+        autokeras.MetricAPIView.as_view(),
         name="get_metrics",
     ),
     # same as above, just as downloadable CSV

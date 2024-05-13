@@ -1,10 +1,13 @@
 import math
+import types
 
 import tensorflow as tf
 
+from api.views.metrics import MetricsAPIView as InferenceMetricsAPIView
+from api.views.metrics import TensorflowMetricAPIView
 from helper_scripts.timer import Timer
 from inference.models.inference import Inference
-from runs.models.training import Run, TrainingMetric
+from runs.models.training import NetworkTraining, Run, TrainingMetric
 
 
 class EvaluationBaseCallback(tf.keras.callbacks.Callback):
@@ -126,17 +129,61 @@ class EvaluationBaseCallback(tf.keras.callbacks.Callback):
             if not math.isnan(logs[key]):
                 metrics[key] = logs[key]
         if self.run:
-            metric = TrainingMetric(
-                epoch=0,
-                metrics=[
-                    {
-                        "run_id": self.run.id,
-                        "metrics": metrics,
-                    },
-                ],
-            )
-            metric.save()
-            self.run.prediction_metrics.add(metric)
+            if isinstance(self.run, Inference):
+                metric_api = InferenceMetricsAPIView()
+                metric_api.post(
+                    types.SimpleNamespace(
+                        **{
+                            "data": {
+                                "epoch": 0,
+                                "metrics": [
+                                    {
+                                        "final_metric": False,
+                                        "current": 0,
+                                        "run_id": self.run.id,
+                                        "metrics": metrics,
+                                        "time": None,
+                                    },
+                                ],
+                            }
+                        }
+                    ),
+                    self.run.id,
+                )
+            elif isinstance(self.run, NetworkTraining):
+                metric_api = TensorflowMetricAPIView()
+                metric_api.post(
+                    types.SimpleNamespace(
+                        **{
+                            "data": {
+                                "epoch": 0,
+                                "metrics": [
+                                    {
+                                        "final_metric": False,
+                                        "current": 0,
+                                        "run_id": self.run.id,
+                                        "metrics": metrics,
+                                        "time": None,
+                                    },
+                                ],
+                            }
+                        }
+                    ),
+                    self.run.id,
+                    1,
+                )
+            else:
+                metric = TrainingMetric(
+                    epoch=0,
+                    metrics=[
+                        {
+                            "run_id": self.run.id,
+                            "metrics": metrics,
+                        },
+                    ],
+                )
+                metric.save()
+                self.run.prediction_metrics.add(metric)
 
     def on_predict_batch_begin(self, batch, logs=None):
         """

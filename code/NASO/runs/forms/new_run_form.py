@@ -6,12 +6,13 @@ from decouple import config
 from django import forms
 from django.urls import reverse_lazy
 
-from neural_architecture.models.autokeras import AutoKerasNodeType, AutoKerasTunerType
 from neural_architecture.models.templates import (
     AutoKerasNetworkTemplate,
     KerasNetworkTemplate,
 )
 from neural_architecture.models.types import (
+    AutoKerasNodeType,
+    AutoKerasTunerType,
     NetworkLayerType,
     OptimizerType,
     TensorFlowModelType,

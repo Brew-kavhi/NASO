@@ -1,11 +1,12 @@
 import math
+import types
 
 import tensorflow as tf
 from loguru import logger
 
+from api.views.autokeras import MetricAPIView
 from helper_scripts.timer import Timer
 from neural_architecture.models.autokeras import AutoKerasRun
-from runs.models.training import TrainingMetric
 
 
 class AutoKerasCallback(tf.keras.callbacks.Callback):
@@ -48,17 +49,27 @@ class AutoKerasCallback(tf.keras.callbacks.Callback):
             if not math.isnan(logs[key]):
                 metrics[key] = logs[key]
         self.timer.stop()
-        metric = TrainingMetric(
-            epoch=0,
-            metrics=[
-                {
-                    "final_metric": True,
-                    "run_id": self.run.id,
-                    "metrics": metrics,
-                    "time": self.timer.get_total_time(),
-                },
-            ],
+        api_view = MetricAPIView()
+
+        api_view.post(
+            types.SimpleNamespace(
+                **{
+                    "data": {
+                        "epoch": 0,
+                        "metrics": [
+                            {
+                                "final_metric": True,
+                                "current": 0,
+                                "total": self.run.model.epochs,
+                                "run_id": self.run.id,
+                                "metrics": metrics,
+                                "time": self.timer.get_total_time(),
+                            },
+                        ],
+                    }
+                }
+            ),
+            self.run.id,
+            0,
         )
-        metric.save()
-        self.run.metrics.add(metric)
         logger.info("Autokeras training ended ")

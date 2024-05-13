@@ -94,6 +94,45 @@ class CallbackType(BaseType):
     registers_metrics = models.TextField()
 
 
+class AutoKerasNodeType(BaseType):
+    """
+    Represents a node type in AutoKeras.
+
+    Attributes:
+        autokeras_type (str): The type of the node in AutoKeras.
+    """
+
+    autokeras_type = models.CharField(max_length=100)
+
+
+class AutoKerasTunerType(BaseType):
+    """
+    Represents the type of AutoKeras tuner.
+
+    Attributes:
+        native_tuner (bool): Indicates whether the tuner is a native AutoKeras tuner.
+            If True, it is a native tuner. If False, it is not a native tuner and requires
+            a class to import the tuner from.
+        module_name (str): The name of the module to import the tuner class from.
+            This attribute is only applicable when native_tuner is False.
+    """
+
+    native_tuner = models.BooleanField(default=True)
+
+    def save(self, *args, **kwargs):
+        if self.name not in ["greedy", "bayesian", "hyperband", "random"]:
+            self.native_tuner = False
+            if not self.module_name or len(self.module_name) == 0:
+                raise ValidationError(
+                    """If the tuner is not a native AutoKeras Tuner we need a class to import the tuner
+                    from, module_name cannot be empty."""
+                )
+        else:
+            self.module_name = None
+            self.native_tuner = True
+        super().save(*args, **kwargs)
+
+
 class LossType(BaseType):
     """
     LossType class represents a type of loss used in a neural network model.

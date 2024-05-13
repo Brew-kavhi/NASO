@@ -1,15 +1,15 @@
 import math
-import time
+import types
 
-import django
 import tensorflow as tf
 
+from api.views.metrics import TensorflowMetricAPIView as MetricAPIView
 from helper_scripts.pruning import calculate_sparsity, collect_prunable_layers
 from helper_scripts.timer import Timer
 from inference.models.inference import Inference
 from neural_architecture.helper_scripts.architecture import calculate_flops
 from neural_architecture.models.autokeras import AutoKerasRun
-from runs.models.training import NetworkTraining, TrainingMetric
+from runs.models.training import NetworkTraining
 from workers.helper_scripts.celery import get_compute_device_name
 
 K = tf.keras.backend
@@ -151,25 +151,28 @@ class BaseCallback(tf.keras.callbacks.Callback):
                 metrics[key] = logs[key]
 
         if isinstance(self.run, NetworkTraining):
-            metric = TrainingMetric(
-                neural_network=self.run,
-                epoch=epoch,
-                metrics=[
-                    {
-                        "current": epoch,
-                        "total": self.epochs,
-                        "run_id": self.run.id,
-                        "metrics": metrics,
-                        "time": self.timer.get_total_time(),
-                    },
-                ],
+            api_view = MetricAPIView()
+            api_view.post(
+                types.SimpleNamespace(
+                    **{
+                        "data": {
+                            "epoch": epoch,
+                            "metrics": [
+                                {
+                                    "final_metric": False,
+                                    "trial_id": 0,
+                                    "current": epoch,
+                                    "total": self.epochs,
+                                    "run_id": self.run.id,
+                                    "metrics": metrics,
+                                    "time": self.timer.get_total_time(),
+                                },
+                            ],
+                        }
+                    }
+                ),
+                self.run.id,
             )
-            # Database could be locked. In that case, wait and try again
-            try:
-                metric.save()
-            except django.db.utils.OperationalError:
-                time.sleep(0.5)
-                metric.save()
 
         if "power_consumption" in logs:
             self.gpu_consumption = logs["power_consumption"]

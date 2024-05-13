@@ -5,9 +5,7 @@ from neural_architecture.models.architecture import NetworkConfiguration
 from neural_architecture.models.autokeras import (
     AutoKerasModel,
     AutoKerasNode,
-    AutoKerasNodeType,
     AutoKerasRun,
-    AutoKerasTunerType,
 )
 from neural_architecture.models.dataset import DatasetLoader
 from neural_architecture.models.templates import (
@@ -15,6 +13,8 @@ from neural_architecture.models.templates import (
     KerasNetworkTemplate,
 )
 from neural_architecture.models.types import (
+    AutoKerasNodeType,
+    AutoKerasTunerType,
     CallbackType,
     LossType,
     MetricType,

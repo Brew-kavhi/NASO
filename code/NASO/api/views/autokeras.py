@@ -8,6 +8,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 
+from api.serializers.training import TrainingMetricSerializer
+from runs.models.training import TrainingMetric
 from neural_architecture.models.autokeras import AutoKerasRun
 from runs.views.softdelete import harddelete_run, undelete_run
 
@@ -323,11 +325,22 @@ def undelete(request, pk):
 class MetricAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, pk, trial_id, format=None):
+    def get(self, request, pk, trial_id, is_prediction=0, format=None):
         return JsonResponse(get_metrics(pk, trial_id), safe=True)
 
-    def post(self, request, pk, trial_id, format=None):
+    def post(self, request, pk, trial_id, is_prediction=0, format=None):
         run = AutoKerasRun.objects.get(pk=pk)
-        data = request.data
+        serialized_metric = TrainingMetricSerializer(data=request.data)
+        if serialized_metric.is_valid(True):
+            metric = TrainingMetric(
+                epoch=serialized_metric.validated_data.get("epoch"),
+                metrics=serialized_metric.validated_data.get("metrics"),
+            )
+            metric.save()
+            if is_prediction == 1:
+                run.prediction_metrics.add(metric)
+            else:
+                run.metrics.add(metric)
 
-        return Response(data, status=status.HTTP_201_created)
+            return Response(serialized_metric.data, status=status.HTTP_201_CREATED)
+        return Response(serialized_metric.errors, status=status.HTTP_400_BAD_REQUEST)

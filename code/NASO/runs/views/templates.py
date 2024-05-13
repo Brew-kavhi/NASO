@@ -8,11 +8,12 @@ from django.views.generic.base import TemplateView
 
 from naso.models.page import PageSetup
 from neural_architecture.models.architecture import NetworkLayer, NetworkLayerType
-from neural_architecture.models.autokeras import AutoKerasNode, AutoKerasNodeType
+from neural_architecture.models.autokeras import AutoKerasNode
 from neural_architecture.models.templates import (
     AutoKerasNetworkTemplate,
     KerasNetworkTemplate,
 )
+from neural_architecture.models.types import AutoKerasNodeType
 
 
 class TemplateDetails(TemplateView):

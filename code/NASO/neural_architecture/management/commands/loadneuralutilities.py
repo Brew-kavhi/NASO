@@ -3,7 +3,6 @@ import inspect
 
 from django.core.management.base import BaseCommand
 
-from neural_architecture.models.autokeras import AutoKerasNodeType, AutoKerasTunerType
 from neural_architecture.models.dataset import DatasetLoader
 from neural_architecture.models.model_optimization import (
     PruningMethodTypes,
@@ -11,6 +10,8 @@ from neural_architecture.models.model_optimization import (
     PruningScheduleTypes,
 )
 from neural_architecture.models.types import (
+    AutoKerasNodeType,
+    AutoKerasTunerType,
     CallbackType,
     LossType,
     MetricType,
