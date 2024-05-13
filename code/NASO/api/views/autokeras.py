@@ -2,12 +2,25 @@ import csv
 import json
 
 from django.http import HttpResponse, JsonResponse
+from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
+from api.serializers.autokeras import AutoKerasRunSerializer
+from api.serializers.training import TrainingMetricSerializer
 from neural_architecture.models.autokeras import AutoKerasRun
+from runs.models.training import TrainingMetric
 from runs.views.softdelete import harddelete_run, undelete_run
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_configuration(request, pk):
+    run = AutoKerasRun.objects.get(pk=pk)
+    serial_model = AutoKerasRunSerializer(run.model)
+    return Response(serial_model.data)
 
 
 @api_view(["POST"])
@@ -316,3 +329,27 @@ def undelete(request, pk):
     """
     success = undelete_run(pk, "autokeras")
     return Response({"success": success, "id": pk})
+
+
+class MetricAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk, trial_id, is_prediction=0, format=None):
+        return JsonResponse(get_metrics(pk, trial_id), safe=True)
+
+    def post(self, request, pk, trial_id, is_prediction=0, format=None):
+        run = AutoKerasRun.objects.get(pk=pk)
+        serialized_metric = TrainingMetricSerializer(data=request.data)
+        if serialized_metric.is_valid(True):
+            metric = TrainingMetric(
+                epoch=serialized_metric.validated_data.get("epoch"),
+                metrics=serialized_metric.validated_data.get("metrics"),
+            )
+            metric.save()
+            if is_prediction == 1:
+                run.prediction_metrics.add(metric)
+            else:
+                run.metrics.add(metric)
+
+            return Response(serialized_metric.data, status=status.HTTP_201_CREATED)
+        return Response(serialized_metric.errors, status=status.HTTP_400_BAD_REQUEST)

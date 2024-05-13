@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow.keras.backend as K
 from autokeras import tuners
 
-from neural_architecture.models.autokeras import AutoKerasTunerType
+from neural_architecture.models.types import AutoKerasTunerType
 from plugins.interfaces.commands import InstallerInterface
 
 # @transaction.atomic

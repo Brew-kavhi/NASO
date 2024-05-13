@@ -606,7 +606,14 @@
             }
         });
 
-        fetch("{% url 'api:tensorflow:get_metrics_for_run' run.id %}").then(function(response) {
+        const token = "{{API_TOKEN}}";
+        fetch("{% url 'api:tensorflow:metrics' run.id %}", {
+            method: "GET",
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Token ${token}`,
+            }
+        }).then(function(response) {
             response.json().then(function(data) {
                 run_metrics = data;
                 let metrics = [];
@@ -619,7 +626,6 @@
 
             });
         });
-        const token = "{{API_TOKEN}}";
         fetch("{% url 'api:celery:is_running' %}", {
             method: 'POST',
                     headers: {
