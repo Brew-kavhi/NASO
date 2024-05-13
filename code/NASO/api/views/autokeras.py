@@ -10,8 +10,8 @@ from rest_framework.views import APIView
 
 from api.serializers.autokeras import AutoKerasRunSerializer
 from api.serializers.training import TrainingMetricSerializer
-from runs.models.training import TrainingMetric
 from neural_architecture.models.autokeras import AutoKerasRun
+from runs.models.training import TrainingMetric
 from runs.views.softdelete import harddelete_run, undelete_run
 
 

@@ -39,8 +39,8 @@ from runs.models.training import (
     NetworkHyperparameters,
     NetworkTraining,
     Optimizer,
-    TrainingMetric,
     TensorFlowModel,
+    TrainingMetric,
 )
 from workers.helper_scripts.celery import get_all_workers
 

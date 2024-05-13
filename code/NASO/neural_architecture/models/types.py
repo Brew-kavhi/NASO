@@ -1,12 +1,11 @@
 import abc
-
-from django.core.exceptions import ValidationError
-from django.db import models
 import inspect
 
-from helper_scripts.importing import get_class
 import tensorflow as tf
+from django.core.exceptions import ValidationError
+from django.db import models
 
+from helper_scripts.importing import get_class
 from neural_architecture.helper_scripts.architecture import (
     build_connected_layer,
     edges_from_source,
