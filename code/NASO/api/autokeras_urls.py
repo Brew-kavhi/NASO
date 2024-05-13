@@ -42,4 +42,7 @@ urlpatterns = [
     path("<int:pk>/hardelete/", autokeras.hard_delete, name="delete_run"),
     path("<int:pk>/undelete/", autokeras.undelete, name="undelete_run"),
     path("<int:pk>/rate/", autokeras.rate_run, name="rate_run"),
+    path(
+        "<int:pk>/configuration/", autokeras.get_configuration, name="get_configuration"
+    ),
 ]

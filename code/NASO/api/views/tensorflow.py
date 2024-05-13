@@ -32,6 +32,14 @@ def rate_run(request, pk):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+def get_configuration(request, pk):
+    run = NetworkTraining.objects.get(pk=pk)
+    serial_model = NetworkTrainingSerializer(run)
+    return Response(serial_model.data)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def hard_delete(request, pk):
     """
     This view finally deletes a run.

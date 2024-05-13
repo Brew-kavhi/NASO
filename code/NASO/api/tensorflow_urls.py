@@ -18,4 +18,5 @@ urlpatterns = [
         TensorflowMetricAPIView.as_view(),
         name="metrics",
     ),
+    path("<int:pk>/configuration/", tensorflow.get_configuration, name="configuration"),
 ]
