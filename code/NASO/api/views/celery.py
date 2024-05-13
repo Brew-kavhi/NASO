@@ -189,3 +189,8 @@ def get_workers_information():
         return []
     except TimeoutError:
         return []
+
+
+def is_worker_busy(hostname):
+    tasks = app.control.inspect([hostname]).active()
+    return len(tasks)
