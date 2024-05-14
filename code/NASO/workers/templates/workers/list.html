@@ -16,8 +16,25 @@
                                     aria-expanded="true"
                                     aria-controls="collapse_{{ worker.id }}">{{ worker.hostname }}</button>
                         </h2>
-                        <div class='d-flex is-align-items-center'>
-                            {% if not worker.active %}<div class='tag is-danger'>inactive</div>{% endif %}
+                        <div class='d-flex align-items-center'>
+                            {% if worker.tasks_executing > 0 %}
+                                <div style="width: 8vw"
+                                     class='has-tooltip-left'
+                                     data-tooltip='This worker is busy executing {{ worker.tasks_executing }} tasks'
+                                     id='progressbar_{{ worker.hostname }}_{{ worker.queue_name }}'>
+                                    <progress class="progress is-normal is-info" max="100">45%</progress>
+                                </div>
+                            {% endif %}
+                            <div class='d-flex is-align-items-center'>
+                                {% if not worker.active %}<div class='tag is-danger'>inactive</div>{% endif %}
+                            </div>
+                            <button class="button is-danger ml-2 delete-btn"
+                                    data-target="#confirmDeleteModal"
+                                    data-action="{% url 'workers:delete' worker.id %}"
+                                    data-item-id="{{ worker.id }}"
+                                    data-item-name="{{ worker.hostname }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </div>
                     </div>
                     <div id="collapse_{{ worker.id }}"
@@ -29,7 +46,14 @@
                                 <strong>Last ping:</strong> {{ worker.last_ping }}
                             </div>
                             <div class='my-2'>
+                                <strong>Last active:</strong> {{ worker.last_active }}
+                            </div>
+                            <div class='my-2'>
                                 <strong>Queue:</strong> {{ worker.queue_name }}
+                            </div>
+                            <div class='my-2'>
+                                <strong>Concurrency:</strong> {{ worker.concurrency }}
+                                {% if worker.tasks_executing > 0 %}, <strong>Active Tasks:</strong> {{ worker.tasks_executing }}{% endif %}
                             </div>
                             {% for device in worker.devices %}
                                 <div class='my-2'>
@@ -38,10 +62,19 @@
                                     {% endfor %}
                                 </div>
                             {% endfor %}
+                            <div class='row'>
+                                <button class='button is-link has-tooltip-right'
+                                        name='{{ worker.hostname }}'
+                                        onclick='restart_worker(this)'
+                                        data-tooltip='Restart worker'>
+                                    <i class='fas fa-redo'></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         {% endfor %}
     </div>
+    {% include 'components/delete_modal.html' %}
 {% endblock content %}

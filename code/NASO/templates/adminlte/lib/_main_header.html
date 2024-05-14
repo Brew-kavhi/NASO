@@ -129,12 +129,23 @@
 
         const apiURL = '/api/celery/restart_worker/';
         async function restart_worker(element) {
-            const response = await fetch(apiURL + element.getAttribute('name'), {
+            fetch(apiURL + element.getAttribute('name'), {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Token ${token}`,
                 },
+            }).then(function(response) {
+                if (response.ok) {
+                    response.json().then(function(data) {
+                        if (data['success']) {
+                            toastr.success("Successful restart");
+                        }
+                        else {
+                            toastr.error("Error");
+                        }
+                    });
+                }
             });
         }
 

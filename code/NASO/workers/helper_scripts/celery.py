@@ -21,8 +21,14 @@ def get_all_workers():
 
         for worker in alive_workers:
             hostname = list(worker.keys())[0]
-            queue = app.control.inspect([hostname]).active_queues()[hostname][0]["name"]
             celery_worker = CeleryWorker.objects.filter(hostname=hostname).first()
+
+            details = app.control.inspect([hostname]).active_queues()
+            configuration = app.control.inspect([hostname]).stats()
+            concurrency = 1
+            if configuration[hostname]["pool"]["max-concurrency"]:
+                concurrency = configuration[hostname]["pool"]["max-concurrency"]
+            queue = details[hostname][0]["name"]
             if celery_worker:
                 if f"{hostname}-{queue}" in known_worker_ids:
                     known_worker_ids.remove(f"{hostname}-{queue}")
@@ -41,6 +47,9 @@ def get_all_workers():
                 celery_worker.last_ping = datetime.datetime.now()
                 celery_worker.save()
                 collect_devices.apply_async(args=(celery_worker.id,), queue=queue)
+            celery_worker.concurrency = concurrency
+            celery_worker.last_active = datetime.datetime.now()
+            celery_worker.save()
 
         for worker in known_worker_ids:
             # these are all inactive.
