@@ -23,6 +23,12 @@ urlpatterns = [
     ),
     # all metrics of run including the final ones. sorted by trial and epoch
     path("<int:pk>/metrics/", autokeras.get_all_metrics, name="all_metrics"),
+    # just the inference metrics of all trials
+    path(
+        "<int:pk>/inferencemetrics/",
+        autokeras.get_inference_metrics,
+        name="inference_metrics",
+    ),
     # just the final metrics of all trials
     path("<int:pk>/finalmetrics/", autokeras.get_final_metrics, name="final_metrics"),
     # only gets extremum values for all trials
