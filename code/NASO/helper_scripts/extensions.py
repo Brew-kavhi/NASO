@@ -2,8 +2,11 @@ import asyncio
 
 import numpy as np
 import tensorflow as tf
+from loguru import logger
 
 from helper_scripts.power_management import get_cpu_power_usage, get_gpu_power_usage
+from neural_architecture.NetworkCallbacks.logging_callback import LoggingCallback
+from neural_architecture.NetworkCallbacks.timing_callback import TimingCallback
 from runs.models.training import Run, TrainingMetric
 
 keras = tf.keras
@@ -77,6 +80,11 @@ def custom_on_epoch_end_decorator(original_on_epoch_end, run):
         run.metrics.add(metric)
 
         if original_on_epoch_end:
+            run.model.trial_model = {
+                "model": model,
+                "trial_id": trial.trial_id,
+                "metrics": metric.metrics,
+            }
             original_on_epoch_end(self, trial, model, epoch, logs)
 
     return on_epoch_end
@@ -109,7 +117,7 @@ def custom_on_epoch_begin_decorator(original_on_epoch_begin):
 
 
 # Define a decorator function that wraps the on_epoch_end method
-def custom_on_trial_end_decorator(original_on_trial_end):
+def custom_on_trial_end_decorator(original_on_trial_end, run, train_data, val_data):
     """
     This function is a decorator for the on_trial_end function of the hyper tuner.
 
@@ -124,7 +132,95 @@ def custom_on_trial_end_decorator(original_on_trial_end):
         if original_on_trial_end:
             original_on_trial_end(self, trial)
 
+        inference_model = run.model.get_export_model(run.model.trial_model["model"])
+        if run.model.clustering_options:
+            inference_model = run.model.clustering_options.get_cluster_export_model(
+                inference_model
+            )
+
+        batch_size = 32
+
+        (_, dataset) = prepare_data_for_trial(
+            train_data, val_data, trial, run.model.auto_model, batch_size
+        )
+
+        callbacks = (
+            [TimingCallback()] + run.model.get_callbacks(run) + [LoggingCallback()]
+        )
+
+        inference_model.evaluate(
+            dataset,
+            batch_size=batch_size,
+            verbose=2,
+            steps=None,
+            callbacks=callbacks,
+            return_dict=True,
+        )
+
+        val_metrics = callbacks[-1].logs[0]
+        train_metrics = run.model.trial_model["metrics"][0]["metrics"]
+
+        log_metrics = val_metrics
+        for metric in train_metrics:
+            if metric not in log_metrics:
+                log_metrics[metric] = train_metrics[metric]
+
+        metric = TrainingMetric(
+            epoch=run.model.epochs,
+            metrics=[
+                {
+                    "current": run.model.epochs,
+                    "run_id": run.id,
+                    "metrics": log_metrics,
+                    "trial_id": trial.trial_id,
+                },
+            ],
+        )
+        metric.save()
+        run.inference_metrics.add(metric)
+
+        score = 0
+        if run.model.objective == "metrics" and hasattr(run.model, "metric_weights"):
+            for metric_name in run.model.metric_weights:
+                if metric_name in log_metrics and log_metrics[metric_name]:
+                    score += (log_metrics[metric_name]) * (
+                        run.model.metric_weights[metric_name]
+                    )
+            trial.score = score
+        else:
+            if run.model.objective in log_metrics:
+                trial.score = log_metrics[run.model.objective]
+
     return on_trial_end
+
+
+def prepare_data_for_trial(
+    train_dataset, test_dataset, trial, auto_model, batch_size=1
+) -> tuple:
+    """
+    Prepares the data for a trial in AutoKeras.
+
+    Args:
+        train_dataset: The training dataset.
+        test_dataset: The test dataset.
+        trial_id: The ID of the trial.
+
+    Returns:
+        A tuple containing the pipeline, hyperparameters, trial data, and validation data.
+    """
+
+    # convert dataset to a shape , that autokeras can use.
+    dataset, validation_data = auto_model._convert_to_dataset(
+        train_dataset, y=None, validation_data=test_dataset, batch_size=batch_size
+    )
+    (
+        _,
+        dataset,
+        validation_data,
+    ) = auto_model.tuner._prepare_model_build(
+        trial.hyperparameters, x=dataset, validation_data=validation_data
+    )
+    return (dataset, validation_data)
 
 
 def custom_on_trial_begin_decorator(original_on_trial_begin):

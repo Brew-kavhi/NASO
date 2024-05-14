@@ -133,6 +133,7 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
     loaded_model: autokeras.AutoModel = None
     inputs: dict = {}
     tuner_object = None
+    trial_model = {"model": None, "trial_id": 0, "metrics": []}
 
     def build_tuner(self, run: "AutoKerasRun"):
         """
@@ -152,8 +153,9 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
             self.tuner_object.on_epoch_begin = custom_on_epoch_begin_decorator(
                 self.tuner_object.on_epoch_begin
             )
+            (train_data, _, dataset) = run.dataset.get_data()
             self.tuner_object.on_trial_end = custom_on_trial_end_decorator(
-                self.tuner_object.on_trial_end
+                self.tuner_object.on_trial_end, run, train_data, dataset
             )
             self.tuner_object.on_trial_begin = custom_on_trial_begin_decorator(
                 self.tuner_object.on_trial_begin
@@ -543,6 +545,10 @@ class AutoKerasRun(Run):
     prediction_metrics = models.ManyToManyField(
         TrainingMetric,
         related_name="autokeras_prediction_metrics",
+    )
+
+    inference_metrics = models.ManyToManyField(
+        TrainingMetric, related_name="autokeras_inference_metrics"
     )
 
     def __str__(self):

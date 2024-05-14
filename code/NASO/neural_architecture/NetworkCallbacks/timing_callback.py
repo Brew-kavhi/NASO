@@ -34,7 +34,10 @@ class TimingCallback(tf.keras.callbacks.Callback):
     def __init__(self):
         super().__init__()
         self.timer = Timer()
+        self.batch_timer = Timer()
         self.times = []
+        self.batch_times = []
+        self.batches = 1
 
     def on_epoch_begin(self, epochs, logs=None):
         """
@@ -46,6 +49,8 @@ class TimingCallback(tf.keras.callbacks.Callback):
         Returns:
             None
         """
+        self.times = []
+        self.batch_times = []
         self.timer.start()
 
     def on_epoch_end(self, epochs, logs=None):
@@ -63,7 +68,21 @@ class TimingCallback(tf.keras.callbacks.Callback):
         if logs is None:
             logs = []
         self.times.append(elapsed_time)
-        logs["execution_time"] = sum(self.times)
+        if len(self.times) > 0:
+            logs["epoch_execution_time"] = sum(self.times) / len(self.times)
+        else:
+            logs["epoch_execution_time"] = 0
+        if len(self.batch_times) > 0:
+            logs["execution_time"] = sum(self.batch_times) / len(self.batch_times)
+        else:
+            logs["execution_time"] = 0
+
+    def on_train_batch_begin(self, batch, logs=None):
+        self.batch_timer.start()
+
+    def on_train_batch_end(self, batch, logs=None):
+        batch_time = self.batch_timer.stop()
+        self.batch_times.append(batch_time)
 
     def on_test_begin(self, logs=None):
         """
