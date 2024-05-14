@@ -806,7 +806,7 @@
                 }
             });
 
-            fetch("{% url 'api:autokeras:final_metrics' run.id %}").then(function(response) {
+            fetch("{% url 'api:autokeras:inference_metrics' run.id %}").then(function(response) {
                 response.json().then(function(data) {
                     var runDatasets = [];
                     for (trial_id in data) {
