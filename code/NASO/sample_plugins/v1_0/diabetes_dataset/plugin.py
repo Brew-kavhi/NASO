@@ -1,18 +1,18 @@
-# from django.db imort transaction
 import os
+from os import listdir
 import zipfile
+from os.path import isfile, join
 
 import kaggle
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 from neural_architecture.models.dataset import DatasetLoader
 from plugins.interfaces.commands import InstallerInterface
 from plugins.interfaces.dataset import DatasetLoaderInterface
-
-# @transaction.atomic
 
 
 class Installer(InstallerInterface):
@@ -61,7 +61,11 @@ class OhioDiabetesDatasets(DatasetLoaderInterface):
 
     module_name = "diabetes_dataset"
     dataset_path = "data"
-    dataset_list = ["Diabetes Dataset"]
+    dataset_list = [
+        "Diabetes Dataset (3)",
+        "Diabetes Dataset (5)",
+        "Diabetes Dataset (7)",
+    ]
     size = 0
     element_size = 0
     info: dict = {}
@@ -77,60 +81,66 @@ class OhioDiabetesDatasets(DatasetLoaderInterface):
         Returns:
             tuple: A tuple containing the train and test datasets.
         """
-        self.dataset_path += str(dataset.id)
+        self.dataset_path = os.path.dirname(os.path.abspath(__file__)) + "/data"
         if not os.path.exists(self.dataset_path):
-            raise Exception("Dataset can not be found on system.")
+            raise Exception(f"Dataset can not be found on {self.dataset_path}.")
 
-        if name == "Diabetes Dataset":
-            self.element_size = 9
-            return self.get_diabetes_dataset()
+        if name == "Diabetes Dataset (3)":
+            self.element_size = 3
+            return self.get_diabetes(3)
+        elif name == "Diabetes Dataset (5)":
+            self.element_size = 5
+            return self.get_diabetes(5)
+        elif name == "Diabetes Dataset (7)":
+            self.element_size = 7
+            return self.get_diabetes(7)
         return (None, None, None)
 
-    def get_diabetes(self):
-        df = pd.read_csv(self.dataset_path + "/bloodsugar.csv")
+    def get_diabetes(self, sequence_length=3):
+        """
+        The dataset is struuctured as follows:
+        we have one column named _ts that stores timestamps in d-m-Y h:s:i format
+        and we have the value for that time that is stored in _value column as baic integer.
+        The training data is given in files that contain ws-training
+        """
+        files = listdir(self.dataset_path)
 
-        (training_set, test_set, eval_set) = self._prep_dataframe(df)
+        training_df_list = [
+            pd.read_csv(join(self.dataset_path, file))
+            for file in files
+            if isfile(join(self.dataset_path, file))
+            and "training" in file
+            and file.endswith(".csv")
+        ]
+        training_df = pd.concat(training_df_list)
 
-        train_dataset = tf.data.Dataset.from_tensor_slices(training_set)
-        test_dataset = tf.data.Dataset.from_tensor_slices(test_set)
-        eval_dataset = tf.data.Dataset.from_tensor_slices(eval_set)
+        testing_df_list = [
+            pd.read_csv(join(self.dataset_path, file))
+            for file in files
+            if isfile(join(self.dataset_path, file))
+            and "testing" in file
+            and file.endswith(".csv")
+        ]
+        testing_df = pd.concat(testing_df_list)
+
+        testing_df, eval_df = train_test_split(testing_df, test_size=0.5, shuffle=False)
+
+        train_dataset = self._prepare_dataset(training_df, sequence_length)
+        test_dataset = self._prepare_dataset(testing_df, sequence_length)
+        eval_dataset = self._prepare_dataset(eval_df, sequence_length)
 
         return (train_dataset, test_dataset, eval_dataset)
 
-    def _prep_dataframe(self, dataframe: pd.DataFrame):
-        dataframe.dropna(inplace=True)
-        columns = [0, 1, 2, 3, 4, 5, 6, 7, 9]
-        validation_split = 0.8
-
-        # prepare dataframe
-        data = dataframe.iloc[:, columns]
-        target = dataframe.iloc[:, 8]
-        data.iloc[:, 8], mapping = pd.factorize(data.iloc[:, 8])
-
-        # conversion to numpy
-        n_data = np.asarray(data.to_numpy()).astype("float32")
-        n_target = np.asarray(target.to_numpy()).astype("float32")
-
-        scaler = StandardScaler()
-        n_data = scaler.fit_transform(n_data)
-        n_target = n_target / np.max(n_target)
-
-        # training and validation split
-        self.size = int(n_data.shape[0] * validation_split)
-        self.test_size = int(n_data.shape[0] * (validation_split + 0.1))
-        training_data = n_data[: self.size]
-        test_data = n_data[self.size : self.test_size]
-        eval_data = n_data[self.test_size :]
-
-        training_labels = n_target[: self.size]
-        test_labels = n_target[self.size : self.test_size]
-        eval_labels = n_target[self.test_size :]
-
-        return (
-            (training_data, training_labels),
-            (test_data, test_labels),
-            (eval_data, eval_labels),
-        )
+    def _prepare_dataset(self, df, sequence_length):
+        df["_ts"] = pd.to_datetime(df["_ts"], format="%d-%m-%Y %H:%M:%S")
+        df = df.sort_values(by="_ts")
+        X, y = [], []
+        for i in range(len(df) - sequence_length):
+            X.append(df["_value"].iloc[i : i + sequence_length].values)
+            y.append(df["_value"].iloc[i + sequence_length])
+        X, y = np.array(X), np.array(y)
+        dataset = tf.data.Dataset.from_tensor_slices((X, y))
+        return dataset
 
     def get_size(self, *args, **kwargs):
         """
