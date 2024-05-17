@@ -6,19 +6,21 @@ from django import forms
 from plugins.models.plugins import Plugin
 
 
-class PluginForm(forms.ModelForm):
+class PluginForm(forms.Form):
+    file = forms.FileField()
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.layout = Layout(
-            "python_file",
-            "config_file",
+            "file",
             Submit("submit", "Upload Plugin", css_class="btn-primary"),
         )
 
-    class Meta:
-        model = Plugin
-        fields = [
-            "python_file",
-            "config_file",
-        ]
+    def clean_file(self):
+        uploaded_file = self.cleaned_data.get("file")
+        if uploaded_file:
+            # Check if the uploaded file is a zip file
+            if not uploaded_file.name.endswith(".zip"):
+                raise forms.ValidationError("Only ZIP files are allowed.")
+        return uploaded_file
