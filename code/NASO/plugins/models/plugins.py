@@ -35,7 +35,7 @@ class Plugin(models.Model):
     description = models.TextField()
     author = models.CharField(max_length=100)
     version = models.CharField(max_length=11)
-    folder_name = models.CharField(max_length=100)
+    folder_name = models.CharField(max_length=200)
 
     class Meta:
         unique_together = ("name", "version")
