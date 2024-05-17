@@ -35,8 +35,7 @@ class Plugin(models.Model):
     description = models.TextField()
     author = models.CharField(max_length=100)
     version = models.CharField(max_length=11)
-    python_file = models.FileField(upload_to="plugins", storage=OverwriteStorage())
-    config_file = models.FileField(upload_to="plugins", storage=OverwriteStorage())
+    folder_name = models.CharField(max_length=100)
 
     class Meta:
         unique_together = ("name", "version")

@@ -20,11 +20,7 @@ class InstallerInterface(ABC):
             plugin (Plugin): The plugin to be installed.
         """
         self.plugin = plugin
-        self.module_name = (
-            self.plugin.name
-            + "."
-            + self.plugin.python_file.name.split("/")[-1].split(".")[0]
-        )
+        self.module_name = self.plugin.name
 
     def get_module_name(self) -> str:
         """

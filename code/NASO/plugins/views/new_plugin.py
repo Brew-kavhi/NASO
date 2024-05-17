@@ -2,8 +2,11 @@ import importlib.util
 import json
 import os
 import shutil
+import zipfile
 
+from django.conf import settings
 from django.contrib import messages
+from django.core.files.storage import FileSystemStorage
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic.base import TemplateView
 from loguru import logger
@@ -52,25 +55,87 @@ class NewPlugin(TemplateView):
         - A redirect response to the plugins:list URL if the form is valid.
         """
         form = PluginForm(request.POST, request.FILES)
+        self.context["form"] = form
         if form.is_valid():
-            plugin = form.save(commit=False)
-            # Create a subdirectory with the plugin's name
-            config_file_content = (
-                form.cleaned_data["config_file"].read().decode("utf-8")
-            )
-            config_data = json.loads(config_file_content)
-            # Extract name, author, and version from the JSON
-            plugin.name = config_data.get("name")
-            plugin.author = config_data.get("author")
-            plugin.description = config_data.get("description")
-            plugin.version = config_data.get("version")
-            # Save the plugin files in the subdirectory
-            plugin.python_file.name = os.path.join(plugin.name, plugin.python_file.name)
-            plugin.config_file.name = os.path.join(plugin.name, plugin.config_file.name)
+            f = form.cleaned_data["file"]
+            upload_dir = os.path.join(settings.MEDIA_ROOT, "plugins/.cache")
+            if not os.path.exists(upload_dir):
+                os.makedirs(upload_dir)
 
-            plugin.save()
+            fs = FileSystemStorage(location=upload_dir)
+            filename = fs.save(f.name, f)
+            uploaded_file_path = fs.path(filename)
+
+            # Extract config.json to get plugin name
+            config_data = []
+            with zipfile.ZipFile(uploaded_file_path, "r") as zip_ref:
+                if "config.json" not in zip_ref.namelist():
+                    self.context["form"].add_error(
+                        "file", "No config.json found in the plugin."
+                    )
+                    return self.render_to_response(self.context)
+                config_content = zip_ref.read("config.json")
+                config_data = json.loads(config_content.decode("utf-8"))
+                plugin_name = config_data.get("name")
+
+                if not plugin_name:
+                    self.context["form"].add_error(
+                        "file", "Plugin name not found in config.json."
+                    )
+                    return self.render_to_response(self.context)
+
+                # Define the directory where the file will be unzipped
+                unzip_dir = os.path.join(settings.MEDIA_ROOT, "plugins/" + plugin_name)
+                if not os.path.exists(unzip_dir):
+                    os.makedirs(unzip_dir)
+
+                # Unzip the file
+                zip_ref.extractall(unzip_dir)
+                # remove the zip file from cache
+                os.remove(uploaded_file_path)
+
+            # Look for main.py and config.json
+            setup_file = os.path.join(unzip_dir, "setup.py")
+            config_file = os.path.join(unzip_dir, "config.json")
+
+            if not os.path.isfile(setup_file):
+                self.context["form"].add_error(
+                    "file", "setup.py not found in the zip file."
+                )
+                shutil.rmtree(unzip_dir)
+                return self.render_to_response(self.context)
+            if not os.path.isfile(config_file):
+                self.context["form"].add_error(
+                    "file", "config.json not found in the zip file."
+                )
+                shutil.rmtree(unzip_dir)
+                return self.render_to_response(self.context)
+
+            if Plugin.objects.filter(
+                name=plugin_name, version=config_data.get("version")
+            ).exists():
+                self.context["form"].add_error(
+                    "file", "plugin seems to be installed already."
+                )
+                shutil.rmtree(unzip_dir)
+                return self.render_to_response(self.context)
+
+            plugin = Plugin.objects.create(
+                name=config_data.get("name"),
+                author=config_data.get("author"),
+                description=config_data.get("description"),
+                version=config_data.get("version"),
+                folder_name=unzip_dir,
+            )
+
             # Call the install function from the Python file
-            install_plugin(plugin)
+            try:
+                install_plugin(plugin)
+            except Exception as e:
+                self.context["form"].add_error("file", str(e))
+                remove_plugin(plugin)
+                return self.render_to_response(self.context)
+
             messages.add_message(
                 request,
                 messages.SUCCESS,
@@ -87,7 +152,6 @@ class NewPlugin(TemplateView):
                 logger.success(f"Plugin {old_plugin} wurde entfernt.")
 
             return redirect("plugins:list")
-        self.context["form"] = form
         return self.render_to_response(self.context)
 
 
@@ -134,7 +198,7 @@ def install_plugin(plugin):
         None
     """
     spec = importlib.util.spec_from_file_location(
-        "plugin_module", plugin.python_file.path
+        "plugin_module", os.path.join(plugin.folder_name, "setup.py")
     )
     plugin_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(plugin_module)
@@ -146,6 +210,11 @@ def install_plugin(plugin):
         installer.install()
     else:
         print("InstallerClass not found in the loaded module.")
+
+
+def remove_plugin(plugin):
+    shutil.rmtree(plugin.folder_name)
+    plugin.delete()
 
 
 def uninstall_plugin(plugin):
@@ -160,7 +229,7 @@ def uninstall_plugin(plugin):
         None
     """
     spec = importlib.util.spec_from_file_location(
-        "plugin_module", plugin.python_file.path
+        "plugin_module", os.path.join(plugin.folder_name, "setup.py")
     )
     plugin_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(plugin_module)
@@ -173,9 +242,6 @@ def uninstall_plugin(plugin):
         installer.uninstall()
     else:
         logger.info("Installer not found in the loaded module.")
-    # Delete the plugin files
-    folder_path = "media/plugins/" + plugin.name + "/"
 
     # Use shutil.rmtree() to delete the folder and its contents
-    shutil.rmtree(folder_path)
-    plugin.delete()
+    remove_plugin(plugin)
