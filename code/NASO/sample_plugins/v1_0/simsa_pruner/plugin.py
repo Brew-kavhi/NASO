@@ -115,7 +115,7 @@ class SimilarityPruning(Wrapper, PruningInterface):
             dot_product = tf.reduce_sum(tf.multiply(weight1, weight2))
             norm_weight1 = tf.norm(weight1)
             norm_weight2 = tf.norm(weight2)
-            similarity = 0 + dot_product / (
+            similarity = dot_product / (
                 norm_weight1 * norm_weight2 + 1e-9
             )  # Adding small epsilon to avoid division by zero
         elif self._similiarity_measure == "EUC":
@@ -440,11 +440,27 @@ class SimilarityPruning(Wrapper, PruningInterface):
         if self._is_conv_layer:
             config["filters"] = len(self._kept_filters)
             new_layer = tf.keras.layers.Conv2D(**config)
+
+            original_weights, original_bias = self.layer.get_weights()
+            pruned_weights = original_weights[:, :, :, self._kept_filters]
+            pruned_biases = original_bias[self._kept_filters]
+
+            new_layer.build(input.shape)
+            new_layer.set_weights([pruned_weights, pruned_biases])
+
+            return new_layer(input)
+        elif isinstance(self.layer, keras.layers.Flatten):
+            new_layer = tf.keras.layers.Flatten()(input)
+            return new_layer
+        elif isinstance(self.layer, keras.layers.Dense):
+            new_layer = keras.layers.Dense(**config)
             return new_layer(input)
 
         return self.layer(input)
 
     def strip_pruning(self):
+        print("pruned filters:", self._pruned_filters)
+        print("keptfilters:", self._kept_filters)
         if not hasattr(self.layer, "_batch_input_shape") and hasattr(
             self, "_batch_input_shape"
         ):

@@ -16,8 +16,10 @@ K = keras.backend
 def calculate_sparsity(model):
     trainable_count = int(np.sum([K.count_params(p) for p in model.trainable_weights]))
     params = []
-    tfmot_sparsity = 0
+
     tfmot_prunable_layers = pruning_wrapper.collect_prunable_layers(model)
+    other_prunable_layers = collect_prunable_layers(model)
+
     for layer in tfmot_prunable_layers:
         for _, mask, _ in layer.pruning_vars:
             params.append(mask)
@@ -28,19 +30,21 @@ def calculate_sparsity(model):
     del values[-1]
     del params[-1]
 
+    sparsity_values = []
     if len(values[::2]) > 0:
-        sparsity_values = [1 - np.mean(mask_value) for mask_value in values[::2]]
-        # Return the average sparsity across all prunable layers
-        tfmot_sparsity = np.mean(sparsity_values)
-    other_prunable_layers = collect_prunable_layers(model)
-    sparsity_values = [tfmot_sparsity]
-    pruned_params = []
+        sparsity_values = [
+            (1 - np.mean(mask_value))
+            * np.count_nonzero(np.isnan(mask))
+            / trainable_count
+            for mask_value in values[::2]
+        ]
+
     for layer in other_prunable_layers:
         if layer not in tfmot_prunable_layers:
-            pruned_params.append(int(layer.sparsity * layer.count_params()))
-            sparsity_values.append(layer.sparsity)
-    print(len(pruned_params) / trainable_count)
-    return np.mean(sparsity_values)
+            sparsity_values.append(
+                layer.sparsity * layer.count_params() / trainable_count
+            )
+    return np.sum(sparsity_values)
 
 
 def collect_prunable_layers(model) -> list[PruningInterface]:
