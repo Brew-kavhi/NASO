@@ -2,7 +2,6 @@ import asyncio
 
 import numpy as np
 import tensorflow as tf
-from loguru import logger
 
 from helper_scripts.power_management import get_cpu_power_usage, get_gpu_power_usage
 from neural_architecture.NetworkCallbacks.logging_callback import LoggingCallback

@@ -9,7 +9,6 @@ from loguru import logger
 from celery import shared_task
 from helper_scripts.extensions import start_async_measuring
 from naso.celery import restart_all_workers
-from neural_architecture.models.architecture import NetworkConfiguration
 from neural_architecture.NetworkCallbacks.base_callback import BaseCallback
 from neural_architecture.NetworkCallbacks.evaluation_base_callback import (
     EvaluationBaseCallback,
@@ -123,7 +122,6 @@ class NeuralNetwork:
         Builds a neural network model based on the provided configuration.
 
         Args:
-            config (NetworkConfiguration): The configuration object specifying the network architecture.
 
         Raises:
             AttributeError: If the training configuration or hyperparameters are not set.
@@ -277,7 +275,8 @@ class NeuralNetwork:
             None.
         """
         # sleep for one second to cool donw the gpu
-        # energy measurement returns the average over the last second, so make sure the training does not affect this metric
+        # energy measurement returns the average over the last second,
+        # so make sure the training does not affect this metric
         time.sleep(1)
         timing_callback = TimingCallback()
         batch_size = 1

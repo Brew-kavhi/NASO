@@ -181,9 +181,8 @@ class SimilarityPruning(Wrapper, PruningInterface):
                         message="ERROR MSG",
                     )
                 ]
-            ):
-                with tf.control_dependencies([self.conditional_mask_update()]):
-                    return tf.no_op("update")
+            ), tf.control_dependencies([self.conditional_mask_update()]):
+                return tf.no_op("update")
 
         def no_op():
             return tf.no_op("no_update")
@@ -387,7 +386,9 @@ class SimilarityPruning(Wrapper, PruningInterface):
         return tf.no_op("update")
 
     def conditional_mask_update(self):
-        """Returns an op to updates masks as per the pruning schedule. Pruning stedp is incremented wioth each execution obvisouly, so one epoch equals #batches pruning steps"""
+        """Returns an op to updates masks as per the pruning schedule.
+        Pruning step is incremented with each execution obviously, so one epoch equals #batches pruning steps
+        """
 
         if self.epoch % self.update_frequency != 0:
             self.epoch += 1

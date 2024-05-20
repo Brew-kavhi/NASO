@@ -247,7 +247,8 @@ class TypeInstance(models.Model):
         Needs to be an array of objects with name and value attributes.
 
         Raises:
-            ValidationError: If the JSON data is not a list of objects or if any object is missing the "name" or "value" attributes.
+            ValidationError: If the JSON data is not a list of objects or
+            if any object is missing the "name" or "value" attributes.
         """
         if not isinstance(self.additional_arguments, list):
             raise ValidationError("JSON data should be a list of objects.")

@@ -18,7 +18,8 @@ K = tf.keras.backend
 class BaseCallback(tf.keras.callbacks.Callback):
     """
     Base class for custom callbacks in a neural network training process.
-    responsible for updating the Celery task state with the current epoch number and the training metrics, saviong the metrics to teh database, and measuring the execution time.
+    responsible for updating the Celery task state with the current epoch number
+    and the training metrics, saviong the metrics to teh database, and measuring the execution time.
 
     Args:
         celery_task (object): The Celery task object.
@@ -134,11 +135,11 @@ class BaseCallback(tf.keras.callbacks.Callback):
             weight_mask_ops = []
             for layer in self.prunable_layers:
                 if tf.executing_eagerly():
-                    if not epoch == self.epochs - 1:
+                    if epoch != self.epochs - 1:
                         layer.conditional_mask_update()
                     layer.weight_mask_op()
                 else:
-                    if not epoch == self.epochs - 1:
+                    if epoch != self.epochs - 1:
                         weight_mask_ops.append(layer.conditional_mask_update())
                     weight_mask_ops.append(layer.weight_mask_op())
 

@@ -28,23 +28,12 @@ def get_inference_details(run_id):
     if run.prediction_metrics.last():
         metrics = run.prediction_metrics.last().metrics[0]["metrics"]
 
-    loss, val_loss, sparsity, memory_consumption, power_consumption = (
-        "-",
-        "-",
-        "-",
-        "-",
-        "-",
-    )
-    if "loss" in metrics:
-        loss = metrics["loss"]
-    if "val_loss" in metrics:
-        val_loss = metrics["val_loss"]
-    if "sparsity" in metrics:
-        sparsity = metrics["sparsity"]
-    if "memory_consumption" in metrics:
-        memory_consumption = metrics["memory_consumption"]
-    if "power_consumption" in metrics:
-        power_consumption = metrics["power_consumption"]
+    loss = metrics.get("loss", "-")
+    val_loss = metrics.get("val_loss", "-")
+    sparsity = metrics.get("sparsity", "-")
+    memory_consumption = metrics.get("memory_consumption", "-")
+    power_consumption = metrics.get("power_consumption", "-")
+
     model = {
         "id": run_id,
         "name": run.name,
@@ -75,13 +64,11 @@ def get_tensorflow_details(run_id):
         .last()
         .metrics[0]["metrics"]
     )
-    loss, val_loss, sparsity = "-", "-", "-"
-    if "loss" in metrics:
-        loss = metrics["loss"]
-    if "val_loss" in metrics:
-        val_loss = metrics["val_loss"]
-    if "sparsity" in metrics:
-        sparsity = metrics["sparsity"]
+
+    loss = metrics.get("loss", "-")
+    val_loss = metrics.get("val_loss", "-")
+    sparsity = metrics.get("sparsity", "-")
+
     model = {
         "id": run_id,
         "name": run.model_name,

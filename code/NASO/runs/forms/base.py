@@ -1,4 +1,3 @@
-import tensorflow as tf
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import HTML, Column, Field, Layout, Row
 from django import forms

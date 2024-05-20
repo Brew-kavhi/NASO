@@ -151,6 +151,8 @@ class Inference(models.Model):
 
             accuracy = accuracy_score(true_labels, predicted_classes)
             print("accuracy:", accuracy)
-        except:
-            print("Something went wrong with calculating the accuracy")
+        except Exception as e:
+            print(
+                f"Something went wrong with calculating the accuracy, Error: {str(e)}"
+            )
         return predictions

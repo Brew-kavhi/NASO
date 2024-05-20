@@ -2,11 +2,8 @@ import os
 
 import autokeras
 import keras_tuner
-import tensorflow as tf
 from decouple import config
-from django.core.exceptions import ValidationError
 from django.db import models
-from keras import backend as K
 from loguru import logger
 
 from helper_scripts.extensions import (

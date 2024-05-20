@@ -461,7 +461,7 @@ def delete_template(request, pk):
 
     Returns:
         JsonResponse: A JSON response indicating the successful deletion of the object.
-            The response contains a "message" field with the success message and an "id" field with the deleted object's primary key.
+            Contains a "message" field with success message and "id" field with the deleted object's primary key.
     """
     # Fetch the object or return a 404 response if it doesn't exist
     obj = get_object_or_404(KerasNetworkTemplate, pk=pk)

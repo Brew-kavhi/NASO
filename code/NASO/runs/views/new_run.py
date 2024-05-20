@@ -665,7 +665,8 @@ class NewAutoKerasRun(TemplateView):
     """
     View class for creating a new AutoKeras run.
 
-    This class handles the creation of a new AutoKeras run by providing the necessary form and data loading functionality.
+    This class handles the creation of a new AutoKeras run
+    by providing the necessary form and data loading functionality.
     """
 
     template_name = "runs/new_autokeras.html"
@@ -683,9 +684,12 @@ class NewAutoKerasRun(TemplateView):
             tuple: A tuple containing the following:
                 - tuner_arguments (list): A list of dictionaries representing tuner arguments.
                 - loss_arguments (list): A list of dictionaries representing loss arguments.
-                - metrics_arguments (dict): A dictionary where the keys are metric IDs and the values are lists of dictionaries representing metric arguments.
-                - callbacks_arguments (dict): A dictionary where the keys are callback IDs and the values are lists of dictionaries representing callback arguments.
-                - metric_weights (dict): A dictionary where the keys are metric names and the values are their corresponding weights.
+                - metrics_arguments (dict): A dictionary where the keys are metric IDs
+                and the values are lists of dictionaries representing metric arguments.
+                - callbacks_arguments (dict): A dictionary where the keys are callback IDs
+                and the values are lists of dictionaries representing callback arguments.
+                - metric_weights (dict): A dictionary where the keys are metric names
+                and the values are their corresponding weights.
         """
         tuner_arguments = []
         loss_arguments = []

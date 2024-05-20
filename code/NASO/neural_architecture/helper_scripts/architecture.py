@@ -127,8 +127,8 @@ def calculate_flops(model, batch_size):
     for layer in model.layers:
         if isinstance(layer, tf.keras.layers.Conv2D):
             total_flops += conv_flops(layer, batch_size)
-        elif isinstance(layer, tf.keras.layers.MaxPooling2D) or isinstance(
-            layer, tf.keras.layers.AveragePooling2D
+        elif isinstance(
+            layer, (tf.keras.layers.MaxPooling2D, tf.keras.layers.AveragePooling2D)
         ):
             total_flops += pooling_flops(layer, batch_size)
         elif isinstance(layer, tf.keras.layers.Dense):
@@ -178,9 +178,7 @@ def fc_flops(layer, batch_size):
 
 def quantize_weights(model):
     for layer in model.layers:
-        if isinstance(layer, tf.keras.layers.Dense) or isinstance(
-            layer, tf.keras.layers.Conv2D
-        ):
+        if isinstance(layer, (tf.keras.layers.Dense, tf.keras.layers.Conv2D)):
             print("leyer")
             layer.set_weights([w.astype(np.bool_) for w in layer.get_weights()])
     return model

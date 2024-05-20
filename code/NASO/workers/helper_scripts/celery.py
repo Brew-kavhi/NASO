@@ -60,8 +60,8 @@ def get_all_workers():
             if worker:
                 worker.active = False
                 worker.save()
-    except:
-        print("Failed to fetch workers")
+    except Exception as e:
+        print(f"Failed to fetch workers: {str(e)}")
 
 
 @shared_task

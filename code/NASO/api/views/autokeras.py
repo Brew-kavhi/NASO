@@ -133,8 +133,7 @@ def get_inference_metrics(request, pk):
     trial_id = ""
     for metric in metrics:
         for measure in metric.metrics:
-            if "trial_id" in measure:
-                trial_id = measure["trial_id"]
+            trial_id = measure.get("trial_id", "")
             if "final_metric" not in measure:
                 trial_metrics[trial_id] = measure["metrics"]
 
@@ -159,8 +158,7 @@ def get_final_metrics(request, pk):
     trial_id = ""
     for metric in metrics:
         for measure in metric.metrics:
-            if "trial_id" in measure:
-                trial_id = measure["trial_id"]
+            trial_id = measure.get("trial_id", "")
             if "final_metric" not in measure:
                 trial_metrics[trial_id] = measure["metrics"]
 
@@ -186,8 +184,7 @@ def get_all_metrics(request, pk):
     for metric in metrics:
         epoch = metric.epoch
         for measure in metric.metrics:
-            if "trial_id" in measure:
-                trial_id = measure["trial_id"]
+            trial_id = measure.get("trial_id", "")
             if "final_metric" not in measure:
                 if trial_id in trial_metrics:
                     # add it to the array
@@ -215,8 +212,7 @@ def get_trial_details_short(request, pk):
     for metric in metrics:
         epoch = metric.epoch
         for measure in metric.metrics:
-            if "trial_id" in measure:
-                trial_id = measure["trial_id"]
+            trial_id = measure.get("trial_id", "")
             if "final_metric" not in measure:
                 # only get the max metrics.
                 if trial_id in trial_json:
@@ -245,7 +241,7 @@ def get_trial_details_short(request, pk):
                     trial_json[trial_id]["min"] = measure["metrics"]
                     trial_json[trial_id]["max"] = measure["metrics"]
                     for metric_name in measure["metrics"]:
-                        if not metric_name in distinct_metrics:
+                        if metric_name not in distinct_metrics:
                             distinct_metrics.append(metric_name)
                     trial_json[trial_id][epoch] = measure["metrics"]
             else:

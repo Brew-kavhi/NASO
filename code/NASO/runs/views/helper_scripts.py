@@ -40,7 +40,7 @@ def build_network_config(name, model):
                 required_arguments=required_arguments,
             )
             naso_layer_type.save()
-        # these keys are alsways inmcluded in teh config m, but we dont need them in the config as they mess with positional arguments
+        # these keys are always included in the config, but we dont need them as they mess with positional arguments
         layer_config.pop("name", None)
         layer_config.pop("trainable", None)
         layer_config.pop("dtype", None)
