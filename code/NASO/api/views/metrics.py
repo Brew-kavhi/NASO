@@ -14,7 +14,7 @@ from runs.models.training import NetworkTraining, TrainingMetric
 class TensorflowMetricAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, pk, is_prediction=0, format=None):
+    def get(self, request, pk, is_prediction=0):
         """
         This view returns the metrics for a run.
 
@@ -32,7 +32,7 @@ class TensorflowMetricAPIView(APIView):
             data.append(metric.metrics[0])
         return Response(data, status=status.HTTP_200_OK)
 
-    def post(self, request, pk, is_prediction=0, format=None):
+    def post(self, request, pk, is_prediction=0):
         run = NetworkTraining.objects.get(pk=pk)
         data = request.data
         serialized_data = TrainingMetricSerializer(data=data)
@@ -61,13 +61,13 @@ class TensorflowMetricAPIView(APIView):
 class MetricsAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, pk, format=None):
+    def get(self, request, pk):
         inference = Inference.objects.get(pk=pk)
         metrics = inference.prediction_metrics.all()
         data = [metric.metrics[0] for metric in metrics]
         return Response(data, status=status.HTTP_200_OK)
 
-    def post(self, request, pk, format=None):
+    def post(self, request, pk):
         inference = Inference.objects.get(pk=pk)
         serialized_data = TrainingMetricSerializer(data=request.data)
         if serialized_data.is_valid(True):

@@ -356,10 +356,10 @@ def undelete(request, pk):
 class MetricAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, pk, trial_id, is_prediction=0, format=None):
-        return JsonResponse(get_metrics(pk, trial_id), safe=True)
+    def get(self, request, pk, trial_id, is_prediction=0):
+        return JsonResponse(get_metrics(pk, trial_id))
 
-    def post(self, request, pk, trial_id, is_prediction=0, format=None):
+    def post(self, request, pk, trial_id, is_prediction=0):
         run = AutoKerasRun.objects.get(pk=pk)
         serialized_metric = TrainingMetricSerializer(data=request.data)
         if serialized_metric.is_valid(True):

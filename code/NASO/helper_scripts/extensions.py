@@ -1,14 +1,13 @@
 import asyncio
 
+import keras
 import numpy as np
-import tensorflow as tf
 
 from helper_scripts.power_management import get_cpu_power_usage, get_gpu_power_usage
 from neural_architecture.NetworkCallbacks.logging_callback import LoggingCallback
 from neural_architecture.NetworkCallbacks.timing_callback import TimingCallback
 from runs.models.training import Run, TrainingMetric
 
-keras = tf.keras
 K = keras.backend
 
 
@@ -269,6 +268,6 @@ def custom_hypermodel_build(original_build_fn, run):
             model.compile(optimizer, loss)
 
             return model
-        raise Exception("No build function provided")
+        raise ValueError("No build function provided")
 
     return build_fn

@@ -55,7 +55,7 @@ class TrainingMetricSerializer(serializers.Serializer):
             valid = False
 
         for item in metrics:
-            if not isinstance(item, dict) or "metrics" not in item:
+            if not isinstance(item, dict):
                 if raise_exception:
                     raise serializers.ValidationError(
                         {
@@ -64,28 +64,11 @@ class TrainingMetricSerializer(serializers.Serializer):
                         }
                     )
                 valid = False
-            if "final_metric" not in item:
-                valid = False
-                if raise_exception:
-                    raise serializers.ValidationError(
-                        {"metrics": "Should contain final_metric"}
-                    )
-            if "run_id" not in item:
-                valid = False
-                if raise_exception:
-                    raise serializers.ValidationError(
-                        {"metrics": "Should contain run_id"}
-                    )
-            if "current" not in item:
-                valid = False
-                if raise_exception:
-                    raise serializers.ValidationError(
-                        {"metrics": "Should contain current"}
-                    )
-            if "time" not in item:
-                valid = False
-                if raise_exception:
-                    raise serializers.ValidationError("Should contain time")
+            valid = self.validate_key_metyric("metrics", item, raise_exception)
+            valid = self.validate_key_metyric("final_metric", item, raise_exception)
+            valid = self.validate_key_metyric("run_id", item, raise_exception)
+            valid = self.validate_key_metyric("current", item, raise_exception)
+            valid = self.validate_key_metyric("time", item, raise_exception)
             if not isinstance(item["metrics"], dict):
                 if raise_exception:
                     raise serializers.ValidationError(
@@ -96,8 +79,28 @@ class TrainingMetricSerializer(serializers.Serializer):
                 valid = False
         return valid
 
+    def validate_key_metyric(self, key: str, item: dict, raise_exception: bool) -> bool:
+        valid = True
+        if key not in item:
+            valid = False
+            if raise_exception:
+                raise serializers.ValidationError({"metrics": f"Should contain {key}"})
+        return valid
+
     def is_final_metric(self):
         metrics = self.validated_data.get("metrics")
         if "final_metrics" in metrics[0] and metrics[0]["final_metrics"]:
             return True
         return False
+
+    def create(self, *args, **kwargs):
+        # nothing to be done here
+        raise NotImplementedError(
+            "TrainingMetric create in serializer is not yert implemented."
+        )
+
+    def update(self, *args, **kwargs):
+        # nothing to be done here
+        raise NotImplementedError(
+            "TrainingMetric update in serializer is not yert implemented."
+        )

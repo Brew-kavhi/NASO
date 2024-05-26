@@ -187,7 +187,7 @@ class ClusterableNetwork(models.Model):
 
         model_layers = {}
         for i, layer in enumerate(model.layers):
-            if not (not include_last_layer and i == model.layers.__len__() - 1):
+            if not (not include_last_layer and i == len(model.layers) - 1):
                 clustered_layer = tfmot.clustering.keras.cluster_weights(
                     layer,
                     number_of_clusters=self.number_of_cluster,
@@ -270,7 +270,7 @@ class PrunableNetwork(models.Model):
             logger.info("Built pruning model")
             # here iterate ove the layers and prune every layer seperately
             model_layers = {}
-            for i, layer in enumerate(model.layers):
+            for _, layer in enumerate(model.layers):
                 if args["pruning_policy"].allow_pruning(layer):
                     args["to_prune"] = layer
                     pruned_layer = self.pruning_method.get_pruned_model(**args)

@@ -2,6 +2,7 @@ import threading
 import time
 import traceback
 
+import keras
 import numpy as np
 import tensorflow as tf
 from loguru import logger
@@ -17,7 +18,6 @@ from neural_architecture.NetworkCallbacks.timing_callback import TimingCallback
 from runs.models.training import NetworkTraining, TrainingMetric
 
 logger.add("net.log", backtrace=True, diagnose=True)
-keras = tf.keras
 K = keras.backend
 
 
@@ -64,7 +64,7 @@ def run_neural_net(self, training_id):
             self.update_state(state="SUCCESS")
     except Exception:
         logger.error(
-            "Failure while executing the autokeras model: " + traceback.format_exc()
+            "Failure while executing the keras model: " + traceback.format_exc()
         )
         self.update_state(state="FAILED")
     finally:

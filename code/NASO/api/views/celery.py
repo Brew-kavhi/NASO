@@ -1,4 +1,5 @@
 from django.urls import reverse_lazy
+from kombu.exceptions import OperationalError
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -136,39 +137,7 @@ def get_workers_information():
                 task_details = get_celery_task_state(task["id"])["details"]
                 if not task_details:
                     continue
-                if "run_id" in task_details:
-                    if "autokeras" in task_details and task_details["autokeras"]:
-                        run = AutoKerasRun.objects.filter(id=task_details["run_id"])
-                        if run.exists():
-                            run = run.first()
-                            task["name"] = run.model.project_name
-                            task["link"] = reverse_lazy(
-                                "runs:autokeras:details", kwargs={"pk": run.id}
-                            )
-                        else:
-                            task["name"] = "Undefined"
-                            task["link"] = ""
-                    elif "inference" in task_details and task_details["inference"]:
-                        run = Inference.objects.filter(id=task_details["run_id"])
-                        if run.exists():
-                            run = run.first()
-                            task["name"] = run.name
-                            task["link"] = reverse_lazy(
-                                "inference:details", kwargs={"pk": run.id}
-                            )
-                    else:
-                        run = NetworkTraining.objects.filter(id=task_details["run_id"])
-                        if run.exists():
-                            run = run.first()
-                            task["name"] = run.model_name
-                            task["link"] = reverse_lazy(
-                                "runs:details", kwargs={"pk": run.id}
-                            )
-                        else:
-                            task["link"] = ""
-                            task["name"] = "Undefined"
-                else:
-                    task["link"] = ""
+                task = add_run_details(task_details, task)
                 if "gpu" in task_details:
                     worker_info["tasks"].append(
                         {
@@ -189,6 +158,42 @@ def get_workers_information():
         return []
     except TimeoutError:
         return []
+    except OperationalError:
+        # no worker is running
+        return []
+
+
+def add_run_details(task_details, task):
+    if "run_id" in task_details:
+        if "autokeras" in task_details and task_details["autokeras"]:
+            run = AutoKerasRun.objects.filter(id=task_details["run_id"])
+            if run.exists():
+                run = run.first()
+                task["name"] = run.model.project_name
+                task["link"] = reverse_lazy(
+                    "runs:autokeras:details", kwargs={"pk": run.id}
+                )
+            else:
+                task["name"] = "Undefined"
+                task["link"] = ""
+        elif "inference" in task_details and task_details["inference"]:
+            run = Inference.objects.filter(id=task_details["run_id"])
+            if run.exists():
+                run = run.first()
+                task["name"] = run.name
+                task["link"] = reverse_lazy("inference:details", kwargs={"pk": run.id})
+        else:
+            run = NetworkTraining.objects.filter(id=task_details["run_id"])
+            if run.exists():
+                run = run.first()
+                task["name"] = run.model_name
+                task["link"] = reverse_lazy("runs:details", kwargs={"pk": run.id})
+            else:
+                task["link"] = ""
+                task["name"] = "Undefined"
+    else:
+        task["link"] = ""
+    return task
 
 
 def is_worker_busy(hostname):

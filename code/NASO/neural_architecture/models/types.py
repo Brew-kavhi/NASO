@@ -1,7 +1,7 @@
 import abc
 import inspect
 
-import tensorflow as tf
+import keras
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -195,12 +195,12 @@ class TensorFlowModelType(BaseType):
         # load the model and heck if its a subclass of tf.keras.model
         model = get_class(self.module_name, self.name)
         if inspect.isclass(model):
-            if issubclass(model, tf.keras.Model):
+            if issubclass(model, keras.Model):
                 super().save(*args, **kwargs)
             else:
                 raise ValidationError("Model should be subclass of tf.keras.Model")
         else:
-            if issubclass(model().__class__, tf.keras.Model):
+            if issubclass(model().__class__, keras.Model):
                 super().save(*args, **kwargs)
             else:
                 raise ValidationError("Model should be subclass of tf.keras.Model")
@@ -232,12 +232,12 @@ class TypeInstance(models.Model):
             type_name = getattr(
                 self, self._meta.get_field("instance_type").attname, None
             )
-        except Exception:
+        except AttributeError:
             try:
                 type_name = getattr(
                     self, self._meta.get_field("node_type").attname, None
                 )
-            except Exception:
+            except AttributeError:
                 type_name = "Unknown"
         return str(type_name) if type_name else ""
 

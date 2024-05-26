@@ -1,3 +1,4 @@
+import keras
 import numpy as np
 import tensorflow as tf
 
@@ -9,7 +10,6 @@ from tensorflow_model_optimization.python.core.sparsity.keras import pruning_wra
 from neural_architecture.helper_scripts.architecture import is_feedforward
 from plugins.interfaces.pruning_method import PruningInterface
 
-keras = tf.keras
 K = keras.backend
 
 
@@ -119,7 +119,7 @@ def strip_pruning(model):
     for layer in model.layers:
         if isinstance(layer, pruning_wrapper.PruneLowMagnitude):
             return strip_low_magnitude_model(model)
-        elif issubclass(layer.__class__, PruningInterface):
+        if issubclass(layer.__class__, PruningInterface):
             contains_pruning_layers = True
             break
     if not contains_pruning_layers:
@@ -130,16 +130,15 @@ def strip_pruning(model):
             "Expected model to e purely feedforward sequential model, but one layer seems to have multiple inputs"
         )
 
-    x = model.inputs[0]
+    input = model.inputs[0]
 
     for i, layer in enumerate(model.layers):
         if i == 0 and layer.name.startswith("input"):
             continue
         if issubclass(layer.__class__, PruningInterface):
-            x = layer.get_reduced_layer(x)
+            input = layer.get_reduced_layer(input)
         else:
-            config = tf.keras.layers.serialize(layer)
-            # TODO instantiate new layer from this config.from
-            new_layer = tf.keras.layers.deserialize(config)
-            x = new_layer(x)
-    return tf.keras.Model(inputs=model.inputs[0], outputs=x)
+            config = keras.layers.serialize(layer)
+            new_layer = keras.layers.deserialize(config)
+            input = new_layer(input)
+    return keras.Model(inputs=model.inputs[0], outputs=input)
