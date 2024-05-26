@@ -2,6 +2,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from api.helper_scripts.run import rate_run
 from api.serializers.tensorflow import NetworkTrainingSerializer
 from runs.models.training import NetworkTraining
 from runs.views.softdelete import harddelete_run, undelete_run
@@ -9,7 +10,7 @@ from runs.views.softdelete import harddelete_run, undelete_run
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def rate_run(request, pk):
+def rate_tensorflow_run(request, pk):
     """
     This view rates a run.
 
@@ -21,13 +22,7 @@ def rate_run(request, pk):
         Response: The response object with parameter 'success'
     """
     run = NetworkTraining.objects.get(pk=pk)
-    rate = request.data.get("rate")
-    if rate != "":
-        run.rate = rate
-    else:
-        run.rate = 0
-    run.save()
-    return Response({"success": True})
+    return rate_run(request, run)
 
 
 @api_view(["GET"])

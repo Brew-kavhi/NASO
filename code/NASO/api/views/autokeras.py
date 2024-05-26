@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from api.helper_scripts.run import rate_run
 from api.serializers.autokeras import AutoKerasRunSerializer
 from api.serializers.training import TrainingMetricSerializer
 from neural_architecture.models.autokeras import AutoKerasRun
@@ -25,7 +26,7 @@ def get_configuration(request, pk):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def rate_run(request, pk):
+def rate_autokeras_run(request, pk):
     """
     This view rates a run.
 
@@ -38,13 +39,7 @@ def rate_run(request, pk):
     """
 
     run = AutoKerasRun.objects.get(pk=pk)
-    rate = request.data.get("rate")
-    if rate != "":
-        run.rate = rate
-    else:
-        run.rate = 0
-    run.save()
-    return Response({"success": True})
+    return rate_run(request, run)
 
 
 def get_metrics(pk, trial_id):

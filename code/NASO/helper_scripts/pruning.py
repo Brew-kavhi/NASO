@@ -34,7 +34,7 @@ def calculate_sparsity(model):
     if len(values[::2]) > 0:
         sparsity_values = [
             (1 - np.mean(mask_value))
-            * np.count_nonzero(np.isnan(mask))
+            * np.count_nonzero(np.isnan(mask_value))
             / trainable_count
             for mask_value in values[::2]
         ]

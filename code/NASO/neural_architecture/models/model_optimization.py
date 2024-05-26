@@ -289,8 +289,10 @@ class PrunableNetwork(models.Model):
             A list of pruning callbacks.
 
         """
-        # TODO: only do this if prune_low_magnitude
-        if self.pruning_method:
+        if (
+            self.pruning_method
+            and self.pruning_method.instance_type.name == "prune_low_magnitude"
+        ):
             return [
                 tfmot.sparsity.keras.UpdatePruningStep(),
             ]
