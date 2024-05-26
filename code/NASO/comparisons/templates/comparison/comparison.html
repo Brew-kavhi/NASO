@@ -4,33 +4,34 @@
 {% load humanize %}
 {% block content %}
     <style>
-    .asc:after {
-        content: '\25B2';
-    }
+        .asc:after {
+            content: '\25B2';
+        }
 
-    .desc:after {
-        content: '\25BC';
-    }
-    #gallery-container {
-      position: relative;
-    }
+        .desc:after {
+            content: '\25BC';
+        }
 
-    .gallery-card {
-      display: none;
-      width: 100%;
-      color:black;
-    }
+        #gallery-container {
+            position: relative;
+        }
 
-    .gallery-card.active {
-      display: block;
-    }
+        .gallery-card {
+            display: none;
+            width: 100%;
+            color: black;
+        }
 
-    #canvas {
-      /* Style your canvas here */
-      background-color: #f0f0f0;
-      padding: 20px;
-      border: 1px solid #ccc;
-    }
+        .gallery-card.active {
+            display: block;
+        }
+
+        #canvas {
+            /* Style your canvas here */
+            background-color: #f0f0f0;
+            padding: 20px;
+            border: 1px solid #ccc;
+        }
     </style>
     <div class="tabs is-centered is-toggle is-toggle-round">
         <ul>
