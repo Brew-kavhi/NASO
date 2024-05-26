@@ -52,11 +52,10 @@
                 minLength: 0,
                 select: function(event, ui) {
                     $('#id_objective').val(ui.item.value);
-                    if (ui.item.value ==='metrics') {
+                    if (ui.item.value === 'metrics') {
                         $('#metric_weights_arguments').addClass('d-block');
                         $('#metric_weights_arguments').removeClass('d-none');
-                    }
-                    else {
+                    } else {
                         $('#metric_weights_arguments').removeClass('d-block');
                         $('#metric_weights_arguments').addClass('d-none');
                     }
@@ -69,7 +68,7 @@
             if ($('#id_objective').val() == 'metrics') {
                 $('#metric_weights_arguments').removeClass("d-none");
             }
-            
+
             $('#id_save_network_as_template').change(function() {
                 if ($(this).prop('checked')) {
                     $('#div_id_network_template_name').removeClass("d-none");

@@ -557,276 +557,291 @@
 {% block javascript %}
     {{ block.super }}
     <script>
-    let run_metrics = {};
-    let graph = null;
-    let allEpochs = [];
+        let run_metrics = {};
+        let graph = null;
+        let allEpochs = [];
 
-    document.addEventListener("DOMContentLoaded", () => {
-        let canvas = document.getElementById("canvas").getContext('2d');
-        graphChart = new Chart(canvas, {
-            type: 'line',
-            data: {
-                labels: allEpochs,
-                datasets: []
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        type: 'linear',
-                        position: 'bottom',
-                        title: {
+        document.addEventListener("DOMContentLoaded", () => {
+            let canvas = document.getElementById("canvas").getContext('2d');
+            graphChart = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: allEpochs,
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'Epochs' // Set the dynamic X-axis title
+                            }
+                        },
+                        y: {
                             display: true,
-                            text: 'Epochs' // Set the dynamic X-axis title
+                            title: {
+                                display: true,
+                                text: 'Loss' // Set the dynamic Y-axis title
+                            }
                         }
                     },
-                    y: {
-                        display: true,
-                        title: {
-                            display: true,
-                            text: 'Loss' // Set the dynamic Y-axis title
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        colors: {
+                            forceOverride: true
+                        },
+                        tooltip: {
+                            enabled: false,
+                            position: 'nearest',
+                            external: externalTooltipHandler
                         }
                     }
-                },
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                plugins: {
-                    colors: {
-                        forceOverride: true
-                    },
-                    tooltip: {
-                        enabled: false,
-                        position: 'nearest',
-                        external: externalTooltipHandler
+                }
+            });
+
+            const token = "{{API_TOKEN}}";
+            fetch("{% url 'api:tensorflow:metrics' run.id %}", {
+                method: "GET",
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${token}`,
+                }
+            }).then(function(response) {
+                response.json().then(function(data) {
+                    run_metrics = data;
+                    let metrics = [];
+                    for (metric in run_metrics[0].metrics) {
+                        metrics.push(metric);
+                        generateOption(metric, metric, $('#graph_xaxis'));
+                        generateOption(metric, metric, $('#graph_yaxis'));
                     }
-                }
-            }
-        });
+                    build_graph();
 
-        const token = "{{API_TOKEN}}";
-        fetch("{% url 'api:tensorflow:metrics' run.id %}", {
-            method: "GET",
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Token ${token}`,
-            }
-        }).then(function(response) {
-            response.json().then(function(data) {
-                run_metrics = data;
-                let metrics = [];
-                for(metric in run_metrics[0].metrics) {
-                    metrics.push(metric);
-                    generateOption(metric, metric, $('#graph_xaxis'));
-                    generateOption(metric, metric, $('#graph_yaxis'));
-                }
-                build_graph();
-
+                });
+            });
+            fetch("{% url 'api:celery:is_running' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${token}`,
+                },
+                body: JSON.stringify({
+                    'run_id': {{ run.id }},
+                    'run_type': 'tensorflow'
+                }),
+            }).then(function(response) {
+                response.json().then(function(data) {
+                    console.log(data);
+                    if (data['success']) {
+                        $('#training_progress').toggleClass('d-none');
+                        // this run is currently in training, so display the progreessbar
+                        $('#task_kill_link').attr('href', $('#task_kill_link').attr('href').replace(0, data['task_id']));
+                        updateProgress("{% url 'runs:training_progress' 0 %}".replace(0, data['task_id']), '');
+                    }
+                });
             });
         });
-        fetch("{% url 'api:celery:is_running' %}", {
-            method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Token ${token}`,
-                    },
-            body: JSON.stringify({'run_id':{{run.id}}, 'run_type':'tensorflow'}),
-        }).then(function(response) {
-            response.json().then(function(data) {
-                console.log(data);
-                if (data['success']) {
-                    $('#training_progress').toggleClass('d-none');
-                    // this run is currently in training, so display the progreessbar
-                    $('#task_kill_link').attr('href', $('#task_kill_link').attr('href').replace(0,data['task_id']));
-                    updateProgress("{% url 'runs:training_progress' 0 %}".replace(0,data['task_id']), '');
-                }
-            });
-        });
-            });
 
-    // This function converts a dictionary to an array of objects with 'y' and 'x' properties.
-    // The 'y' property is the value of the given key in the dictionary and the 'x' property is
-    // either the key of the dictionary or the value of the given xAxisMetric key in the dictionary.
-    function dictToArray(dict, key, xAxisMetric='epochs') {
-        let array = [];
-        for (let i in dict) {
-            if ('current' in dict[i]) {
-                var label = '';
-                if (xAxisMetric == 'epochs') {
-                    label = i.toString();
-                } else {
-                    label = dict[i].metrics[xAxisMetric].toString();
+        // This function converts a dictionary to an array of objects with 'y' and 'x' properties.
+        // The 'y' property is the value of the given key in the dictionary and the 'x' property is
+        // either the key of the dictionary or the value of the given xAxisMetric key in the dictionary.
+        function dictToArray(dict, key, xAxisMetric = 'epochs') {
+            let array = [];
+            for (let i in dict) {
+                if ('current' in dict[i]) {
+                    var label = '';
+                    if (xAxisMetric == 'epochs') {
+                        label = i.toString();
+                    } else {
+                        label = dict[i].metrics[xAxisMetric].toString();
+                    }
+                    array.push({
+                        y: dict[i].metrics[key],
+                        x: label
+                    });
                 }
-                array.push({y:dict[i].metrics[key], x: label});
             }
+            return array;
         }
-        return array;
-    }
 
-    const getOrCreateTooltip = (chart) => {
-        let tooltipEl = chart.canvas.parentNode.querySelector('div');
+        const getOrCreateTooltip = (chart) => {
+            let tooltipEl = chart.canvas.parentNode.querySelector('div');
 
-        if (!tooltipEl) {
-            tooltipEl = document.createElement('div');
-            tooltipEl.style.background = 'rgba(0, 0, 0, 0.7)';
-            tooltipEl.style.borderRadius = '3px';
-            tooltipEl.style.color = 'white';
+            if (!tooltipEl) {
+                tooltipEl = document.createElement('div');
+                tooltipEl.style.background = 'rgba(0, 0, 0, 0.7)';
+                tooltipEl.style.borderRadius = '3px';
+                tooltipEl.style.color = 'white';
+                tooltipEl.style.opacity = 1;
+                tooltipEl.style.pointerEvents = 'none';
+                tooltipEl.style.position = 'absolute';
+                tooltipEl.style.transform = 'translate(-50%, 0)';
+                tooltipEl.style.width = 'max-content';
+                tooltipEl.style.zIndex = 9999;
+                const table = document.createElement('table');
+                table.style.margin = '0px';
+
+                tooltipEl.appendChild(table);
+                chart.canvas.parentNode.appendChild(tooltipEl);
+            }
+
+            return tooltipEl;
+        };
+
+        const externalTooltipHandler = (context) => {
+            // Tooltip Element
+            const {
+                chart,
+                tooltip
+            } = context;
+            const tooltipEl = getOrCreateTooltip(chart);
+
+            // Hide if no tooltip
+            if (tooltip.opacity === 0) {
+                tooltipEl.style.opacity = 0;
+                return;
+            }
+
+            let dataIndex = tooltip.dataPoints[0].dataIndex;
+
+            // Set Text
+            if (tooltip.body) {
+                const titleLines = tooltip.title || [];
+                const bodyLines = tooltip.body.map(b => b.lines);
+
+                const tableHead = document.createElement('thead');
+
+                titleLines.forEach(title => {
+                    const tr = document.createElement('tr');
+                    tr.style.borderWidth = 0;
+
+                    const th = document.createElement('th');
+                    th.style.borderWidth = 0;
+                    th.style.color = 'white';
+                    const text = document.createTextNode($('#graph_xaxis').val() + " " + title);
+
+                    th.appendChild(text);
+                    tr.appendChild(th);
+                    tableHead.appendChild(tr);
+                });
+
+                const tableBody = document.createElement('tbody');
+                bodyLines.forEach((body, i) => {
+                    let metrics = run_metrics[dataIndex];
+                    const colors = tooltip.labelColors[i];
+                    const span = document.createElement('span');
+                    span.style.background = colors.backgroundColor;
+                    span.style.borderColor = colors.borderColor;
+                    span.style.borderWidth = '2px';
+                    span.style.height = '10px';
+                    span.style.width = '10px';
+                    span.style.display = 'inline-block';
+
+                    const tr = document.createElement('tr');
+                    tr.style.backgroundColor = 'inherit';
+                    tr.style.borderWidth = 0;
+
+                    const td = document.createElement('td');
+                    td.style.borderWidth = 0;
+
+                    let bodyText = $('#graph_yaxis').val() + ": " + body
+                    if ('trial_power_consumption' in metrics) {
+                        bodyText += ', Power: ' + metrics['trial_power_consumption'].toLocaleString() + ' W';
+                    }
+                    const text = document.createTextNode(bodyText);
+
+                    td.appendChild(span);
+                    td.appendChild(text);
+                    tr.appendChild(td);
+                    tableBody.appendChild(tr);
+                });
+
+                const tableRoot = tooltipEl.querySelector('table');
+
+                // Remove old children
+                while (tableRoot.firstChild) {
+                    tableRoot.firstChild.remove();
+                }
+
+                // Add new children
+                tableRoot.appendChild(tableHead);
+                tableRoot.appendChild(tableBody);
+            }
+
+            const {
+                offsetLeft: positionX,
+                offsetTop: positionY
+            } = chart.canvas;
+
+            // Display, position, and set styles for font
             tooltipEl.style.opacity = 1;
-            tooltipEl.style.pointerEvents = 'none';
-            tooltipEl.style.position = 'absolute';
-            tooltipEl.style.transform = 'translate(-50%, 0)';
-            tooltipEl.style.width = 'max-content';
-            tooltipEl.style.zIndex = 9999;
-            const table = document.createElement('table');
-            table.style.margin = '0px';
+            tooltipEl.style.left = positionX + tooltip.caretX + 'px';
+            tooltipEl.style.top = positionY + tooltip.caretY + 'px';
+        };
 
-            tooltipEl.appendChild(table);
-            chart.canvas.parentNode.appendChild(tooltipEl);
+        function generateOption(value, text, parent) {
+            let optionY = document.createElement('option');
+            optionY.value = value;
+            optionY.text = text;
+            parent.append(optionY);
         }
 
-        return tooltipEl;
-    };
-
-    const externalTooltipHandler = (context) => {
-        // Tooltip Element
-        const {chart, tooltip} = context;
-        const tooltipEl = getOrCreateTooltip(chart);
-
-        // Hide if no tooltip
-        if (tooltip.opacity === 0) {
-            tooltipEl.style.opacity = 0;
-            return;
-        }
-
-        let dataIndex = tooltip.dataPoints[0].dataIndex;
-        
-        // Set Text
-        if (tooltip.body) {
-            const titleLines = tooltip.title || [];
-            const bodyLines = tooltip.body.map(b => b.lines);
-
-            const tableHead = document.createElement('thead');
-
-            titleLines.forEach(title => {
-                const tr = document.createElement('tr');
-                tr.style.borderWidth = 0;
-
-                const th = document.createElement('th');
-                th.style.borderWidth = 0;
-                th.style.color = 'white';
-                const text = document.createTextNode($('#graph_xaxis').val() + " " + title);
-
-                th.appendChild(text);
-                tr.appendChild(th);
-                tableHead.appendChild(tr);
+        function graphX(event) {
+            let xaxis = $('#graph_xaxis').val();
+            let yaxis = $('#graph_yaxis').val();
+            graphChart.data.datasets.forEach(function(dataset) {
+                dataset.data = dictToArray(run_metrics, yaxis, xaxis);
+                dataset.label = yaxis;
             });
-
-            const tableBody = document.createElement('tbody');
-            bodyLines.forEach((body, i) => {
-                let metrics = run_metrics[dataIndex];
-                const colors = tooltip.labelColors[i];
-                const span = document.createElement('span');
-                span.style.background = colors.backgroundColor;
-                span.style.borderColor = colors.borderColor;
-                span.style.borderWidth = '2px';
-                span.style.height = '10px';
-                span.style.width = '10px';
-                span.style.display = 'inline-block';
-
-                const tr = document.createElement('tr');
-                tr.style.backgroundColor = 'inherit';
-                tr.style.borderWidth = 0;
-
-                const td = document.createElement('td');
-                td.style.borderWidth = 0;
-
-                let bodyText = $('#graph_yaxis').val() + ": " + body
-                if ('trial_power_consumption' in metrics) {
-                    bodyText += ', Power: ' + metrics['trial_power_consumption'].toLocaleString() + ' W';
-                }
-                const text = document.createTextNode(bodyText);
-
-                td.appendChild(span);
-                td.appendChild(text);
-                tr.appendChild(td);
-                tableBody.appendChild(tr);
-            });
-
-            const tableRoot = tooltipEl.querySelector('table');
-
-            // Remove old children
-            while (tableRoot.firstChild) {
-                tableRoot.firstChild.remove();
-            }
-
-            // Add new children
-            tableRoot.appendChild(tableHead);
-            tableRoot.appendChild(tableBody);
-        }
-
-        const {offsetLeft: positionX, offsetTop: positionY} = chart.canvas;
-
-        // Display, position, and set styles for font
-        tooltipEl.style.opacity = 1;
-        tooltipEl.style.left = positionX + tooltip.caretX + 'px';
-        tooltipEl.style.top = positionY + tooltip.caretY + 'px';
-    };
-
-    function generateOption(value, text, parent) {
-        let optionY = document.createElement('option');
-        optionY.value = value;
-        optionY.text = text;
-        parent.append(optionY);
-    }
-
-    function graphX(event) {
-        let xaxis = $('#graph_xaxis').val();
-        let yaxis = $('#graph_yaxis').val();
-        graphChart.data.datasets.forEach(function(dataset) {
-            dataset.data = dictToArray(run_metrics, yaxis, xaxis);
-            dataset.label = yaxis;
-        });
-        graphChart.options.scales.x.title.text = xaxis;
-        graphChart.update();
-    }
-
-    function graphY(event) {
-        let yaxis = $('#graph_yaxis').val();
-        graphChart.data.datasets.forEach(function(dataset) {
-            dataset.data = dictToArray(run_metrics, yaxis, $('#graph_xaxis').val());
-            dataset.label = yaxis;
-        });
-        graphChart.options.scales.y.title.text = yaxis;
-        graphChart.update();
-    }
-
-    function build_graph(data) {
-     
-        var data = [];
-        var labels = [];
-
-       let yaxis = $('#graph_yaxis').val();
-       let xaxis = $('#graph_xaxis').val();
-
-        function updateChart() {
-            graphChart.data.labels = [];
-            graphChart.data.datasets = [{data:dictToArray(run_metrics, yaxis, xaxis), label: yaxis}];
+            graphChart.options.scales.x.title.text = xaxis;
             graphChart.update();
         }
 
-        for (let epoch in run_metrics) {
-            data.push(run_metrics[epoch].metrics[yaxis]);
-            labels.push(epoch);
+        function graphY(event) {
+            let yaxis = $('#graph_yaxis').val();
+            graphChart.data.datasets.forEach(function(dataset) {
+                dataset.data = dictToArray(run_metrics, yaxis, $('#graph_xaxis').val());
+                dataset.label = yaxis;
+            });
+            graphChart.options.scales.y.title.text = yaxis;
+            graphChart.update();
         }
 
-        if (labels.length > graphChart.data.labels.length) {
-            allEpochs = labels;
-            graphChart.data.labels = labels;
+        function build_graph(data) {
+
+            var data = [];
+            var labels = [];
+
+            let yaxis = $('#graph_yaxis').val();
+            let xaxis = $('#graph_xaxis').val();
+
+            function updateChart() {
+                graphChart.data.labels = [];
+                graphChart.data.datasets = [{
+                    data: dictToArray(run_metrics, yaxis, xaxis),
+                    label: yaxis
+                }];
+                graphChart.update();
+            }
+
+            for (let epoch in run_metrics) {
+                data.push(run_metrics[epoch].metrics[yaxis]);
+                labels.push(epoch);
+            }
+
+            if (labels.length > graphChart.data.labels.length) {
+                allEpochs = labels;
+                graphChart.data.labels = labels;
+            }
+            updateChart();
+
         }
-        updateChart();
-    
-    }
     </script>
 {% endblock %}

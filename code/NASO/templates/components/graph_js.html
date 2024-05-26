@@ -41,9 +41,9 @@
         // we dont need this anymore.
         delete load_nodes;
         refreshGraph();
-    {% endif %}
-    document.addEventListener("DOMContentLoaded", () => {
-        handleLayerChange(document.getElementById('id_layers'));
-    });
+        {% endif %}
+        document.addEventListener("DOMContentLoaded", () => {
+            handleLayerChange(document.getElementById('id_layers'));
+        });
     </script>
 {% endblock %}

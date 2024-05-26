@@ -606,53 +606,51 @@
             });
             let canvas = document.getElementById("canvas_trial_overview").getContext('2d');
             let runOverview = document.getElementById("canvas_run_overview").getContext('2d');
-            runOverviewChart = new Chart(runOverview,{
+            runOverviewChart = new Chart(runOverview, {
                 type: 'scatter',
                 data: {
                     datasets: [],
                 },
                 plugins: [{
-                        afterDraw: function(chart) {
-                            var check = document.getElementById("include_regression_check");
-                            if (!check.checked) {
-                                return;
+                    afterDraw: function(chart) {
+                        var check = document.getElementById("include_regression_check");
+                        if (!check.checked) {
+                            return;
+                        }
+                        var datasets = chart.data.datasets;
+                        let displayedDatasetIndex = 0;
+                        for (var i = 0; i < datasets.length; i++) {
+                            var dataset = datasets[i];
+                            var regression = calculateRegressionLine(dataset.data);
+
+                            var ctx = chart.ctx;
+
+                            ctx.save();
+                            if (dataset.hidden) {
+                                continue;
                             }
-                            var datasets = chart.data.datasets;
-                            let displayedDatasetIndex = 0;
-                            for (var i = 0; i < datasets.length; i++) {
-                                var dataset = datasets[i];
-                                var regression = calculateRegressionLine(dataset.data);
-
-                                var ctx = chart.ctx;
-
-                                ctx.save();
-                                if (dataset.hidden) {
-                                    continue;
-                                }
-                                var minX = Math.min(...dataset.data.map(point => point.x));
+                            var minX = Math.min(...dataset.data.map(point => point.x));
                             var maxX = Math.max(...dataset.data.map(point => point.x));
 
-                                ctx.save();
-                                ctx.beginPath();
-                                if (displayedDatasetIndex == 2) {
-                                    ctx.moveTo(chart.scales.x.getPixelForValue(minX), chart.scales.y3.getPixelForValue(regression.intercept + regression.slope * minX));
-                                    ctx.lineTo(chart.scales.x.getPixelForValue(maxX), chart.scales.y3.getPixelForValue(regression.intercept + regression.slope * maxX));
-                                }
-                                else if(displayedDatasetIndex == 1) {
-                                    ctx.moveTo(chart.scales.x.getPixelForValue(minX), chart.scales.y2.getPixelForValue(regression.intercept + regression.slope * minX));
-                                    ctx.lineTo(chart.scales.x.getPixelForValue(maxX), chart.scales.y2.getPixelForValue(regression.intercept + regression.slope * maxX));
-                                }
-                                else {
-                                    ctx.moveTo(chart.scales.x.getPixelForValue(minX), chart.scales.y.getPixelForValue(regression.intercept + regression.slope * minX));
-                                    ctx.lineTo(chart.scales.x.getPixelForValue(maxX), chart.scales.y.getPixelForValue(regression.intercept + regression.slope * maxX));
-                                }
-                                ctx.strokeStyle = dataset.borderColor;
-                                ctx.lineWidth = 2;
-                                ctx.stroke();
-                                ctx.restore();
-                                displayedDatasetIndex +=1;
+                            ctx.save();
+                            ctx.beginPath();
+                            if (displayedDatasetIndex == 2) {
+                                ctx.moveTo(chart.scales.x.getPixelForValue(minX), chart.scales.y3.getPixelForValue(regression.intercept + regression.slope * minX));
+                                ctx.lineTo(chart.scales.x.getPixelForValue(maxX), chart.scales.y3.getPixelForValue(regression.intercept + regression.slope * maxX));
+                            } else if (displayedDatasetIndex == 1) {
+                                ctx.moveTo(chart.scales.x.getPixelForValue(minX), chart.scales.y2.getPixelForValue(regression.intercept + regression.slope * minX));
+                                ctx.lineTo(chart.scales.x.getPixelForValue(maxX), chart.scales.y2.getPixelForValue(regression.intercept + regression.slope * maxX));
+                            } else {
+                                ctx.moveTo(chart.scales.x.getPixelForValue(minX), chart.scales.y.getPixelForValue(regression.intercept + regression.slope * minX));
+                                ctx.lineTo(chart.scales.x.getPixelForValue(maxX), chart.scales.y.getPixelForValue(regression.intercept + regression.slope * maxX));
                             }
-                        },
+                            ctx.strokeStyle = dataset.borderColor;
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+                            ctx.restore();
+                            displayedDatasetIndex += 1;
+                        }
+                    },
                 }],
                 options: {
                     responsive: true,
@@ -716,9 +714,9 @@
                                     var data = chart.data;
                                     if (data.datasets.length) {
                                         let labels = data.datasets.map(function(dataset, index) {
-                                            if(!dataset.hidden) {
+                                            if (!dataset.hidden) {
                                                 return {
-                                                    text: dataset.label ==='metrics'? "objective" : dataset.label.replaceAll("_", " "),
+                                                    text: dataset.label === 'metrics' ? "objective" : dataset.label.replaceAll("_", " "),
                                                     fillStyle: dataset.backgroundColor, // Assuming only one dataset
                                                     fontColor: dataset.backgroundColor,
                                                     strokeStyle: dataset.borderColor,
@@ -774,29 +772,29 @@
                         colors: {
                             forceOverride: true
                         },
+                        zoom: {
+                            enabled: true,
+                            mode: 'y',
                             zoom: {
-                                enabled: true,
-                                mode: 'y',
-                                zoom: {
-                                    wheel: {
-                                        enabled: true
-                                    },
-                                    pinch: {
-                                        enabled: true
-                                    },
-                                    drag: {
-                                        enabled: true,
-                                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                                        borderColor: 'rgb(255, 99, 132)',
-                                        borderWidth: 1,
-                                        modifierKey: 'ctrl'
-                                    },
+                                wheel: {
+                                    enabled: true
                                 },
-                                pan:{
+                                pinch: {
+                                    enabled: true
+                                },
+                                drag: {
                                     enabled: true,
-                                    mode: 'xy'
+                                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                    borderColor: 'rgb(255, 99, 132)',
+                                    borderWidth: 1,
+                                    modifierKey: 'ctrl'
                                 },
                             },
+                            pan: {
+                                enabled: true,
+                                mode: 'xy'
+                            },
+                        },
                         tooltip: {
                             enabled: false,
                             position: 'nearest',
@@ -818,10 +816,19 @@
                             }
                             let y = data[trial_id][metric];
                             if (metric in runDatasets) {
-                                runDatasets[metric].data.push({'x': x, "y": y});
-                            }
-                            else {
-                                runDatasets[metric] = {'label': metric, 'data':[{'x': x, "y": y}], 'hidden': true};
+                                runDatasets[metric].data.push({
+                                    'x': x,
+                                    "y": y
+                                });
+                            } else {
+                                runDatasets[metric] = {
+                                    'label': metric,
+                                    'data': [{
+                                        'x': x,
+                                        "y": y
+                                    }],
+                                    'hidden': true
+                                };
                             }
                         }
 
@@ -841,7 +848,7 @@
                             let shownCount = 0;
                             for (dataset of runOverviewChart.data.datasets) {
                                 if (!dataset.hidden) {
-                                    shownCount ++;
+                                    shownCount++;
                                 }
                             }
                             for (dataset of runOverviewChart.data.datasets) {
@@ -866,9 +873,9 @@
                                             position: 'right',
                                             title: {
                                                 display: true,
-                                                text: metric === 'metric' ? "objective" :metric,
+                                                text: metric === 'metric' ? "objective" : metric,
                                                 font: {
-                                                   size: 20
+                                                    size: 20
                                                 },
                                                 color: dataset.borderColor
                                             }
@@ -913,7 +920,7 @@
                         $('#trial_checkbox_' + trial_id).change(function() {
                             let trial_id = this.getAttribute('data-trial');
                             if (this.checked) {
-                                if (! ('data' in run_metrics[trial_id])) {
+                                if (!('data' in run_metrics[trial_id])) {
                                     fetch("{% url 'api:autokeras:get_metrics' run.id '-1e' %}".replace('-1e', trial_id), {
                                         method: "GET",
                                         headers: {
@@ -971,7 +978,7 @@
                     $('#best_trial_id_container').html(' ' + bestTrial);
 
                     var select = $('#sortSelect');
-                    for(metric in run_metrics[firstTrialID]['final']) {
+                    for (metric in run_metrics[firstTrialID]['final']) {
                         generateOption('eval' + capitalizeFirstLetter(metric) + ':asc', "Test data " + metric + ' (Ascending)', select);
                         generateOption('eval' + capitalizeFirstLetter(metric) + ':desc', "Test data " + metric + ' (Descending)', select);
                     }
@@ -1267,7 +1274,7 @@
                     $('#canvas_configure_' + trial_id).parent().parent().attr('data-max-' + snake_case_string(metric), maxMetrics[metric]);
                 }
             }
-            for(metric in trial_data['final']) {
+            for (metric in trial_data['final']) {
                 $('#canvas_configure_' + trial_id).parent().parent().attr('data-eval-' + snake_case_string(metric), trial_data['final'][metric]);
             }
 
@@ -1430,7 +1437,7 @@
             const divs = Array.from(parentDiv.querySelectorAll('div.rounded-lg'));
 
             usePrefix = true;
-            if (metric.indexOf('eval') >=0) {
+            if (metric.indexOf('eval') >= 0) {
                 usePrefix = false;
             }
             divs.sort((a, b) => {
@@ -1442,7 +1449,7 @@
                     }
                     if (!metricName in a.dataset || !metricName in b.dataset) {
                         return 0;
-                }
+                    }
                     const aValue = parseFloat(a.dataset[metricName]);
                     const bValue = parseFloat(b.dataset[metricName]);
                     return aValue - bValue;
