@@ -220,6 +220,9 @@ class NeuralNetwork:
             )["current"]
         else:
             self.training_config.memory_usage = -1
+        self.training_config.model_size = int(
+            np.sum([K.count_params(w) for w in self.model.trainable_weights])
+        )
         self.training_config.save()
 
         logger.success("Finished training of neural network.")
@@ -285,6 +288,12 @@ class NeuralNetwork:
             predict_model = self.training_config.network_model.clustering_options.get_cluster_export_model(
                 predict_model
             )
+        final_model_size = int(
+            np.sum([K.count_params(w) for w in predict_model.trainable_weights])
+        )
+        final_sparsity = 1.0 - final_model_size / self.training_config.model_size
+        self.training_config.model_size = final_model_size
+        self.training_config.save()
         return predict_model.predict(
             dataset,
             batch_size,
@@ -294,5 +303,5 @@ class NeuralNetwork:
             + self.training_config.evaluation_parameters.get_callbacks(
                 self.training_config
             )
-            + [EvaluationBaseCallback(self.training_config)],
+            + [EvaluationBaseCallback(self.training_config, final_sparsity)],
         )

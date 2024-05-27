@@ -35,10 +35,11 @@ class EvaluationBaseCallback(tf.keras.callbacks.Callback):
     times = []
     _batch = 0
 
-    def __init__(self, run: Run | Inference):
+    def __init__(self, run: Run | Inference, given_sparsity: float = None):
         super().__init__()
         self.run = run
         self.timer = Timer()
+        self.sparsity = given_sparsity
 
     def on_test_begin(self, logs=None):
         """
@@ -63,6 +64,8 @@ class EvaluationBaseCallback(tf.keras.callbacks.Callback):
         Returns:
             None
         """
+        if self.sparsity:
+            logs["sparsity"] = self.sparsity
         logs["execution_time"] = sum(self.times) / len(self.times)
         keys = list(logs.keys())
         print(f"Stop testing; got log keys: {keys}")
@@ -119,6 +122,8 @@ class EvaluationBaseCallback(tf.keras.callbacks.Callback):
         Returns:
             None
         """
+        if self.sparsity:
+            logs["sparsity"] = self.sparsity
         logs["total_batches"] = self._batch
         if self.run.gpu.startswith("GPU"):
             logs["memory_consumption"] = tf.config.experimental.get_memory_info(
