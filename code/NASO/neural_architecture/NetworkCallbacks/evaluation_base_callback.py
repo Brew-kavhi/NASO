@@ -6,6 +6,7 @@ import tensorflow as tf
 from api.views.metrics import MetricsAPIView as InferenceMetricsAPIView
 from api.views.metrics import TensorflowMetricAPIView
 from helper_scripts.timer import Timer
+from helper_scripts.database import lock_safe_db_operation
 from inference.models.inference import Inference
 from runs.models.training import NetworkTraining, Run, TrainingMetric
 
@@ -187,6 +188,7 @@ class EvaluationBaseCallback(tf.keras.callbacks.Callback):
                         },
                     ],
                 )
+                lock_safe_db_operation(metric.save)
                 metric.save()
                 self.run.prediction_metrics.add(metric)
 
