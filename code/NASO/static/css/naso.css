@@ -20,3 +20,6 @@
 section.content > .container {
     max-width: 60vw !important;
 }
+.sigma-scene {
+    background: white;
+}
