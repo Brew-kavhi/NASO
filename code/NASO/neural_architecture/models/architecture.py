@@ -1,7 +1,7 @@
 import os
 import zipfile
 
-import tensorflow as tf
+import keras
 from decouple import config
 from django.db import models
 from loguru import logger
@@ -19,8 +19,6 @@ from neural_architecture.models.types import (
     TypeInstance,
 )
 from neural_architecture.validators import validate_dtype
-
-keras = tf.keras
 
 
 class SearchSpace(models.Model):
@@ -126,8 +124,8 @@ class NetworkModel(PrunableNetwork):
                 f"{config('TENSORFLOW_MODEL_PATH')}{self.model_type}/{self.name}_{self.id}.zip",
                 "w",
                 compression=zipfile.ZIP_DEFLATED,
-            ) as f:
-                f.write(file_path)
+            ) as zip_file:
+                zip_file.write(file_path)
 
             self.model_file = file_path
             self.save()
@@ -139,7 +137,6 @@ class NetworkModel(PrunableNetwork):
         """
         Builds/returns a tf.Keras.Model that is used for training and evaluation and everything
         """
-        pass
 
     def get_gzipped_model_size(self) -> int:
         if self.save_model:

@@ -1,14 +1,11 @@
 import os
 from os import listdir
-import zipfile
 from os.path import isfile, join
 
-import kaggle
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
 
 from neural_architecture.models.dataset import DatasetLoader
 from plugins.interfaces.commands import InstallerInterface

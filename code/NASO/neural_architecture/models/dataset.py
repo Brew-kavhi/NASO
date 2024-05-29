@@ -81,7 +81,7 @@ class DatasetLoader(models.Model):
             int: The size of an element in the dataset.
         """
         if not self.dataset_loader:
-            raise Exception("no dataset loaded yet")
+            raise ValueError("no dataset loaded yet")
         return self.dataset_loader.get_element_size()
 
     def get_data(
@@ -160,7 +160,7 @@ class Dataset(models.Model):
 
     def get_element_size(self, *args, **kwargs):
         if not self.dataset_loader:
-            raise Exception("no dataset loaded yet")
+            raise ValueError("no dataset loaded yet")
         return self.dataset_loader.get_element_size()
 
     def get_data(self, *args, **kwargs):
@@ -258,7 +258,7 @@ class TensorflowDatasetLoader(DatasetLoaderInterface):
         """
         if "splits" in self.info.features:
             return self.info.features["splits"].shape
-        raise Exception("This dataset does not support size information")
+        raise NotImplementedError("This dataset does not support size information")
 
     def get_element_size(self, *args, **kwargs):
         """
@@ -272,7 +272,7 @@ class TensorflowDatasetLoader(DatasetLoaderInterface):
         """
         if "image" in self.info.features:
             return self.info.features["image"].shape
-        raise Exception("This dataset does not support size information")
+        raise NotImplementedError("This dataset does not support size information")
 
     def get_datasets(self, *args, **kwargs):
         """

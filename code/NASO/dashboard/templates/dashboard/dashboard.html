@@ -78,11 +78,11 @@
 {% endblock %}
 {% block javascript %}
     <script>
-            var progressUrls = {
-                {% for  celery_run in run %}
-                '{{celery_run.task_id}}':'{% url "runs:training_progress" celery_run.task_id %}',
-                {% endfor %}
-            };
+        var progressUrls = {
+            {% for celery_run in run %}
+                '{{celery_run.task_id}}': '{% url "runs:training_progress" celery_run.task_id %}',
+            {% endfor %}
+        };
     </script>
     {{ block.super }}
 {% endblock javascript %}

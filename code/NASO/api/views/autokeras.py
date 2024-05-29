@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from api.helper_scripts.run import rate_run
 from api.serializers.autokeras import AutoKerasRunSerializer
 from api.serializers.training import TrainingMetricSerializer
 from neural_architecture.models.autokeras import AutoKerasRun
@@ -25,7 +26,7 @@ def get_configuration(request, pk):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def rate_run(request, pk):
+def rate_autokeras_run(request, pk):
     """
     This view rates a run.
 
@@ -38,13 +39,7 @@ def rate_run(request, pk):
     """
 
     run = AutoKerasRun.objects.get(pk=pk)
-    rate = request.data.get("rate")
-    if rate != "":
-        run.rate = rate
-    else:
-        run.rate = 0
-    run.save()
-    return Response({"success": True})
+    return rate_run(request, run)
 
 
 def get_metrics(pk, trial_id):
@@ -133,8 +128,7 @@ def get_inference_metrics(request, pk):
     trial_id = ""
     for metric in metrics:
         for measure in metric.metrics:
-            if "trial_id" in measure:
-                trial_id = measure["trial_id"]
+            trial_id = measure.get("trial_id", "")
             if "final_metric" not in measure:
                 trial_metrics[trial_id] = measure["metrics"]
 
@@ -159,8 +153,7 @@ def get_final_metrics(request, pk):
     trial_id = ""
     for metric in metrics:
         for measure in metric.metrics:
-            if "trial_id" in measure:
-                trial_id = measure["trial_id"]
+            trial_id = measure.get("trial_id", "")
             if "final_metric" not in measure:
                 trial_metrics[trial_id] = measure["metrics"]
 
@@ -186,8 +179,7 @@ def get_all_metrics(request, pk):
     for metric in metrics:
         epoch = metric.epoch
         for measure in metric.metrics:
-            if "trial_id" in measure:
-                trial_id = measure["trial_id"]
+            trial_id = measure.get("trial_id", "")
             if "final_metric" not in measure:
                 if trial_id in trial_metrics:
                     # add it to the array
@@ -199,7 +191,10 @@ def get_all_metrics(request, pk):
                     trial_metrics[trial_id] = {}
                     trial_metrics[trial_id][epoch] = measure["metrics"]
             else:
-                trial_metrics[trial_id]["final"] = measure["metrics"]
+                if trial_id in trial_metrics:
+                    trial_metrics[trial_id]["final"] = measure["metrics"]
+                else:
+                    trial_metrics[trial_id] = {"final": measure["metrics"]}
 
     return JsonResponse(trial_metrics, safe=True)
 
@@ -215,8 +210,7 @@ def get_trial_details_short(request, pk):
     for metric in metrics:
         epoch = metric.epoch
         for measure in metric.metrics:
-            if "trial_id" in measure:
-                trial_id = measure["trial_id"]
+            trial_id = measure.get("trial_id", "")
             if "final_metric" not in measure:
                 # only get the max metrics.
                 if trial_id in trial_json:
@@ -245,11 +239,18 @@ def get_trial_details_short(request, pk):
                     trial_json[trial_id]["min"] = measure["metrics"]
                     trial_json[trial_id]["max"] = measure["metrics"]
                     for metric_name in measure["metrics"]:
-                        if not metric_name in distinct_metrics:
+                        if metric_name not in distinct_metrics:
                             distinct_metrics.append(metric_name)
                     trial_json[trial_id][epoch] = measure["metrics"]
             else:
-                trial_json[trial_id]["final"] = measure["metrics"]
+                if trial_id in trial_json:
+                    trial_json[trial_id]["final"] = measure["metrics"]
+                else:
+                    trial_json[trial_id] = {
+                        "min": {},
+                        "max": {},
+                        "final": measure["metrics"],
+                    }
 
     trial_json["metrics"] = distinct_metrics
     return JsonResponse(trial_json, safe=True)
@@ -360,10 +361,10 @@ def undelete(request, pk):
 class MetricAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, pk, trial_id, is_prediction=0, format=None):
-        return JsonResponse(get_metrics(pk, trial_id), safe=True)
+    def get(self, request, pk, trial_id, is_prediction=0):
+        return JsonResponse(get_metrics(pk, trial_id))
 
-    def post(self, request, pk, trial_id, is_prediction=0, format=None):
+    def post(self, request, pk, trial_id, is_prediction=0):
         run = AutoKerasRun.objects.get(pk=pk)
         serialized_metric = TrainingMetricSerializer(data=request.data)
         if serialized_metric.is_valid(True):

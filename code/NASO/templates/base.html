@@ -48,7 +48,7 @@
                 minimumResultsForSearch: 0,
                 width: '100%'
             });
-            var stars = new StarRating('.star-rating',{
+            var stars = new StarRating('.star-rating', {
                 tooltip: false
             });
             $('.star-rating').change(function(event) {
@@ -69,12 +69,12 @@
         });
 
         function updateTaskPower(taskID) {
-            fetch("{% url 'api:celery:task_details' 0 %}".replace(0,taskID),{
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Token ${token}`,
-                    },
+            fetch("{% url 'api:celery:task_details' 0 %}".replace(0, taskID), {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${token}`,
+                },
             }).then(function(response) {
                 if (response.ok) {
                     response.json().then(function(data) {
@@ -86,7 +86,7 @@
         }
 
         async function setRate(objectId, newRate, type) {
-        
+
             try {
                 const response = await fetch(rateUrl.replace("0", objectId).replace('tensorflow', type), {
                     method: 'POST',
@@ -94,11 +94,13 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Token ${token}`,
                     },
-                    body: JSON.stringify({ rate: newRate }),
+                    body: JSON.stringify({
+                        rate: newRate
+                    }),
                 });
-        
+
                 const data = await response.json();
-        
+
                 if (response.ok) {
                     console.log('Rate updated successfully:', data.success);
 

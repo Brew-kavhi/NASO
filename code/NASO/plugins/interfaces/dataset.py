@@ -3,15 +3,7 @@ from abc import ABC, abstractmethod
 
 class DatasetLoaderInterface(ABC):
     @abstractmethod
-    def get_data(
-        self,
-        name="",
-        is_supervised=True,
-        data_dir="",
-        shuffle_files=True,
-        *args,
-        **kwargs
-    ):
+    def get_data(self, name="", *args, **kwargs):
         """
         Retrieves the data from the dataset.
 

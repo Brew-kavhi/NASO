@@ -7,9 +7,9 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             // for each tensorflowtraining in tensorflowTrainings, fetch the data from the api and display the graph:
-            document.getElementById('toggleSelectionButton').addEventListener('click', function () {
+            document.getElementById('toggleSelectionButton').addEventListener('click', function() {
                 var button = document.getElementById('toggleSelectionButton');
-                document.querySelectorAll('input[type="checkbox"]').forEach((el)=>el.classList.toggle('d-none'));
+                document.querySelectorAll('input[type="checkbox"]').forEach((el) => el.classList.toggle('d-none'));
                 document.getElementById('actions_dropdown').classList.toggle('d-none');
                 document.getElementById('selectAllButton').classList.toggle('d-none');
 
@@ -17,12 +17,12 @@
                     button.innerHTML = 'Fertig';
                 } else {
                     button.innerHTML = 'Auswahl';
-                } 
-            });  
-            document.getElementById('selectAllButton').addEventListener('click', function () {
+                }
+            });
+            document.getElementById('selectAllButton').addEventListener('click', function() {
                 var activeTab = getActiveTab();
                 var checkboxs = document.querySelectorAll('input[type="checkbox"][name="' + activeTab + '_checkbox"]');
-        
+
                 checkboxs.forEach(function(checkbox) {
                     checkbox.checked = true;
                 });
@@ -39,16 +39,16 @@
         }
 
         function undelete(element) {
-                fetch(UNDELETE_URL.replace("0", element.dataset.id).replace('tensorflow', element.dataset.runtype), {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Token ${token}`,
-                    },
-                }).then(function(response) {
+            fetch(UNDELETE_URL.replace("0", element.dataset.id).replace('tensorflow', element.dataset.runtype), {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${token}`,
+                },
+            }).then(function(response) {
 
                 const data = response.json();
-        
+
                 if (response.ok) {
                     console.log('Rate updated successfully:', data.success);
                     toastr.success("Erfolgreich wiecer hergestellt", 'INFO');
@@ -57,21 +57,21 @@
                 } else {
                     console.error('Error updating rate:', data.error);
                 }
-                });
-        
+            });
+
         }
 
         function harddelete(element) {
-                fetch(HARDDELETE_URL.replace("0", element.dataset.id).replace('tensorflow', element.dataset.runtype), {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Token ${token}`,
-                    },
-                }).then(function(response) {
+            fetch(HARDDELETE_URL.replace("0", element.dataset.id).replace('tensorflow', element.dataset.runtype), {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${token}`,
+                },
+            }).then(function(response) {
 
                 const data = response.json();
-        
+
                 if (response.ok) {
                     console.log('Rate updated successfully:', data.success);
                     toastr.success("Erfolgreich endgültig gelöscht", 'INFO');
@@ -80,7 +80,7 @@
                 } else {
                     console.error('Error updating rate:', data.error);
                 }
-                });
+            });
         }
 
         function removeAccordion(id) {
@@ -93,17 +93,27 @@
             if (confirm("Wollen Sie ie Daten wirklich loschen?")) {
                 selectedRuns.forEach((input) => {
                     [x, runType, id] = input.id.split("_");
-                    harddelete({'dataset':{'id':id, 'runtype': runType}});
+                    harddelete({
+                        'dataset': {
+                            'id': id,
+                            'runtype': runType
+                        }
+                    });
                 });
             }
         }
-        
+
         function restoreSelectedRuns() {
             var activeTab = getActiveTab();
             var selectedRuns = document.querySelectorAll('input[type="checkbox"][name="' + activeTab + '_checkbox"]:checked');
             selectedRuns.forEach((input) => {
                 [x, runType, id] = input.id.split("_");
-                undelete({'dataset':{'id':id, 'runtype': runType}});
+                undelete({
+                    'dataset': {
+                        'id': id,
+                        'runtype': runType
+                    }
+                });
             });
         }
     </script>

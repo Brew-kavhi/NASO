@@ -4,7 +4,7 @@ from .views import tensorflow
 from .views.metrics import TensorflowMetricAPIView
 
 urlpatterns = [
-    path("<int:pk>/rate/", tensorflow.rate_run, name="rate_run"),
+    path("<int:pk>/rate/", tensorflow.rate_tensorflow_run, name="rate_run"),
     path("<int:pk>/hardelete/", tensorflow.hard_delete, name="delete_run"),
     path("<int:pk>/undelete/", tensorflow.undelete, name="undelete_run"),
     path(

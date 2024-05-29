@@ -4,33 +4,34 @@
 {% load humanize %}
 {% block content %}
     <style>
-    .asc:after {
-        content: '\25B2';
-    }
+        .asc:after {
+            content: '\25B2';
+        }
 
-    .desc:after {
-        content: '\25BC';
-    }
-    #gallery-container {
-      position: relative;
-    }
+        .desc:after {
+            content: '\25BC';
+        }
 
-    .gallery-card {
-      display: none;
-      width: 100%;
-      color:black;
-    }
+        #gallery-container {
+            position: relative;
+        }
 
-    .gallery-card.active {
-      display: block;
-    }
+        .gallery-card {
+            display: none;
+            width: 100%;
+            color: black;
+        }
 
-    #canvas {
-      /* Style your canvas here */
-      background-color: #f0f0f0;
-      padding: 20px;
-      border: 1px solid #ccc;
-    }
+        .gallery-card.active {
+            display: block;
+        }
+
+        #canvas {
+            /* Style your canvas here */
+            background-color: #f0f0f0;
+            padding: 20px;
+            border: 1px solid #ccc;
+        }
     </style>
     <div class="tabs is-centered is-toggle is-toggle-round">
         <ul>
@@ -397,7 +398,7 @@
         let cards = [];
         let allPlots = undefined;
 
-        async function runInference(event, id){
+        async function runInference(event, id) {
             event.preventDefault();
             var select = event.target.querySelector("select");
             var formData = {
@@ -408,25 +409,24 @@
             };
             console.log(formData);
             const response = await fetch('{% url "api:inference:run_from_id" %}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Token ${token}`,
-                    },
-                    body: JSON.stringify(formData),
-                });
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${token}`,
+                },
+                body: JSON.stringify(formData),
+            });
             const result = await response.json();
-            if(result.success) {
+            if (result.success) {
                 toastr.success("inference gestartet");
-            }
-            else {
+            } else {
                 toastr.error("Fehler");
             }
         }
 
-        async function runAllInference(event){
+        async function runAllInference(event) {
             event.preventDefault();
-            for(const id of Object.keys(COMPARISONS)) {
+            for (const id of Object.keys(COMPARISONS)) {
                 var select = event.target.querySelector("select");
                 var formData = {
                     run_id: id,
@@ -436,49 +436,47 @@
                 };
                 console.log(formData);
                 const response = await fetch('{% url "api:inference:run_from_id" %}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Token ${token}`,
-                        },
-                        body: JSON.stringify(formData),
-                    });
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Token ${token}`,
+                    },
+                    body: JSON.stringify(formData),
+                });
                 const result = await response.json();
-                if(result.success) {
+                if (result.success) {
                     toastr.success("inference gestartet");
-                }
-                else {
+                } else {
                     toastr.error("Fehler");
                 }
             }
         }
 
         document.addEventListener("submit", function(event) {
-          if (event.target && event.target.classList.contains("inferenceform")) {
-              event.preventDefault();
-              runInference(event, event.target.dataset.id);
-          }
-          else if (event.target && event.target.classList.contains("allinferenceform")) {
-              event.preventDefault();
-              runAllInference(event);
-          }
+            if (event.target && event.target.classList.contains("inferenceform")) {
+                event.preventDefault();
+                runInference(event, event.target.dataset.id);
+            } else if (event.target && event.target.classList.contains("allinferenceform")) {
+                event.preventDefault();
+                runAllInference(event);
+            }
         });
 
-            function showCard(index) {
-              cards.forEach((card, i) => {
+        function showCard(index) {
+            cards.forEach((card, i) => {
                 card.classList.toggle('active', i === index);
-              });
-            }
+            });
+        }
 
-            function nextCard() {
-              currentCardIndex = (currentCardIndex + 1) % cards.length;
-              showCard(currentCardIndex);
-            }
+        function nextCard() {
+            currentCardIndex = (currentCardIndex + 1) % cards.length;
+            showCard(currentCardIndex);
+        }
 
-            function prevCard() {
-              currentCardIndex = (currentCardIndex - 1 + cards.length) % cards.length;
-              showCard(currentCardIndex);
-            }
+        function prevCard() {
+            currentCardIndex = (currentCardIndex - 1 + cards.length) % cards.length;
+            showCard(currentCardIndex);
+        }
 
         function updateTable(label, run, data) {
             let content = $('#table thead>tr')[0].innerHTML;
@@ -487,14 +485,13 @@
             if (content.indexOf(label) < 0) {
                 content += '<th class="text-center"><input type="checkbox" class="column-checkbox" data-column="' + label + '">' + label + '</th>';
 
-                for (var i = 0; i< length; i++) {
+                for (var i = 0; i < length; i++) {
                     dataRows[i].innerHTML += '<td>-</td>';
                 }
             }
 
-            for (var i = 0; i< length; i++) {
+            for (var i = 0; i < length; i++) {
                 if (dataRows[i].innerHTML.indexOf(run) > 0) {
-                    console.log(run,data);
                     var cells = dataRows[i].querySelectorAll('td');
                     cells[cells.length - 1].innerHTML = '<td>' + data + '</td>';
                 }
@@ -509,8 +506,8 @@
 
             var comparisonRuns = Object.keys(COMPARISONS);
             var barData = [];
-            for(const run of comparisonRuns) {
-                for(var barName in COMPARISONS[run]) {
+            for (const run of comparisonRuns) {
+                for (var barName in COMPARISONS[run]) {
                     if (barName === 'run_type' || barName === 'run_id' || barName === 'name') {
                         continue;
                     }
@@ -527,7 +524,7 @@
             for (var barName of barData) {
                 var data = [];
                 for (var run of comparisonRuns) {
-                    if(COMPARISONS[run][barName]) {
+                    if (COMPARISONS[run][barName]) {
                         data.push(COMPARISONS[run][barName]);
                     } else {
                         data.push('-');
@@ -541,8 +538,11 @@
 
             // Generate the table and append it to a container element
             var tableContainer = document.getElementById('table');
-            tableContainer.innerHTML = generateTable({labels: labels, datasets: datasets});
-            
+            tableContainer.innerHTML = generateTable({
+                labels: labels,
+                datasets: datasets
+            });
+
             var ctx = document.getElementById('canvas_bar_chart').getContext('2d');
             var myBarChart = new Chart(ctx, {
                 type: 'bar',
@@ -561,7 +561,7 @@
                     },
                     plugins: {
                         legend: {
-                            onClick: function (event, legendItem) {
+                            onClick: function(event, legendItem) {
                                 var index = legendItem.datasetIndex;
                                 var chart = this.chart;
                                 var meta = chart.getDatasetMeta(index);
@@ -576,85 +576,85 @@
             });
 
             let allCanvas = document.getElementById("canvas_all_plot").getContext('2d');
-                allPlots = new Chart(allCanvas, {
-                    type: 'line',
-                    data: {
-                        labels: [],
-                        datasets: []
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            x: {
-                                type: 'linear',
-                                position: 'bottom',
-                                title: {
-                                    display: true,
-                                    text: 'Epochs' // Set the dynamic X-axis title
-                                }
-                            },
-                            y: {
+            allPlots = new Chart(allCanvas, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
                                 display: true,
-                                title: {
-                                    display: true,
-                                    text: 'Loss' // Set the dynamic Y-axis title
-                                }
+                                text: 'Epochs' // Set the dynamic X-axis title
                             }
                         },
-                        interaction: {
-                            mode: 'index',
-                            intersect: false,
-                        },
-                        plugins: {
-                            colors: {
-                                forceOverride: true
-                            },
-                            tooltip: {
-                                enabled: true,
-                                position: 'nearest',
-                            },
-                            zoom: {
-                                enabled: true,
-                                mode: 'y',
-                                zoom: {
-                                    wheel: {
-                                        enabled: true
-                                    },
-                                    pinch: {
-                                        enabled: true
-                                    },
-                                    drag: {
-                                        enabled: true,
-                                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                                        borderColor: 'rgb(255, 99, 132)',
-                                        borderWidth: 1,
-                                        modifierKey: 'ctrl'
-                                    },
-                                },
-                                pan:{
-                                    enabled: true,
-                                    mode: 'xy'
-                                },
-                            },
-                            legend: {
-                                position: 'top',
-                                //onClick: selectDataset
-                                onClick: function (event, legendItem) {
-                                    var index = legendItem.datasetIndex;
-                                    var chart = this.chart;
-                                    var meta = chart.getDatasetMeta(index);
-
-                                    // Toggle visibility of the dataset
-                                    meta.hidden = meta.hidden === null ? !chart.data.datasets[index].hidden : null;
-                                    chart.update();
-                                    selectDataset(event, legendItem);
-                                }
-                            },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Loss' // Set the dynamic Y-axis title
+                            }
                         }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        colors: {
+                            forceOverride: true
+                        },
+                        tooltip: {
+                            enabled: true,
+                            position: 'nearest',
+                        },
+                        zoom: {
+                            enabled: true,
+                            mode: 'y',
+                            zoom: {
+                                wheel: {
+                                    enabled: true
+                                },
+                                pinch: {
+                                    enabled: true
+                                },
+                                drag: {
+                                    enabled: true,
+                                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                    borderColor: 'rgb(255, 99, 132)',
+                                    borderWidth: 1,
+                                    modifierKey: 'ctrl'
+                                },
+                            },
+                            pan: {
+                                enabled: true,
+                                mode: 'xy'
+                            },
+                        },
+                        legend: {
+                            position: 'top',
+                            //onClick: selectDataset
+                            onClick: function(event, legendItem) {
+                                var index = legendItem.datasetIndex;
+                                var chart = this.chart;
+                                var meta = chart.getDatasetMeta(index);
+
+                                // Toggle visibility of the dataset
+                                meta.hidden = meta.hidden === null ? !chart.data.datasets[index].hidden : null;
+                                chart.update();
+                                selectDataset(event, legendItem);
+                            }
+                        },
                     }
-                });
-            
+                }
+            });
+
             var index = 0;
             for (const run of Object.keys(COMPARISONS)) {
                 let canvas = document.getElementById("canvas_" + COMPARISONS[run].run_type + "_" + run).getContext('2d');
@@ -729,8 +729,7 @@
                             addDatasetToPlot(data, allPlots, COMPARISONS[run].name, index);
                         });
                     });
-                }
-                else if (COMPARISONS[run].run_type === 'autokeras') {
+                } else if (COMPARISONS[run].run_type === 'autokeras') {
                     fetch(autokerasMetricAPI.replace(0, COMPARISONS[run].run_id)).then(function(response) {
                         response.json().then(function(data) {
                             run_metrics = data;
@@ -749,10 +748,9 @@
                             addDatasetToPlot(data, allPlots, COMPARISONS[run].name, index);
                         });
                     });
-                }
-                else if (COMPARISONS[run].run_type === 'autokeras_trial') {
+                } else if (COMPARISONS[run].run_type === 'autokeras_trial') {
                     [runID, trialID] = run.split('_');
-                    fetch(autokerasTrialMetricAPI.replace(0, runID).replace('-1',trialID), {
+                    fetch(autokerasTrialMetricAPI.replace(0, runID).replace('-1', trialID), {
                         method: "GET",
                         headers: {
                             'Content-Type': 'application/json',
@@ -781,7 +779,7 @@
         });
 
 
-        const selectDataset = function (e, legendItem, legend) {
+        const selectDataset = function(e, legendItem, legend) {
             const index = legendItem.datasetIndex;
             showCard(allPlots.data.datasets[index].cardIndex);
         };
@@ -796,18 +794,18 @@
             }
         }
 
-        function getLatexCode(){
+        function getLatexCode() {
             var selectedRows = [];
             var selectedColumns = [];
 
             // Get selected rows
             var rowCheckboxes = document.querySelectorAll('.row-checkbox:checked');
             rowCheckboxes.forEach(function(checkbox) {
-              selectedRows.push(checkbox.dataset.row);
+                selectedRows.push(checkbox.dataset.row);
             });
             var colCheckboxes = document.querySelectorAll('.column-checkbox:checked');
             colCheckboxes.forEach(function(checkbox) {
-              selectedColumns.push(checkbox.dataset.column);
+                selectedColumns.push(checkbox.dataset.column);
             });
 
             let latexCode = "\\begin{table}[h]\n\t\\centering\n\t\\begin{tabular}{|p{2cm}|" + "p{2cm}|".repeat(selectedColumns.length) + "}\n\t\t\\hline\n";
@@ -833,7 +831,7 @@
             codeContainer.select();
             codeContainer.style.height = (codeContainer.scrollHeight) + "px";
             document.execCommand('copy');
-            codeContainer.setSelectionRange(0,0);
+            codeContainer.setSelectionRange(0, 0);
             toastr.info("Copied to clipboard");
         }
 
@@ -841,7 +839,11 @@
             var labels = [];
             let yaxis = $('#graph_yaxis_all_plot').val();
             let xaxis = $('#graph_xaxis_all_plot').val();
-            canvas.data.datasets.push({cardIndex: index,label: name, data:dictToArray(data, yaxis, xaxis)});
+            canvas.data.datasets.push({
+                cardIndex: index,
+                label: name,
+                data: dictToArray(data, yaxis, xaxis)
+            });
             canvas.update();
 
             for (let epoch in data) {
@@ -897,8 +899,7 @@
                         y: dict[i].metrics[key],
                         x: label
                     });
-                }
-                else if ('loss' in dict[i]) {
+                } else if ('loss' in dict[i]) {
                     var label = '';
                     if (xAxisMetric == 'epochs') {
                         label = i.toString();
@@ -1007,8 +1008,7 @@
                     if (Number(x.innerHTML)) {
                         x = Number(x.innerHTML);
                         y = Number(y.innerHTML);
-                    }
-                    else {
+                    } else {
                         x = x.innerText.toLowerCase();
                         y = y.innerText.toLowerCase();
                     }
@@ -1044,54 +1044,54 @@
 
         // Function to generate the table HTML
         function generateTable(data) {
-          var tableHTML = '<table>';
-          
-          // Add table headers with checkboxes above columns
-          tableHTML += '<thead><tr><th onclick="sortTable(0)" class="sortable"></th>'; // Empty cell for checkboxes above columns
-          data.datasets.forEach(function(dataset, index) {
-            tableHTML += '<th class="text-center sortable" onclick="sortTable(' + (index + 1) + ')"><input type="checkbox" class="column-checkbox" data-column="' + dataset.label + '">' + dataset.label + '</th>';
-          });
-          tableHTML += '</tr></thead>';
-          
-          // Add table body with checkboxes for rows and data values
-          tableHTML += '<tbody>';
-          data.labels.forEach(function(label, index) {
-              tableHTML += '<tr id="table_' + Object.keys(COMPARISONS)[index] + '"><td><input type="checkbox" class="row-checkbox" data-row="' + Object.keys(COMPARISONS)[index] + '">' + label + '</td>'; // Checkbox for each row
-              data.datasets.forEach(function(dataset) {
-                if(index in dataset.data) {
-                    tableHTML += '<td>' + dataset.data[index] + '</td>'; // Display data values
-                } else {
-                    tableHTML += "<td>-</td>";
-                }
-            });
-            tableHTML += '</tr>';
-          });
-          tableHTML += '</tbody></table>';
+            var tableHTML = '<table>';
 
-          return tableHTML;
+            // Add table headers with checkboxes above columns
+            tableHTML += '<thead><tr><th onclick="sortTable(0)" class="sortable"></th>'; // Empty cell for checkboxes above columns
+            data.datasets.forEach(function(dataset, index) {
+                tableHTML += '<th class="text-center sortable" onclick="sortTable(' + (index + 1) + ')"><input type="checkbox" class="column-checkbox" data-column="' + dataset.label + '">' + dataset.label + '</th>';
+            });
+            tableHTML += '</tr></thead>';
+
+            // Add table body with checkboxes for rows and data values
+            tableHTML += '<tbody>';
+            data.labels.forEach(function(label, index) {
+                tableHTML += '<tr id="table_' + Object.keys(COMPARISONS)[index] + '"><td><input type="checkbox" class="row-checkbox" data-row="' + Object.keys(COMPARISONS)[index] + '">' + label + '</td>'; // Checkbox for each row
+                data.datasets.forEach(function(dataset) {
+                    if (index in dataset.data) {
+                        tableHTML += '<td>' + dataset.data[index] + '</td>'; // Display data values
+                    } else {
+                        tableHTML += "<td>-</td>";
+                    }
+                });
+                tableHTML += '</tr>';
+            });
+            tableHTML += '</tbody></table>';
+
+            return tableHTML;
         }
 
 
         function removeComparisonFromView(element) {
             {% if comparison.id %}
-            fetch("{% url 'api:comparisons:remove_run' comparison.id 'run_id' %}".replace('run_id' ,element.dataset.id),{
+                fetch("{% url 'api:comparisons:remove_run' comparison.id 'run_id' %}".replace('run_id', element.dataset.id), {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Token ${token}`,
                     },
-            }).then(function(response) {
-                if (response.ok) {
+                }).then(function(response) {
+                    if (response.ok) {
                         document.getElementById(element.dataset.id).remove();
                         document.getElementById("table_" + element.dataset.id).remove();
                         COMPARISONS[element.dataset.id] = {};
-                    toastr.success("Vergleich entfernt", "INFO");
-                }
-            });
+                        toastr.success("Vergleich entfernt", "INFO");
+                    }
+                });
             {% else %}
-            document.getElementById(element.dataset.id).remove();
-            COMPARISONS[element.dataset.id] = {};
-            removeComparison(element);
+                document.getElementById(element.dataset.id).remove();
+                COMPARISONS[element.dataset.id] = {};
+                removeComparison(element);
             {% endif %}
         }
     </script>

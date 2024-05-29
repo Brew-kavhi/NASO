@@ -64,7 +64,7 @@ class TrialView(TemplateView):
             tuple: A tuple containing the following:
                 - tuner_arguments (list): A list of dictionaries representing tuner arguments.
                 - loss_arguments (list): A list of dictionaries representing loss arguments.
-                - metrics_arguments (dict): A dictionary where the keys are metric IDs and the values are lists of dictionaries
+                - metrics_arguments (dict): Keys are metric IDs and values are lists of dictionaries
                 representing metric arguments.
                 - callbacks_arguments (dict): A dictionary where the keys are callback
                 IDs and the values are lists of dictionaries representing callback arguments.

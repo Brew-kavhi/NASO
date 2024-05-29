@@ -5,6 +5,7 @@ import tensorflow as tf
 
 from api.views.metrics import MetricsAPIView as InferenceMetricsAPIView
 from api.views.metrics import TensorflowMetricAPIView
+from helper_scripts.database import lock_safe_db_operation
 from helper_scripts.timer import Timer
 from inference.models.inference import Inference
 from runs.models.training import NetworkTraining, Run, TrainingMetric
@@ -35,10 +36,11 @@ class EvaluationBaseCallback(tf.keras.callbacks.Callback):
     times = []
     _batch = 0
 
-    def __init__(self, run: Run | Inference):
+    def __init__(self, run: Run | Inference, given_sparsity: float = None):
         super().__init__()
         self.run = run
         self.timer = Timer()
+        self.sparsity = given_sparsity
 
     def on_test_begin(self, logs=None):
         """
@@ -63,6 +65,8 @@ class EvaluationBaseCallback(tf.keras.callbacks.Callback):
         Returns:
             None
         """
+        if self.sparsity:
+            logs["sparsity"] = self.sparsity
         logs["execution_time"] = sum(self.times) / len(self.times)
         keys = list(logs.keys())
         print(f"Stop testing; got log keys: {keys}")
@@ -119,6 +123,8 @@ class EvaluationBaseCallback(tf.keras.callbacks.Callback):
         Returns:
             None
         """
+        if self.sparsity:
+            logs["sparsity"] = self.sparsity
         logs["total_batches"] = self._batch
         if self.run.gpu.startswith("GPU"):
             logs["memory_consumption"] = tf.config.experimental.get_memory_info(
@@ -182,6 +188,7 @@ class EvaluationBaseCallback(tf.keras.callbacks.Callback):
                         },
                     ],
                 )
+                lock_safe_db_operation(metric.save)
                 metric.save()
                 self.run.prediction_metrics.add(metric)
 

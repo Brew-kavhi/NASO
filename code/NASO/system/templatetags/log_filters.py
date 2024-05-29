@@ -16,10 +16,6 @@ def colorize_log(log_content):
     Returns:
         str: The colorized log content with CSS classes applied.
 
-    Example:
-        >>> log_content = '2023-09-25 14:30:00 - INFO - This is an informational message'
-        >>> colorize_log(log_content)
-        '<span class="text-green">2023-09-25 14:30:00</span> - <span class="has-background-info has-text-weight-bold text-uppercase">INFO</span> - This is an informational message'
     """
     # Split the log content into lines and reverse the order
     lines = log_content.splitlines()

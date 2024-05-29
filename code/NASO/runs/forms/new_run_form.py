@@ -342,26 +342,25 @@ class NewAutoKerasRunForm(BaseRunWithCallback, PrunableForm, ClusterableForm):
             HTML("<div id='tuner-arguments' class='card rounded-3'></div>"),
             HTML('<div class="clearfix"></div>'),
             Row(
-                # Column("epochs", css_class="form-group col-6 mb-0"),
                 Column(
                     Field("max_model_size", template="crispyForms/small_field.html"),
-                    css_class="col-2",
+                    css_class="col-4",
                 ),
                 Column(
                     Field("max_trials", template="crispyForms/small_field.html"),
-                    css_class="col-2",
+                    css_class="col-4",
                 ),
                 Column(
                     Field("max_epochs", template="crispyForms/small_field.html"),
-                    css_class="col-2",
+                    css_class="col-4",
                 ),
                 Column(
                     Field("objective"),
-                    css_class="col-6",
+                    css_class="col-4",
                 ),
                 Column(
                     Field("directory"),
-                    css_class="col-12",
+                    css_class="col-8",
                 ),
                 css_class="mt-5 pt-3 border-top",
             ),

@@ -42,7 +42,7 @@
                 $('#networkgraph').removeClass('d-block');
             }
             $('#id_use_model_definition').change(function() {
-                if($(this).prop('checked')) {
+                if ($(this).prop('checked')) {
                     $('#tensorflow_models').removeClass('d-none');
                     $('#networkgraph').addClass('d-none');
                     $('#networkgraph').removeClass('d-block');
@@ -53,13 +53,13 @@
                 }
             });
             $('#id_fine_tune_saved_model').change(function() {
-                if($(this).prop('checked')) {
+                if ($(this).prop('checked')) {
                     $('#load_model').removeClass('d-none');
                 } else {
                     $('#load_model').addClass('d-none');
                 }
             });
-            
+
             $('#div_id_network_template_name').addClass("d-none");
             $('#id_save_network_as_template').change(function() {
                 if ($(this).prop('checked')) {

@@ -2,11 +2,8 @@ import os
 
 import autokeras
 import keras_tuner
-import tensorflow as tf
 from decouple import config
-from django.core.exceptions import ValidationError
 from django.db import models
-from keras import backend as K
 from loguru import logger
 
 from helper_scripts.extensions import (
@@ -286,8 +283,8 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
             # loading weights here is okay as this is just for building the model and the necessary database items.
             # the training model is then build as trensorflow model from the databse
             trial_model.load_weights(weights_path)
-        except Exception as e:
-            logger.info(f"{weights_path} weights was not successful, Fehler: {e}")
+        except Exception as exc:
+            logger.info(f"{weights_path} weights was not successful, Fehler: {exc}")
         trial_model.compile(
             optimizer=trial_model.optimizer,
             loss=trial_model.loss,
@@ -355,7 +352,7 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         if not self.loaded_model:
             raise ValueError("load model first")
         if not trial_id:
-            raise Exception("Supply a Trial id")
+            raise ValueError("Supply a Trial id")
         trial = self.get_trial(trial_id)
 
         # convert dataset to a shape , that autokeras can use.

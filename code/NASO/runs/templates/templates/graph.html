@@ -2,11 +2,11 @@
 {% block content %}
     <form id='start_new_run' class='w-100' method='POST'>
         {% csrf_token %}
-        <div class='d-flex w-100'>
+        <div class='d-flex w-100 mb-5'>
             <div id="graph-container"
-                 style="height:30em;
+                 style="height:40em;
                         border-radius: 10px"
-                 class='bg-white mr-3 col-lg-{% if hide_layer_details %}12{% else %}8{% endif %}'>
+                 class='mr-3 mb-5 col-lg-{% if hide_layer_details %}12{% else %}8{% endif %}'>
                 <h2 id='graph_header' class='m-2'>Graph</h2>
             </div>
             <div {% if editable %}id="networkgraph"{% endif %}
@@ -70,5 +70,9 @@
                    class="button is is-fullwidth is-info"
                    value='Speichern'>
         {% endif %}
+        <div class='d-flex mt-3' style='gap:1em'>
+            <img src="{% static image_url %}" alt="Neural Network Architecture">
+            <textarea style='width: 100%; font-family: monospace'>{{ text_representation}}</textarea>
+        </div>
     </form>
 {% endblock %}

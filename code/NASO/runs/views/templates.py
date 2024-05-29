@@ -1,12 +1,17 @@
 import abc
 import json
+import os
+from collections import defaultdict, deque
 
+from decouple import config
 from django.contrib import messages
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic.base import TemplateView
+from PIL import Image, ImageDraw, ImageFont
 
 from naso.models.page import PageSetup
+from naso.settings import STATICFILES_DIRS
 from neural_architecture.models.architecture import NetworkLayer, NetworkLayerType
 from neural_architecture.models.autokeras import AutoKerasNode
 from neural_architecture.models.templates import (
@@ -70,9 +75,21 @@ class TemplateDetails(TemplateView):
         """
         template = self.get_template(**kwargs)
         (nodes, layers) = self.build_nodes_and_layers(template)
+        draw_nodes = {node["id"]: node["additional_arguments"] for node in nodes}
+        draw_connections = [
+            (edge["source"], edge["target"]) for edge in template.connections
+        ]
+        text_template = draw_text_graph(draw_nodes, draw_connections)
+        text_to_image(
+            text_template,
+            font_path=config("MONO_PATH"),
+            title=f"{template.name}_{template.id}",
+        )
         self.context["layers"] = layers
         self.context["nodes"] = nodes
         self.context["template"] = template
+        self.context["text_representation"] = text_template
+        self.context["image_url"] = f"templates/{template.name}_{template.id}.png"
         return self.render_to_response(self.context)
 
     def post(self, request, *args, **kwargs):
@@ -214,6 +231,7 @@ class TemplateDetails(TemplateDetails):
                 "size": 3,
                 "color": "#008cc2",
                 "type": "image",
+                "additional_arguments": {},
             }
         )
 
@@ -461,7 +479,7 @@ def delete_template(request, pk):
 
     Returns:
         JsonResponse: A JSON response indicating the successful deletion of the object.
-            The response contains a "message" field with the success message and an "id" field with the deleted object's primary key.
+            Contains a "message" field with success message and "id" field with the deleted object's primary key.
     """
     # Fetch the object or return a 404 response if it doesn't exist
     obj = get_object_or_404(KerasNetworkTemplate, pk=pk)
@@ -471,3 +489,107 @@ def delete_template(request, pk):
 
     # Return a JSON response to indicate successful deletion
     return JsonResponse({"message": "Object deleted successfully", "id": pk})
+
+
+def dict_to_string(values):
+    representation = ""
+    for argument in values:
+        if argument["value"] != "undefined" and argument["value"] != "null":
+            representation += f"|{argument['name']:<18}: {argument['value']:<18}|\n"
+    if representation != "":
+        representation += "----------------------------------------\n"
+    return representation
+
+
+def topological_sort(vertices, edges):
+    in_degree = {v: 0 for v in vertices}
+    graph = defaultdict(list)
+
+    # Build the graph and compute in-degrees of each node
+    for u, v in edges:
+        graph[u].append(v)
+        in_degree[v] += 1
+
+    # Find all nodes with no incoming edges
+    queue = deque([v for v in vertices if in_degree[v] == 0])
+    sorted_nodes = {}
+
+    while queue:
+        node = queue.popleft()
+        sorted_nodes[node] = vertices[node]
+        # Decrease the in-degree of each neighbor
+        for neighbor in graph[node]:
+            in_degree[neighbor] -= 1
+            # If in-degree becomes zero, add it to the queue
+            if in_degree[neighbor] == 0:
+                queue.append(neighbor)
+
+    if len(sorted_nodes) == len(vertices):
+        return sorted_nodes
+    else:
+        raise ValueError("The graph is not a DAG")
+
+
+def draw_text_graph(nodes, edges):
+    try:
+        sorted_nodes = topological_sort(nodes, edges)
+        node_texts = {
+            node_id: create_node_text(node_id, meta)
+            for node_id, meta in sorted_nodes.items()
+        }
+        result = ""
+
+        count = 0
+        node_idx = list(sorted_nodes.keys())
+        for node_id, meta in sorted_nodes.items():
+            result += node_texts[node_id]
+            if count < len(sorted_nodes) - 1:
+                next_node_id = node_idx[count + 1]
+                if (node_id, next_node_id) in edges:
+                    result += "               ||\n"
+                    result += "               ||\n"
+                    result += "               \/\n"
+            count += 1
+
+        return result
+    except Exception as e:
+        raise e
+        return f"Fhler {str(e)}"
+
+
+def create_node_text(node, meta):
+    return (
+        "----------------------------------------\n"
+        f"| {node:<37}|\n"
+        "----------------------------------------\n" + dict_to_string(meta)
+    )
+
+
+def text_to_image(text, font_path=None, font_size=14, title="output"):
+    # Define font
+    if font_path:
+        font = ImageFont.truetype(font_path, font_size)
+    else:
+        font = ImageFont.load_default()
+
+    # Determine the size of the text to create an appropriate image size
+    lines = text.split("\n")
+    max_width = max(font.getbbox(line)[2] for line in lines)
+    line_height = font.getbbox("A")[3]
+    img_height = line_height * len(lines)
+
+    # Create a new image with white background
+    image = Image.new("RGB", (max_width + 10, img_height + 10), "white")
+    draw = ImageDraw.Draw(image)
+
+    # Draw text on image
+    y = 5
+    for line in lines:
+        draw.text((5, y), line, fill="black", font=font)
+        y += line_height
+
+    # Save the image
+    if not os.path.exists(os.path.join(STATICFILES_DIRS[0], "templates")):
+        os.makedirs(os.path.join(STATICFILES_DIRS[0], "templates"))
+    file_path = os.path.join(STATICFILES_DIRS[0], f"templates/{title}.png")
+    image.save(file_path)

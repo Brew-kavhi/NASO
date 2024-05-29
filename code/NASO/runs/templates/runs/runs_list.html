@@ -36,9 +36,9 @@
                 sortByDataset($(this), 'name', 'runs_list_autokeras');
             });
 
-            document.getElementById('toggleSelectionButton').addEventListener('click', function () {
+            document.getElementById('toggleSelectionButton').addEventListener('click', function() {
                 var button = document.getElementById('toggleSelectionButton');
-                document.querySelectorAll('input[type="checkbox"]').forEach((el)=>el.classList.toggle('d-none'));
+                document.querySelectorAll('input[type="checkbox"]').forEach((el) => el.classList.toggle('d-none'));
                 document.getElementById('actions_dropdown').classList.toggle('d-none');
                 document.getElementById('selectAllButton').classList.toggle('d-none');
 
@@ -46,12 +46,12 @@
                     button.innerHTML = 'Fertig';
                 } else {
                     button.innerHTML = 'Auswahl';
-                } 
-            });  
-            document.getElementById('selectAllButton').addEventListener('click', function () {
+                }
+            });
+            document.getElementById('selectAllButton').addEventListener('click', function() {
                 var activeTab = getActiveTab();
                 var checkboxs = document.querySelectorAll('input[type="checkbox"][name="' + activeTab + '_checkbox"]');
-        
+
                 checkboxs.forEach(function(checkbox) {
                     checkbox.checked = true;
                 });
@@ -60,16 +60,16 @@
 
         function fetchTensorflowData(tensorflowId) {
             fetch(tensorflowUrl.replace('0', tensorflowId), {
-                method: "GET",
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Token ${token}`,
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                loadDataInGraph('chart', tensorflowId, data);
-            });
+                    method: "GET",
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Token ${token}`,
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    loadDataInGraph('chart', tensorflowId, data);
+                });
         }
 
         function fetchKerasData(kerasId) {
@@ -96,7 +96,7 @@
                     }
                     return metrics;
                 });
-            var tagContainer = document.getElementById('tags_'+trainingId);
+            var tagContainer = document.getElementById('tags_' + trainingId);
             if (tagContainer) {
                 var lastMetric = data.filter((point) => {
                     return 'current' in point
@@ -146,7 +146,7 @@
                 var timeB = parseFloat($(b).data(type));
                 if (isNaN(timeA)) {
                     return (($(a).data(type) < $(b).data(type)) * 2 - 1) * (ascending * 2 - 1);
-                } 
+                }
                 return ascending ? timeA - timeB : timeB - timeA;
             }).appendTo('#' + containerID);
         }
@@ -208,19 +208,18 @@
             if (confirm("Wollen Sie ie Daten wirklich loschen?")) {
                 selectedRuns.forEach((input) => {
                     [x, runType, id] = input.id.split("_");
-                    var deleteURL  = '';
+                    var deleteURL = '';
                     if (activeTab === 'tensorflow') {
                         deleteURL = tensorflowdeleteURL;
-                    }
-                    else {
+                    } else {
                         deleteURL = autokerasdeleteURL;
                     }
 
                     $.ajax({
                         type: 'GET',
-                        url: deleteURL.replace(0,id),
+                        url: deleteURL.replace(0, id),
                         success: function(data) {
-                            $('#accordion'+data['id']).remove();
+                            $('#accordion' + data['id']).remove();
                             toastr.success("Datensatzx geloscht", 'INFO');
                         },
                         error: function() {
@@ -241,14 +240,14 @@
                 selectedRunIDs.push(activeTab + ":" + id);
             });
             if (selectedRunIDs.length > 0) {
-                var updateUrl = "{% url 'api:system:update_session' %}";        
+                var updateUrl = "{% url 'api:system:update_session' %}";
                 $.ajax({
                     type: 'POST',
                     url: updateUrl,
                     contentType: 'application/json',
                     data: JSON.stringify({
-                        'comparison':'comparison',
-                        'delete':false,
+                        'comparison': 'comparison',
+                        'delete': false,
                         'run_type': activeTab,
                         'values': selectedRunIDs
                     }),
@@ -282,7 +281,6 @@
                 });
             }
         }
-
     </script>
     <div class="tabs is-centered is-toggle is-toggle-round">
         <ul>

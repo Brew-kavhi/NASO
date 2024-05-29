@@ -54,7 +54,7 @@ to start the development server. For using the local settings append ```--settin
 
 Furthermore, there need to be two workers running. One is for actually executing the network, the other one is subscribed to a special queue and only handles the loading of models. This needs to be done in a celery task as when laoding the model, the graphics memory is loaded full and because of tensorflows memory leak we have no option of freeing up the memory. The only option is to spawn a subprocess that is killed afterwards. 
 You need to start the workers with this command: 
-```poetry run celery -A naso worker -l INFO --concurrency 1```
+```poetry run celery -A naso worker -l INFO --concurrency 1 -n <name>@%h```
 and the following one for the trial loading:
 ```poetry run celery -A naso worker -Q start_trials -l INFO```
 The concurrency parameter ensures that only one task is executed at a time, because otherwise it could lead to weird behaviour.

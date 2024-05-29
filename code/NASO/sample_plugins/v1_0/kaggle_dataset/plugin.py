@@ -1,6 +1,4 @@
-# from django.db imort transaction
 import os
-import zipfile
 
 import kaggle
 import numpy as np

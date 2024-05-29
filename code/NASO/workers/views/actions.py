@@ -1,5 +1,6 @@
-from workers.models.celery_workers import CeleryWorker
 from django.http import JsonResponse
+
+from workers.models.celery_workers import CeleryWorker
 
 
 def delete_worker(request, pk):

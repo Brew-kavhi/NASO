@@ -2,6 +2,7 @@ import threading
 import time
 import traceback
 
+import keras
 import numpy as np
 import tensorflow as tf
 from loguru import logger
@@ -9,7 +10,6 @@ from loguru import logger
 from celery import shared_task
 from helper_scripts.extensions import start_async_measuring
 from naso.celery import restart_all_workers
-from neural_architecture.models.architecture import NetworkConfiguration
 from neural_architecture.NetworkCallbacks.base_callback import BaseCallback
 from neural_architecture.NetworkCallbacks.evaluation_base_callback import (
     EvaluationBaseCallback,
@@ -18,7 +18,6 @@ from neural_architecture.NetworkCallbacks.timing_callback import TimingCallback
 from runs.models.training import NetworkTraining, TrainingMetric
 
 logger.add("net.log", backtrace=True, diagnose=True)
-keras = tf.keras
 K = keras.backend
 
 
@@ -65,7 +64,7 @@ def run_neural_net(self, training_id):
             self.update_state(state="SUCCESS")
     except Exception:
         logger.error(
-            "Failure while executing the autokeras model: " + traceback.format_exc()
+            "Failure while executing the keras model: " + traceback.format_exc()
         )
         self.update_state(state="FAILED")
     finally:
@@ -123,7 +122,6 @@ class NeuralNetwork:
         Builds a neural network model based on the provided configuration.
 
         Args:
-            config (NetworkConfiguration): The configuration object specifying the network architecture.
 
         Raises:
             AttributeError: If the training configuration or hyperparameters are not set.
@@ -222,6 +220,9 @@ class NeuralNetwork:
             )["current"]
         else:
             self.training_config.memory_usage = -1
+        self.training_config.model_size = int(
+            np.sum([K.count_params(w) for w in self.model.trainable_weights])
+        )
         self.training_config.save()
 
         logger.success("Finished training of neural network.")
@@ -277,7 +278,8 @@ class NeuralNetwork:
             None.
         """
         # sleep for one second to cool donw the gpu
-        # energy measurement returns the average over the last second, so make sure the training does not affect this metric
+        # energy measurement returns the average over the last second,
+        # so make sure the training does not affect this metric
         time.sleep(1)
         timing_callback = TimingCallback()
         batch_size = 1
@@ -286,6 +288,12 @@ class NeuralNetwork:
             predict_model = self.training_config.network_model.clustering_options.get_cluster_export_model(
                 predict_model
             )
+        final_model_size = int(
+            np.sum([K.count_params(w) for w in predict_model.trainable_weights])
+        )
+        final_sparsity = 1.0 - final_model_size / self.training_config.model_size
+        self.training_config.model_size = final_model_size
+        self.training_config.save()
         return predict_model.predict(
             dataset,
             batch_size,
@@ -295,5 +303,5 @@ class NeuralNetwork:
             + self.training_config.evaluation_parameters.get_callbacks(
                 self.training_config
             )
-            + [EvaluationBaseCallback(self.training_config)],
+            + [EvaluationBaseCallback(self.training_config, final_sparsity)],
         )
