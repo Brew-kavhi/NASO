@@ -179,6 +179,5 @@ def fc_flops(layer, batch_size):
 def quantize_weights(model):
     for layer in model.layers:
         if isinstance(layer, (tf.keras.layers.Dense, tf.keras.layers.Conv2D)):
-            print("leyer")
             layer.set_weights([w.astype(np.bool_) for w in layer.get_weights()])
     return model

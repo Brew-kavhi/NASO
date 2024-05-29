@@ -540,17 +540,17 @@ def draw_text_graph(nodes, edges):
         }
         result = ""
 
-        i = 0
+        count = 0
         node_idx = list(sorted_nodes.keys())
         for node_id, meta in sorted_nodes.items():
             result += node_texts[node_id]
-            if i < len(sorted_nodes) - 1:
-                next_node_id = node_idx[i + 1]
+            if count < len(sorted_nodes) - 1:
+                next_node_id = node_idx[count + 1]
                 if (node_id, next_node_id) in edges:
                     result += "               ||\n"
                     result += "               ||\n"
                     result += "               \/\n"
-            i += 1
+            count += 1
 
         return result
     except Exception as e:

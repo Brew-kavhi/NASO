@@ -191,7 +191,10 @@ def get_all_metrics(request, pk):
                     trial_metrics[trial_id] = {}
                     trial_metrics[trial_id][epoch] = measure["metrics"]
             else:
-                trial_metrics[trial_id]["final"] = measure["metrics"]
+                if trial_id in trial_metrics:
+                    trial_metrics[trial_id]["final"] = measure["metrics"]
+                else:
+                    trial_metrics[trial_id] = {"final": measure["metrics"]}
 
     return JsonResponse(trial_metrics, safe=True)
 
@@ -240,7 +243,14 @@ def get_trial_details_short(request, pk):
                             distinct_metrics.append(metric_name)
                     trial_json[trial_id][epoch] = measure["metrics"]
             else:
-                trial_json[trial_id]["final"] = measure["metrics"]
+                if trial_id in trial_json:
+                    trial_json[trial_id]["final"] = measure["metrics"]
+                else:
+                    trial_json[trial_id] = {
+                        "min": {},
+                        "max": {},
+                        "final": measure["metrics"],
+                    }
 
     trial_json["metrics"] = distinct_metrics
     return JsonResponse(trial_json, safe=True)
