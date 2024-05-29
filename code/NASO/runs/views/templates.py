@@ -1,16 +1,17 @@
 import abc
-import os
 import json
-from naso.settings import STATICFILES_DIRS
+import os
+from collections import defaultdict, deque
 
-from collections import deque, defaultdict
-
+from decouple import config
 from django.contrib import messages
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic.base import TemplateView
+from PIL import Image, ImageDraw, ImageFont
 
 from naso.models.page import PageSetup
+from naso.settings import STATICFILES_DIRS
 from neural_architecture.models.architecture import NetworkLayer, NetworkLayerType
 from neural_architecture.models.autokeras import AutoKerasNode
 from neural_architecture.models.templates import (
@@ -18,8 +19,6 @@ from neural_architecture.models.templates import (
     KerasNetworkTemplate,
 )
 from neural_architecture.models.types import AutoKerasNodeType
-from PIL import Image, ImageDraw, ImageFont
-from decouple import config
 
 
 class TemplateDetails(TemplateView):

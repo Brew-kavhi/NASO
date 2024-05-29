@@ -5,8 +5,8 @@ import tensorflow as tf
 
 from api.views.metrics import MetricsAPIView as InferenceMetricsAPIView
 from api.views.metrics import TensorflowMetricAPIView
-from helper_scripts.timer import Timer
 from helper_scripts.database import lock_safe_db_operation
+from helper_scripts.timer import Timer
 from inference.models.inference import Inference
 from runs.models.training import NetworkTraining, Run, TrainingMetric
 
