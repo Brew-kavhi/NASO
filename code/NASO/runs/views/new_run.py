@@ -809,6 +809,7 @@ class NewAutoKerasRun(TemplateView):
             form.initial["dataset"] = autokeras_run.dataset.name
             form.initial["dataset_is_supervised"] = autokeras_run.dataset.as_supervised
             self.context.update(form.get_extra_context())
+            self.context["metric_weights"] = autokeras_run.model.metric_weights
         else:
             self.context = {"page": self.page.get_context()}
 
