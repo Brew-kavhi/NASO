@@ -69,7 +69,7 @@ class MetricsAPIView(APIView):
                 epoch=serialized_data.validated_data.get("epoch"),
                 metrics=serialized_data.validated_data.get("metrics"),
             )
-            lock_safe_db_operatation(metric.save)
+            lock_safe_db_operation(metric.save)
             inference.prediction_metrics.add(metric)
             inference.save()
 
