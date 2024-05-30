@@ -1,3 +1,4 @@
+import ast
 import json
 import os
 import random
@@ -331,9 +332,6 @@ class NewRun(TemplateView):
                     build_metrics(form.cleaned_data, metrics_arguments)
                 )
 
-                training = NetworkTraining()
-                training.hyper_parameters = hyper_parameters
-
                 eval_parameters = EvaluationParameters.objects.filter(
                     steps=form.cleaned_data["steps_per_execution"],
                     batch_size=form.cleaned_data["batch_size"],
@@ -452,20 +450,7 @@ class NewRun(TemplateView):
                         network_model.pruning_policy = policy
                 network_model.save()
 
-                training.dataset = build_dataset(form.cleaned_data)
-                if form.cleaned_data["use_model_definition"]:
-                    training.tensorflow_model = network_model
-                else:
-                    training.network_config = network_model
-                training.fit_parameters = fit_parameters
-                training.evaluation_parameters = eval_parameters
-                queue, gpu = form.cleaned_data["gpu"].split("|")
-                training.gpu = gpu
-                training.worker = queue
-                training.description = form.cleaned_data["description"]
-
-                training.save()
-
+                old_trainingmetric_queryset = None
                 if network_model.load_model:
                     # copy all the existing metrics to this training as well
                     # but first get id of run from model:
@@ -476,25 +461,49 @@ class NewRun(TemplateView):
                     )[0]
 
                     if network_model.model_file.rfind("/tensorflow/") > 0:
-                        source_queryset = TrainingMetric.objects.filter(
+                        old_trainingmetric_queryset = TrainingMetric.objects.filter(
                             neural_network__network_config__id=id
                         )
                     else:
-                        source_queryset = TrainingMetric.objects.filter(
+                        old_trainingmetric_queryset = TrainingMetric.objects.filter(
                             neural_network__tensorflow_model__id=id
                         )
-                    for source_instance in source_queryset:
-                        new_instance = TrainingMetric.objects.create(
-                            neural_network=training,
-                            epoch=source_instance.epoch,
-                            metrics=source_instance.metrics,
-                        )
-                        new_instance.save()
 
-                run_neural_net.apply_async(args=(training.id,), queue=queue)
-                messages.add_message(
-                    request, messages.SUCCESS, "Training wurde gestartet."
-                )
+                # TODO loop over GPUs here and then set
+                workers = ast.literal_eval(form.cleaned_data["gpu"])
+                for worker in workers:
+                    queue, gpu = worker.split("|")
+                    training = NetworkTraining()
+                    training.hyper_parameters = hyper_parameters
+                    training.dataset = build_dataset(form.cleaned_data)
+                    if form.cleaned_data["use_model_definition"]:
+                        training.tensorflow_model = network_model
+                    else:
+                        training.network_config = network_model
+                    training.fit_parameters = fit_parameters
+                    training.evaluation_parameters = eval_parameters
+                    training.description = (
+                        form.cleaned_data["description"] + f"(@{queue})"
+                    )
+
+                    training.gpu = gpu
+                    training.worker = queue
+
+                    training.save()
+                    if old_trainingmetric_queryset:
+                        for source_instance in old_trainingmetric_queryset:
+                            new_instance = TrainingMetric.objects.create(
+                                neural_network=training,
+                                epoch=source_instance.epoch,
+                                metrics=source_instance.metrics,
+                            )
+                            new_instance.save()
+
+                    run_neural_net.apply_async(args=(training.id,), queue=queue)
+                    messages.add_message(
+                        request, messages.SUCCESS, "Training wurde gestartet."
+                    )
+
                 return redirect("dashboard:index")
         return redirect(request.path)
 
