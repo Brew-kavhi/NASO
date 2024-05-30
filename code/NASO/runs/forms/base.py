@@ -45,7 +45,7 @@ class BaseRun(forms.Form):
     dataset_is_supervised = forms.BooleanField(initial=True, required=False)
     gpu = forms.CharField(
         label="Device",
-        widget=forms.Select(attrs={"class": "select2 w-100"}),
+        widget=forms.SelectMultiple(attrs={"class": "select2 w-100"}),
         required=False,
     )
 
@@ -121,7 +121,10 @@ class BaseRun(forms.Form):
             ),
         )
 
-    def gpu_field(self):
+    def gpu_field(self, multiple: bool = True):
+        if not multiple:
+            self.fields["gpu"].widget = forms.Select(attrs={"class": "select2 w-100"})
+            self.fields["gpu"].widget.choices = get_gpu_choices()
         return Layout(
             Row(
                 HTML(
