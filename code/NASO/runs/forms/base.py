@@ -48,6 +48,11 @@ class BaseRun(forms.Form):
         widget=forms.SelectMultiple(attrs={"class": "select2 w-100"}),
         required=False,
     )
+    inference_gpu = forms.CharField(
+        label="Inference Device",
+        widget=forms.SelectMultiple(attrs={"class": "select2 w-100"}),
+        required=False,
+    )
 
     extra_context = {}
 
@@ -70,6 +75,7 @@ class BaseRun(forms.Form):
         self.fields["loss"].widget.attrs["onchange"] = "handleLossChange(this)"
         self.fields["loss"].widget.choices = self.get_loss_choices()
         self.fields["gpu"].widget.choices = get_gpu_choices()
+        self.fields["inference_gpu"].widget.choices = get_gpu_choices()
 
     def load_metric_configs(self, arguments):
         self.extra_context["metric_configs"] = arguments
@@ -121,7 +127,7 @@ class BaseRun(forms.Form):
             ),
         )
 
-    def gpu_field(self, multiple: bool = True):
+    def gpu_field(self, multiple: bool = True, include_inference: bool = True):
         if not multiple:
             self.fields["gpu"].widget = forms.Select(attrs={"class": "select2 w-100"})
             self.fields["gpu"].widget.choices = get_gpu_choices()
@@ -139,7 +145,19 @@ class BaseRun(forms.Form):
                 css_class="chosen-select select2 w-100",
                 data_placeholder="Select GPU",
             ),
+            self._inference_gpu_field(include_inference),
         )
+
+    def _inference_gpu_field(self, include_inference):
+        if include_inference:
+            return Layout(
+                Field(
+                    "inference_gpu",
+                    css_class="chosen-select select2 w-100",
+                    data_placeholder="Select inference GPU",
+                )
+            )
+        return ""
 
     def loss_html(self):
         return Layout(

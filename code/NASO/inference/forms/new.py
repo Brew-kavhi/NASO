@@ -40,7 +40,7 @@ class NewInferenceForm(BaseRunWithCallback):
             ),
             self.callback_html(),
             self.dataloader_html(),
-            self.gpu_field(),
+            self.gpu_field(include_inference=False),
             Submit("customer-general-edit", "Inference starten"),
         )
         self.fields["load_model"].choices = self.get_saved_models()

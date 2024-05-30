@@ -19,7 +19,7 @@
                 {
                     "id": {{ metric.id }},
                     "name": "{{ metric.name }}",
-                    "jsonConfig": {{ metric.required_arguments | safe | default: "{}" }},
+                    "jsonConfig": {{ metric.required_arguments | safe | default:"{}" }},
                 }, 
             {% endfor %}
         ];
@@ -28,8 +28,8 @@
                 {
                     "id": {{callback.id }},
                     "name": "{{ callback.name }}",
-                    "jsonConfig": {{ callback.required_arguments | safe | default: "{}" }},
-                    "metrics": {{ callback.registers_metrics | safe | default: "[]" }}
+                    "jsonConfig": {{ callback.required_arguments | safe | default:"{}" }},
+                    "metrics": {{ callback.registers_metrics | safe | default:"[]" }}
                 }, 
             {% endfor %}
         ];

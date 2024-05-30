@@ -469,9 +469,9 @@ class NewRun(TemplateView):
                             neural_network__tensorflow_model__id=id
                         )
 
-                # TODO loop over GPUs here and then set
                 workers = ast.literal_eval(form.cleaned_data["gpu"])
-                for worker in workers:
+                inference_workers = ast.literal_eval(form.cleaned_data["inference_gpu"])
+                for idx, worker in enumerate(workers):
                     queue, gpu = worker.split("|")
                     training = NetworkTraining()
                     training.hyper_parameters = hyper_parameters
@@ -499,7 +499,19 @@ class NewRun(TemplateView):
                             )
                             new_instance.save()
 
-                    run_neural_net.apply_async(args=(training.id,), queue=queue)
+                    passed_inference_workers = []
+                    if idx == len(workers) - 1:
+                        passed_inference_workers = inference_workers
+                    elif worker in inference_workers:
+                        passed_inference_workers = [worker]
+                        inference_workers.pop(inference_workers.index(worker))
+                    run_neural_net.apply_async(
+                        args=(
+                            training.id,
+                            passed_inference_workers,
+                        ),
+                        queue=queue,
+                    )
                     messages.add_message(
                         request, messages.SUCCESS, "Training wurde gestartet."
                     )
