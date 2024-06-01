@@ -198,4 +198,6 @@ def add_run_details(task_details, task):
 
 def is_worker_busy(hostname):
     tasks = app.control.inspect([hostname]).active()
-    return len(tasks)
+    if tasks:
+        return len(tasks)
+    return 0

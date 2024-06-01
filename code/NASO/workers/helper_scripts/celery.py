@@ -32,6 +32,8 @@ def get_all_workers():
             if celery_worker:
                 if f"{hostname}-{queue}" in known_worker_ids:
                     known_worker_ids.remove(f"{hostname}-{queue}")
+                celery_worker.concurrency = concurrency
+                celery_worker.last_active = datetime.datetime.now()
                 celery_worker.last_ping = datetime.datetime.now()
                 celery_worker.active = True
                 celery_worker.queue_name = queue
@@ -42,14 +44,15 @@ def get_all_workers():
             else:
                 # create a new one:
                 celery_worker = CeleryWorker(
-                    hostname=hostname, queue_name=queue, active=True
+                    hostname=hostname,
+                    queue_name=queue,
+                    active=True,
+                    concurrency=concurrency,
+                    last_active=datetime.datetime.now(),
                 )
                 celery_worker.last_ping = datetime.datetime.now()
                 celery_worker.save()
                 collect_devices.apply_async(args=(celery_worker.id,), queue=queue)
-            celery_worker.concurrency = concurrency
-            celery_worker.last_active = datetime.datetime.now()
-            celery_worker.save()
 
         for worker in known_worker_ids:
             # these are all inactive.
