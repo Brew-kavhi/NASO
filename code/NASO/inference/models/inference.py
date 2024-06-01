@@ -93,7 +93,7 @@ class Inference(models.Model):
         model_file_id = os.path.splitext(
             self.model_file[self.model_file.rfind("_") + 1 :]
         )[0]
-        if not model_file_id:
+        if not model_file_id.isdigit():
             return
 
         if self.model_file.rfind("/tensorflow/") > 0:
