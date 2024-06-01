@@ -293,6 +293,17 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         trial_model.summary()
         return trial_model
 
+    def get_best_model(self) -> str:
+        """
+        Returns the path to the best model found in this search.
+        If it is not finished, then throw an Exception
+        """
+        best_path = f"{config('NAS_MODEL_PATH')}{self.trial_folder}/best_model"
+
+        if os.path.exists(best_path):
+            return best_path
+        raise RuntimeError("search is not finished yet and best model cannot be found.")
+
     def get_trial_checkpoint_path(self, trial_id) -> str:
         """
         Returns the checkpoint path for a specific trial.

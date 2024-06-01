@@ -970,7 +970,16 @@ class NewAutoKerasRun(TemplateView):
                 description=form.cleaned_data["description"],
             )
 
-            run_autokeras.apply_async(args=(run.id,), queue=queue)
+            inference_workers = []
+            if len(form.cleaned_data["inference_gpu"]) > 0:
+                inference_workers = ast.literal_eval(form.cleaned_data["inference_gpu"])
+            run_autokeras.apply_async(
+                args=(
+                    run.id,
+                    inference_workers,
+                ),
+                queue=queue,
+            )
             messages.add_message(request, messages.SUCCESS, "Training wurde gestartet.")
             return redirect("dashboard:index")
         return redirect(request.path)
