@@ -249,7 +249,9 @@ class TrialView(TemplateView):
             network_config.save()
 
             workers = ast.literal_eval(form.cleaned_data["gpu"])
-            inference_workers = ast.literal_eval(form.cleaned_data["inference_gpu"])
+            inference_workers = []
+            if len(form.cleaned_data["inference_gpu"]):
+                inference_workers = ast.literal_eval(form.cleaned_data["inference_gpu"])
             for idx, worker in enumerate(workers):
                 training = NetworkTraining()
 
