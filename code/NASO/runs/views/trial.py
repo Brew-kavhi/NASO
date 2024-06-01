@@ -1,3 +1,5 @@
+import ast
+
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.views.generic.base import TemplateView
@@ -207,9 +209,6 @@ class TrialView(TemplateView):
                 build_metrics(form.cleaned_data, metrics_arguments)
             )
 
-            training = NetworkTraining()
-
-            training.hyper_parameters = hyper_parameters
             network_config.name = form.cleaned_data["name"]
 
             network_config.save_model = True
@@ -249,19 +248,41 @@ class TrialView(TemplateView):
                     network_config.pruning_policy = policy
             network_config.save()
 
-            training.dataset = build_dataset(form.cleaned_data)
-            training.network_config = network_config
-            training.fit_parameters = fit_params
-            training.evaluation_parameters = eval_params
-            queue, gpu = form.cleaned_data["gpu"].split("|")
-            training.gpu = gpu
-            training.worker = queue
-            training.description = form.cleaned_data["description"]
+            workers = ast.literal_eval(form.cleaned_data["gpu"])
+            inference_workers = []
+            if len(form.cleaned_data["inference_gpu"]):
+                inference_workers = ast.literal_eval(form.cleaned_data["inference_gpu"])
+            for idx, worker in enumerate(workers):
+                training = NetworkTraining()
 
-            training.save()
+                training.hyper_parameters = hyper_parameters
+                training.dataset = build_dataset(form.cleaned_data)
+                training.network_config = network_config
+                training.fit_parameters = fit_params
+                training.evaluation_parameters = eval_params
+                queue, gpu = worker.split("|")
+                training.gpu = gpu
+                training.worker = queue
+                training.description = form.cleaned_data["description"] + f"(@{queue})"
+                training.save()
 
-            run_neural_net.apply_async(args=(training.id,), queue=queue)
-            messages.add_message(request, messages.SUCCESS, "Training wurde gestartet.")
+                passed_inference_workers = []
+                if idx == len(workers) - 1:
+                    passed_inference_workers = inference_workers
+                elif worker in inference_workers:
+                    passed_inference_workers = [worker]
+                    inference_workers.pop(inference_workers.index(worker))
+                run_neural_net.apply_async(
+                    args=(
+                        training.id,
+                        passed_inference_workers,
+                    ),
+                    queue=queue,
+                )
+                messages.add_message(
+                    request, messages.SUCCESS, "Training wurde gestartet."
+                )
+
             return redirect("dashboard:index")
         self.context["form"] = form
         self.context["hp"] = {}

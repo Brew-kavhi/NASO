@@ -409,7 +409,7 @@ class NewAutoKerasRunForm(BaseRunWithCallback, PrunableForm, ClusterableForm):
             self.dataloader_html(),
             self.get_pruning_fields(),
             self.get_clustering_fields(),
-            self.gpu_field(),
+            self.gpu_field(multiple=False),
             Submit("customer-general-edit", "Training starten"),
         )
 

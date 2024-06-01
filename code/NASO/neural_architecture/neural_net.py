@@ -9,6 +9,7 @@ from loguru import logger
 
 from celery import shared_task
 from helper_scripts.extensions import start_async_measuring
+from inference.helper_scripts.tensorflow import run_inference_from_run
 from naso.celery import restart_all_workers
 from neural_architecture.NetworkCallbacks.base_callback import BaseCallback
 from neural_architecture.NetworkCallbacks.evaluation_base_callback import (
@@ -22,7 +23,7 @@ K = keras.backend
 
 
 @shared_task(bind=True)
-def run_neural_net(self, training_id):
+def run_neural_net(self, training_id, inference_workers):
     """
     Runs the neural network training process.
 
@@ -62,6 +63,9 @@ def run_neural_net(self, training_id):
             _nn = NeuralNetwork(training)
             _nn.run_from_config(training, update_call)
             self.update_state(state="SUCCESS")
+            for worker in inference_workers:
+                queue, gpu = worker.split("|")
+                run_inference_from_run(training, gpu, queue)
     except Exception:
         logger.error(
             "Failure while executing the keras model: " + traceback.format_exc()

@@ -1,3 +1,5 @@
+import ast
+
 from django.shortcuts import redirect
 from django.views.generic.base import TemplateView
 
@@ -80,24 +82,28 @@ class NewInference(TemplateView):
                 metrics_arguments,
                 callbacks_arguments,
             ) = self.get_typewise_arguments(request.POST.items())
-            queue, gpu = form.cleaned_data["gpu"].split("|")
-            inference = Inference(
-                name=form.cleaned_data["name"],
-                description=form.cleaned_data["description"],
-                model_file=form.cleaned_data["load_model"],
-                gpu=gpu,
-                worker=queue,
-                batch_size=form.cleaned_data["batch_size"],
-            )
-            inference.save()
-            inference.metrics.set(build_metrics(form.cleaned_data, metrics_arguments))
-            inference.callbacks.set(
-                build_callbacks(form.cleaned_data, callbacks_arguments)
-            )
-            inference.dataset = build_dataset(form.cleaned_data)
-            inference.save()
-            # now start the inference run
-            run_inference.apply_async(args=(inference.id,), queue=queue)
+            workers = ast.literal_eval(form.cleaned_data["gpu"])
+            for worker in workers:
+                queue, gpu = worker.split("|")
+                inference = Inference(
+                    name=form.cleaned_data["name"],
+                    description=form.cleaned_data["description"],
+                    model_file=form.cleaned_data["load_model"],
+                    gpu=gpu,
+                    worker=queue,
+                    batch_size=form.cleaned_data["batch_size"],
+                )
+                inference.save()
+                inference.metrics.set(
+                    build_metrics(form.cleaned_data, metrics_arguments)
+                )
+                inference.callbacks.set(
+                    build_callbacks(form.cleaned_data, callbacks_arguments)
+                )
+                inference.dataset = build_dataset(form.cleaned_data)
+                inference.save()
+                # now start the inference run
+                run_inference.apply_async(args=(inference.id,), queue=queue)
 
             return redirect("inference:list")
         print(form.errors)

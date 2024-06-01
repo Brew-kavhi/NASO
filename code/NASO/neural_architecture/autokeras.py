@@ -7,6 +7,9 @@ from loguru import logger
 
 from celery import shared_task
 from helper_scripts.extensions import start_async_measuring
+from helper_scripts.database import lock_safe_db_operation
+from inference.celery.run_inference import run_inference
+from inference.models.inference import Inference
 from naso.celery import restart_all_workers
 from neural_architecture.models.autokeras import AutoKerasRun
 from neural_architecture.NetworkCallbacks.autokeras_callback import AutoKerasCallback
@@ -17,7 +20,7 @@ logger.add("net.log", backtrace=True, diagnose=True)
 
 
 @shared_task(bind=True)
-def run_autokeras(self, run_id):
+def run_autokeras(self, run_id, inference_workers):
     """
     Runs the AutoKeras model training and evaluation.
 
@@ -76,6 +79,10 @@ def run_autokeras(self, run_id):
 
             autokeras_model.predict(test_dataset.take(200).batch(1), run)
             self.update_state(state="SUCCESS")
+
+            for worker in inference_workers:
+                queue, gpu = worker.split("|")
+                run_inference_from_autokeras(run, gpu, queue)
         except Exception:
             logger.error(
                 "Failure while executing the autokeras model: " + traceback.format_exc()
@@ -84,3 +91,22 @@ def run_autokeras(self, run_id):
         finally:
             stop_event.set()
             tf.compat.v1.reset_default_graph()
+
+
+def run_inference_from_autokeras(run, gpu, queue):
+    inference = Inference.objects.create(
+        name=run.model.project_name,
+        description=run.description,
+        model_file=run.model.get_best_model(),
+        gpu=gpu,
+        worker=queue,
+        batch_size=32,
+        dataset=run.dataset,
+    )
+
+    def save_metrics():
+        inference.metrics.set(run.model.metrics.all())
+        inference.callbacks.set(run.model.callbacks.all())
+
+    lock_safe_db_operation(save_metrics)
+    run_inference.apply_async(args=(inference.id,), queue=queue)
