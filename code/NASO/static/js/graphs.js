@@ -282,7 +282,7 @@ function refreshGraph(nodeId = undefined) {
 
             // set additional arguments of the layer
             for (argument of clickedNode.additional_arguments) {
-                $('[name="layer_argument_' + argument.name)[0].value = argument.value;
+                setArgumentValue('layer_argument_', argument.name, argument.value);
             }
         });
 

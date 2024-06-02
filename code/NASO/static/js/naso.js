@@ -348,12 +348,75 @@ function addInputField(argument, prefix) {
     if ('name' in argument) {
         var defaultValue = argument['default'];
         label = argument['name'];
-        inputName = prefix + argument['name']
-        return '<div class="mb-4 row"><label class="col-form-label col-lg-2">' + label + '</label>' +
-        '<div class="col-lg-10 d-flex"><input class="form-control" type="text" id="' + inputName+ '" name="' + inputName + '" value="' + 
-        defaultValue + '"><span class="icon"><i class="fa fa-help icon" data-tooltip="Type: ' + argument['dtype'] + '">?</i></span></div></div>';
+        inputName = prefix + argument['name'];
+        var dtype = argument['dtype'];
+        var inputField = '<div class="mb-4 row col-12"><label class="col-form-label col-lg-3">' + label + '</label>' +
+        '<div class="col-lg-9 d-flex">';
+        switch (dtype) {
+            case "int":
+                inputField += '<input class="form-control" type="number" step="1" id="' + inputName+ '" name="' + inputName + '" value="' + defaultValue + '">';
+                break;
+            case "float":
+                inputField += '<input class="form-control" type="number" step="any" id="' + inputName+ '" name="' + inputName + '" value="' + defaultValue + '">';
+                break;
+            case "bool":
+                inputField += '<input type="hidden" name="' + inputName + '" value="False"><input class="form-control" type="checkbox" name="' + inputName + '"';
+                if (defaultValue && defaultValue.toString().toLowerCase() == 'true') {
+                    inputField += ' checked="checked"';
+                }
+                inputField +=' value="True">';
+                break;
+            default:
+                if (dtype.startsWith("ENUM")) {
+                    arguments = convertStringToList(dtype.substr(4));
+                    inputField += '<select class="form-control" id="' + inputName+ '" name="' + inputName + '">';
+                    for (const arg of arguments) {
+                        inputField+= "<option";
+                        if (defaultValue === arg) {
+                            inputField += " selected";
+                        }
+                        inputField += ">" + arg + "</option>";
+                    }
+                    inputField += "</select>"
+                    break;
+                } else if (dtype.startsWith("tuple")) {
+                    inputField += '<input data-type="' + argument['dtype'] + '" class="form-control" type="text" id="' + inputName+ '" name="' + inputName + '" value="' + defaultValue + '" onInput="validateTupleInput(this, \'' + argument['dtype'] + '\')">';
+                    break;
+                } else {
+                    inputField += '<input class="form-control" type="text" id="' + inputName+ '" name="' + inputName + '" value="' + defaultValue + '">';
+                    break;
+                }
+        }
+        if ((dtype !== 'unknown' && dtype !== 'NoneType' && !dtype.startsWith("ENUM")) || 'help' in argument) {
+            
+            inputField += '<span class="icon"><i class="fa fa-help icon" data-tooltip="Type: ' + argument['dtype'];
+            if ('help' in argument) {
+                inputField += '\n ' + argument['help'];
+            }
+            inputField += '">?</i></span>';
+        } else {
+            inputField += '<span class="icon"></span>';
+        }
+        inputField += '</div></div>';
+        return inputField
     }
     return '';   
+}
+
+function setArgumentValue(argumentType, name, value) {
+    var element = document.getElementsByName(argumentType + name)[0];
+    if (!element) {
+        return;
+    }
+    if (element.type === 'hidden') {
+        // This is a checkbox so we need to set values differently
+        var checkbox = document.getElementsByName(argumentType + name)[1];
+        if (value && value.toString().toLowerCase() == "true") {
+            checkbox.checked = true;
+        }
+    } else {
+        element.value = value;        
+    }
 }
 
 function capitalizeFirstLetter(string) {
@@ -428,4 +491,76 @@ function calculateRegressionLine(data) {
     return { slope: slope, intercept: intercept };
 
 }
+
+function convertStringToList(str) {
+    // Remove the parentheses
+    str = str.replace(/[()]/g, '');
+
+    // Split the string by ', ' and trim any extra spaces
+    const list = str.split(', ').map(item => item.trim());
+
+    return list;
+}
+
+function isValidTupleDetailed(str,requiredParts) {
+    if (str === 'undefined') {
+        return true;
+    }
+    if (!str.startsWith('(') || !str.endsWith(')')) {
+        return false;
+    }
+
+    const content = str.slice(1, -1).trim();  // Remove the parentheses
+    const parts = content.split(',').map(part => part.trim());  // Split and trim spaces
+
+    if (parts.length !== requiredParts.length) {
+        return false;
+    }
+
+    for (const partIdx in parts) {
+        part = parts[partIdx];
+        partType = requiredParts[partIdx];
+        if (part.length === 0) {
+            console.log(part + " is short");
+            return false;
+        }
+        switch(partType) {
+            case "int":
+                if (!isInteger(part)) {
+                    console.log(part + " is not an int");
+                    return false;
+                }
+                break;
+            case "float":
+                if (!isFinite(part)) {
+                    return false;
+                }
+                break;
+            case "bool":
+                if (part.toLowerCase() !== 'false' && part.toLowerCase() !== 'true') {
+                    return false;
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    return true;
+}
+
+function isInteger(value) {
+    return /^\d+$/.test(value);
+}
+
+function validateTupleInput(elm, dtype) {
+    var parts = convertStringToList(dtype.substr(5));
+    var isValid = isValidTupleDetailed(elm.value, parts);
+    if (!isValid) {
+        elm.classList.add('border-danger');
+    } else {
+        elm.classList.remove('border-danger');
+    }
+}
+
 metricWeights = new Map();

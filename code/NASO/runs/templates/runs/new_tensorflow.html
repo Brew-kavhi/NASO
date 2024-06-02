@@ -90,7 +90,7 @@
                 // load the optimizer values
                 let existing_optimizer = {{optimizer_config | safe}};
                 for (const argument of existing_optimizer) {
-                    document.getElementsByName('optimizer_argument_' + argument.name)[0].value = argument.value
+                    setArgumentValue('optimizer_argument_', argument.name, argument.value)
                 }
                 delete existing_optimizer;
             {% endif %}
@@ -99,7 +99,7 @@
                 // load the loss values
                 let existing_models = {{tensorflow_model_config | safe}};
                 for (const argument of existing_models) {
-                    document.getElementsByName('tensorflow_model_argument_' + argument.name)[0].value = argument.value
+                    setArgumentValue('tensorflow_model_argument_', argument.name, argument.value)
                 }
                 delete existing_loss;
             {% endif %}
@@ -107,7 +107,7 @@
                 // load the loss values
                 let existing_loss = {{loss_config | safe}};
                 for (const argument of existing_loss) {
-                    document.getElementsByName('loss_argument_' + argument.name)[0].value = argument.value
+                    setArgumentValue('loss_argument_', argument.name, argument.value)
                 }
                 delete existing_loss;
             {% endif %}
@@ -117,10 +117,7 @@
                 let existing_metrics = {{metric_configs | safe}};
                 for (const metric of existing_metrics) {
                     for(const argument of metric['arguments']) {
-                        let fields = document.getElementsByName('metric_argument_' + metric['id'] + "_" + argument.name);
-                        if (fields[0]) {
-                            fields[0].value = argument.value;
-                        }
+                        setArgumentValue('metric_argument_' + metric['id'] + "_", argument.name, argument.value);
                     }
                 }
                 delete existing_metrics;
@@ -130,10 +127,7 @@
                 let existing_callbacks = {{callbacks_configs | safe}};
                 for (const callback of existing_callbacks) {
                     for(const argument of callback['arguments']) {
-                        let fields = document.getElementsByName('callback_argument_' + callback['id'] + "_" + argument.name);
-                        if (fields[0]) {
-                            fields[0].value = argument.value;
-                        }
+                        setArgumentValue('callback_argument_' + callback['id'] + "_", argument.name, argument.value);
                     }
                 }
                 delete existing_callbacks;
@@ -142,10 +136,7 @@
                 let existing_pruning_methods = {{ pruning_method_config | safe }};
                 for (const p_method of existing_pruning_methods) {
                     for (const argument of p_method['arguments']) {
-                        let fields = document.getElementsByName('pruning-method_argument_' + argument.name);
-                        if (fields[0]) {
-                            fields[0].value = argument.value;
-                        }
+                        setArgumentValue('pruning-method_argument_', argument.name, argument.value);
                     }
                 }
                 delete existing_pruning_methods;
@@ -154,10 +145,7 @@
                 let existing_pruning_schedulers = {{ pruning_scheduler_config | safe }};
                 for (const p_scheduler of existing_pruning_schedulers) {
                     for (const argument of p_scheduler['arguments']) {
-                        let fields = document.getElementsByName('pruning-scheduler_argument_' + argument.name);
-                        if (fields[0]) {
-                            fields[0].value = argument.value;
-                        }
+                        setArgumentValue('pruning-scheduler_argument_', argument.name, argument.value);
                     }
                 }
                 delete existing_pruning_schedulers;
@@ -166,10 +154,7 @@
                 let existing_pruning_policys = {{ pruning_policy_config | safe }};
                 for (const p_policy of existing_pruning_policys) {
                     for (const argument of p_policy['arguments']) {
-                        let fields = document.getElementsByName('pruning-policy_argument_' + argument.name);
-                        if (fields[0]) {
-                            fields[0].value = argument.value;
-                        }
+                        setArgumentValue('pruning-policy_argument_', argument.name, argument.value);
                     }
                 }
                 delete existing_pruning_policys;
