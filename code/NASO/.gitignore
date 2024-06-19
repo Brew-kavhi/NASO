@@ -16,7 +16,6 @@ static/datasets/
 python
 .idea/
 .vscode/
-naso/settings.py
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
