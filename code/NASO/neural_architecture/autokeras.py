@@ -6,8 +6,8 @@ import tensorflow as tf
 from loguru import logger
 
 from celery import shared_task
-from helper_scripts.extensions import start_async_measuring
 from helper_scripts.database import lock_safe_db_operation
+from helper_scripts.extensions import start_async_measuring
 from inference.celery.run_inference import run_inference
 from inference.models.inference import Inference
 from naso.celery import restart_all_workers

@@ -1,11 +1,15 @@
+# from django.db imort transaction
 import os
+import zipfile
 
 import kaggle
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 from sklearn.preprocessing import StandardScaler
 
+from naso import settings
 from neural_architecture.models.dataset import DatasetLoader
 from plugins.interfaces.commands import InstallerInterface
 from plugins.interfaces.dataset import DatasetLoaderInterface
@@ -62,7 +66,14 @@ class CaliforniaHousingDataset(DatasetLoaderInterface):
     dataset_list = ["California Housing", "DeepSat (SAT-6)"]
     size = 0
     element_size = 0
-    info: dict = {}
+
+    def get_info(self, name, *args, **kwargs):
+        datasets_found = kaggle.api.dataset_list(search=name)
+        if len(datasets_found) == 0:
+            raise Exception("Dataset can not be found on Kaggle")
+
+        dataset = datasets_found[0]
+        return vars(dataset)
 
     def get_data(self, name: str, as_supervised: bool, *args, **kwargs) -> tuple:
         """
@@ -99,12 +110,48 @@ class CaliforniaHousingDataset(DatasetLoaderInterface):
     def get_california_housing(self):
         df = pd.read_csv(self.dataset_path + "/housing.csv")
 
-        (training_set, test_set) = self._prep_dataframe(df)
+        (training_set, test_set, eval_set) = self._prep_dataframe(df)
 
         train_dataset = tf.data.Dataset.from_tensor_slices(training_set)
         test_dataset = tf.data.Dataset.from_tensor_slices(test_set)
+        eval_dataset = tf.data.Dataset.from_tensor_slices(eval_set)
 
-        return (train_dataset, test_dataset)
+        return (train_dataset, test_dataset, eval_dataset)
+
+    def get_sample_images(self, dataset_name="", num_examples=9):
+        if dataset_name == "DeepSat (SAT-6)":
+            filename = "deepsat.png"
+            static_dir = os.path.join(settings.BASE_DIR, "static/datasets")
+            os.makedirs(static_dir, exist_ok=True)
+            file_path = os.path.join(static_dir, filename)
+            if os.path.exists(file_path):
+                return f"datasets/{filename}"
+
+            self.dataset_path = "datasets/kaggle9971"
+            train_dataset, _, _ = self.get_deepsat()
+            # Prepare the dataset for iteration
+            train_dataset = train_dataset.take(num_examples).batch(num_examples)
+
+            # Create an iterator
+            info = pd.read_csv(self.dataset_path + "/sat6annotations.csv", header=None)
+            annotation = []
+            for i, row in info.iterrows():
+                annotation.append(row.iloc[0])
+            iterator = iter(train_dataset)
+            images, labels = next(iterator)
+            plt.figure(figsize=(10, 10))
+
+            for i in range(num_examples):
+                plt.subplot(int(num_examples**0.5), int(num_examples**0.5), i + 1)
+                rgb_image = images[i][:, :, :3].numpy().astype("uint8")
+                plt.imshow(rgb_image)
+                plt.title(str(annotation[np.argmax(labels[i].numpy())]))
+                plt.axis("off")
+
+            plt.savefig(file_path)
+            plt.close()
+            return f"datasets/{filename}"
+        return ""
 
     def get_deepsat(self):
         n = 20000
@@ -119,22 +166,40 @@ class CaliforniaHousingDataset(DatasetLoaderInterface):
         )
         y_train = y_train_df.values.astype("float32")
         x_test_df = pd.read_csv(
-            self.dataset_path + "/X_test_sat6.csv", nrows=n, header=None
+            self.dataset_path + "/X_test_sat6.csv", nrows=n * 0.5, header=None
         )
         x_test = (
             x_test_df.values.reshape((-1, 28, 28, 4)).clip(0, 255).astype("float32")
         )
         y_test_df = pd.read_csv(
-            self.dataset_path + "/y_test_sat6.csv", nrows=n, header=None
+            self.dataset_path + "/y_test_sat6.csv", nrows=n * 0.5, header=None
         )
         y_test = y_test_df.values.astype("float32")
+
+        x_eval_df = pd.read_csv(
+            self.dataset_path + "/X_test_sat6.csv",
+            skiprows=int(n * 0.5),
+            nrows=n * 0.5,
+            header=None,
+        )
+        x_eval = (
+            x_eval_df.values.reshape((-1, 28, 28, 4)).clip(0, 255).astype("float32")
+        )
+        y_eval_df = pd.read_csv(
+            self.dataset_path + "/y_test_sat6.csv",
+            skiprows=int(n * 0.5),
+            nrows=n * 0.5,
+            header=None,
+        )
+        y_eval = y_eval_df.values.astype("float32")
 
         self.size = int(x_train.shape[0])
 
         train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
         test_dataset = tf.data.Dataset.from_tensor_slices((x_test, y_test))
+        eval_dataset = tf.data.Dataset.from_tensor_slices((x_eval, y_eval))
 
-        return (train_dataset, test_dataset)
+        return (train_dataset, test_dataset, eval_dataset)
 
     def _prep_dataframe(self, dataframe: pd.DataFrame):
         dataframe.dropna(inplace=True)
@@ -199,4 +264,3 @@ class CaliforniaHousingDataset(DatasetLoaderInterface):
         Returns:
             list: A list of available datasets in TensorFlow Datasets.
         """
-        return self.dataset_list

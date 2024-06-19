@@ -24,6 +24,7 @@ urlpatterns = [
     path(
         "settings/plugins/", include(("plugins.urls", "plugins"), namespace="plugins")
     ),
+    path("datasets/", include(("datasets.urls", "datasets"), namespace="datasets")),
     path("runs/", include(("runs.urls", "runs"), namespace="runs")),
     path("inference/", include(("inference.urls", "inference"), namespace="inference")),
     path("workers/", include(("workers.urls", "workers"), namespace="workers")),
