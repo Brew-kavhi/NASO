@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import tensorflow as tf
 import tensorflow_datasets as tfds
 from django.db import models
@@ -8,6 +9,7 @@ from django.http import JsonResponse
 from sklearn import datasets
 
 from helper_scripts.importing import get_class
+from naso import settings
 from plugins.interfaces.dataset import DatasetLoaderInterface
 
 
@@ -246,6 +248,71 @@ class TensorflowDatasetLoader(DatasetLoaderInterface):
         train_dataset = train_dataset.prefetch(tf.data.AUTOTUNE)
         return (train_dataset, test_dataset, eval_dataset)
 
+    def get_info(self, name, *args, **kwargs):
+        try:
+            _, info = tfds.load(
+                name, download=False, split=["train", "test"], with_info=True
+            )
+        except AssertionError as assertion_error:
+            return {}
+        except tfds.download.DownloadError as down_error:
+            return {}
+        except Exception as general_error:
+            return {}
+        information = {
+            "version": info.version,
+            "redistribution_info": info.redistribution_info,
+            "homepage": info.homepage,
+            "description": info.description,
+            "citation": info.citation,
+            "metadata": info.metadata,
+            "features": info.features,
+            "module_name": info.module_name,
+            "download_size": info.download_size,
+            "dataset_size": info.dataset_size,
+            "full_name": info.full_name,
+            "file_format": info.file_format,
+            "supervised_keys": info.supervised_keys,
+        }
+        if "splits" in info.features:
+            information["size"] = info.features["splits"].shape
+        if "image" in info.features:
+            information["element_size"] = info.features["image"].shape
+        return information
+
+    def get_sample_images(self, dataset_name, num_examples=9):
+        filename = f"{dataset_name}.png"
+        static_dir = os.path.join(settings.BASE_DIR, "static/datasets")
+        os.makedirs(static_dir, exist_ok=True)
+        file_path = os.path.join(static_dir, filename)
+        if os.path.exists(file_path):
+            return f"datasets/{filename}"
+        # 1oad the dataset
+        dataset, info = tfds.load(dataset_name, with_info=True, as_supervised=True)
+
+        # Get the training split
+        train_dataset = dataset["train"]
+
+        # Prepare the dataset for iteration
+        train_dataset = train_dataset.take(num_examples).batch(num_examples)
+
+        # Create an iterator
+        iterator = iter(train_dataset)
+        images, labels = next(iterator)
+
+        # Plotting the sample images
+        plt.figure(figsize=(10, 10))
+
+        for i in range(num_examples):
+            plt.subplot(int(num_examples**0.5), int(num_examples**0.5), i + 1)
+            plt.imshow(images[i].numpy().astype("uint8"))
+            plt.title(info.features["label"].int2str(labels[i].numpy()))
+            plt.axis("off")
+
+        plt.savefig(file_path)
+        plt.close()
+        return f"datasets/{filename}"
+
     def get_size(self, *args, **kwargs):
         """
         Returns the size information of the dataset.
@@ -322,6 +389,18 @@ class SkLearnDatasetLoader(DatasetLoaderInterface):
             int: The size of the dataset.
         """
         return self.dataset_size
+
+    def get_info(self, name, *args, **kwargs):
+        loader_args = {}
+        if "data_dir" in kwargs:
+            loader_args["data_home"] = kwargs["data_dir"]
+
+        data = getattr(datasets, self.dataset_list[name])(**loader_args)
+        if hasattr(data.data, "shape"):
+            info = {"description": data.DESCR, "length": data.data.shape[0]}
+        else:
+            info = {"description": data.DESCR, "length": len(data.data)}
+        return info
 
     def get_element_size(self, *args, **kwargs):
         """

@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load get_values %}
+{% block content %}
+    <div class="container pb-5">
+        {% for dataset in datasets %}
+            <div class="accordion"
+                 id="accordion{{ dataset.id }}"
+                 data-name='{{ dataset.name }}'>
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between is-align-items-center"
+                         id="heading{{ dataset.id }}">
+                        <h2 class="mb-0">
+                            <button class="btn text-bold"
+                                    type="button"
+                                    data-toggle="collapse"
+                                    data-target="#collapse{{ dataset.id }}"
+                                    aria-expanded="true"
+                                    aria-controls="collapse{{ dataset.id }}">{{ dataset.name }}</button>
+                        </h2>
+                        <div class='d-flex is-align-items-center'>
+                            <div class='d-flex flex-wrap'>
+                                {% if dataset.info %}<span class="mx-1 my-1 tag is-light is-success">Downloaded</span>{% endif %}
+                                <span class="mx-1 my-1 tag is-warning is-light">{{ dataset.size }} Samples</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="collapse{{ dataset.id }}"
+                         class="collapse"
+                         aria-labelledby="heading{{ dataset.id }}"
+                         data-parent="#accordion{{ dataset.id }}">
+                        <div class="card-body">
+                            <div>{{ dataset.description }}</div>
+                            <div class="row">
+                                <div class="col-8">
+                                    {% if dataset.img %}
+                                        <img alt='{{ dataset.img }}' src="{% static dataset.img %}">
+                                    {% endif %}
+                                </div>
+                                <div class="col-4 border-left p-5">
+                                    <div>
+                                        {% if dataset.info %}
+                                            {% for el in dataset.info %}
+                                                <p>
+                                                    <span class='has-text-weight-bold'>{{ el }}:</span>
+                                                    {% get_metric dataset.info el %}
+                                                </p>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    {{ block.super }}
+{% endblock content %}

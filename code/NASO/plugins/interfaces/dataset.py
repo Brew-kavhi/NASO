@@ -2,6 +2,28 @@ from abc import ABC, abstractmethod
 
 
 class DatasetLoaderInterface(ABC):
+    def get_sample_images(self, name="", num_examples=9):
+        """
+        This creates a picture that represents the dataset visually.
+        Return:
+        the path tho the img, so it can be rendered in the html
+        """
+        return name
+
+    @abstractmethod
+    def get_info(self, name="", *args, **kwargs):
+        """
+        Retrieves some information the dataset.
+
+        Args:
+            name (str): The name of the dataset.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            The retrieved information for the dataset.
+        """
+
     @abstractmethod
     def get_data(self, name="", *args, **kwargs):
         """
