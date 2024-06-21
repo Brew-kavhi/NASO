@@ -4,6 +4,7 @@ from os.path import isfile, join
 
 import numpy as np
 import pandas as pd
+from functools import reduce
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
@@ -67,6 +68,12 @@ class OhioDiabetesDatasets(DatasetLoaderInterface):
     element_size = 0
     info: dict = {}
 
+    def get_info(self, name, *args, **kwargs):
+        return {"descrption": "This is a diabetes dataset from university of Ohio."}
+
+    def get_sample_images(self, dataset_name="", num_examplse=9):
+        return ""
+
     def get_data(self, name: str, as_supervised: bool, *args, **kwargs) -> tuple:
         """
         Loads and preprocesses the specified dataset.
@@ -80,16 +87,16 @@ class OhioDiabetesDatasets(DatasetLoaderInterface):
         """
         self.dataset_path = os.path.dirname(os.path.abspath(__file__)) + "/data"
         if not os.path.exists(self.dataset_path):
-            raise Exception(f"Dataset can not be found on {self.dataset_path}.")
+            raise Exception(f"Dataset can not be found on system {self.dataset_path}.")
 
         if name == "Diabetes Dataset (3)":
-            self.element_size = 3
+            self.element_size = (3, 1)
             return self.get_diabetes(3)
         elif name == "Diabetes Dataset (5)":
-            self.element_size = 5
+            self.element_size = (5, 1)
             return self.get_diabetes(5)
         elif name == "Diabetes Dataset (7)":
-            self.element_size = 7
+            self.element_size = (7, 1)
             return self.get_diabetes(7)
         return (None, None, None)
 
@@ -109,8 +116,6 @@ class OhioDiabetesDatasets(DatasetLoaderInterface):
             and "training" in file
             and file.endswith(".csv")
         ]
-        training_df = pd.concat(training_df_list)
-
         testing_df_list = [
             pd.read_csv(join(self.dataset_path, file))
             for file in files
@@ -118,24 +123,61 @@ class OhioDiabetesDatasets(DatasetLoaderInterface):
             and "testing" in file
             and file.endswith(".csv")
         ]
-        testing_df = pd.concat(testing_df_list)
 
-        testing_df, eval_df = train_test_split(testing_df, test_size=0.5, shuffle=False)
+        train_dataset = [
+            self._prepare_dataset(training_df, sequence_length)
+            for training_df in training_df_list
+        ]
+        test_dataset = [
+            self._prepare_dataset(testing_df, sequence_length)
+            for testing_df in testing_df_list[: len(testing_df_list) // 2]
+        ]
+        eval_dataset = [
+            self._prepare_dataset(eval_df, sequence_length)
+            for eval_df in testing_df_list[len(testing_df_list) // 2 :]
+        ]
 
-        train_dataset = self._prepare_dataset(training_df, sequence_length)
-        test_dataset = self._prepare_dataset(testing_df, sequence_length)
-        eval_dataset = self._prepare_dataset(eval_df, sequence_length)
-
+        train_dataset = reduce(lambda ds1, ds2: ds1.concatenate(ds2), train_dataset)
+        test_dataset = reduce(lambda ds1, ds2: ds1.concatenate(ds2), test_dataset)
+        eval_dataset = reduce(lambda ds1, ds2: ds1.concatenate(ds2), eval_dataset)
         return (train_dataset, test_dataset, eval_dataset)
 
-    def _prepare_dataset(self, df, sequence_length):
+    def _prepare_dataset(
+        self, df, sequence_length, prediction_length=9, interpolation="linear"
+    ):
+        """
+        params:
+         - interpolation: None, 'spline', 'linear', 'polynomial'
+        """
         df["_ts"] = pd.to_datetime(df["_ts"], format="%d-%m-%Y %H:%M:%S")
         df = df.sort_values(by="_ts")
+        # Set 'timestamp' as the index
+        df.set_index("_ts", inplace=True)
+
+        # Resample to 5-minute intervals and interpolate
+        if interpolation:
+            df = df.resample("5min", origin="start").interpolate(
+                method=interpolation, order=3
+            )
+
+        def is_consecutive(timestamps, freq="5min"):
+            expected = pd.date_range(
+                start=timestamps[0], periods=len(timestamps), freq=freq
+            )
+            return all(timestamps == expected)
+
         X, y = [], []
-        for i in range(len(df) - sequence_length):
-            X.append(df["_value"].iloc[i : i + sequence_length].values)
-            y.append(df["_value"].iloc[i + sequence_length])
+        for i in range(len(df) - sequence_length - prediction_length + 1):
+            if is_consecutive(df.index[i : i + sequence_length]):
+                X.append(df["_value"].iloc[i : i + sequence_length].values)
+                y.append(
+                    df["_value"].iloc[
+                        i + sequence_length : i + sequence_length + prediction_length
+                    ]
+                )
         X, y = np.array(X), np.array(y)
+        X = X.reshape((-1, sequence_length, 1))
+        y = y.reshape((-1, prediction_length, 1))
         dataset = tf.data.Dataset.from_tensor_slices((X, y))
         return dataset
 
