@@ -78,7 +78,13 @@ function getLayerArguments() {
         if (input.name && input.name.startsWith('layer_argument_')) {
             const key = input.name.replace('layer_argument_', '');
             const value = input.value;
-            values.push({ 'name': key, 'value': value });
+            if (input.type == 'checkbox' && input.checked) {
+                containsDictWithValueForKey(values, 'name', key, true);
+                values.push({'name': key, 'value': value});
+            }
+            else if (!containsDictWithValueForKey(values, 'name', key, false)) {
+                values.push({ 'name': key, 'value': value });
+            }
         }
     }
 

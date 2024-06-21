@@ -403,6 +403,21 @@ function addInputField(argument, prefix) {
     return '';   
 }
 
+function containsDictWithValueForKey(listOfDicts, key, value, removeDuplicate) {
+    // Iterate over each dictionary in the list
+    for (let i = 0; i < listOfDicts.length; i++) {
+        let dict = listOfDicts[i];
+        // Check if the dictionary contains the key and has the specified value
+        if (dict[key] === value) {
+            if (removeDuplicate) {
+                listOfDicts.splice(i, 1); // Remove the dictionary from the list
+            }
+            return true; // Dictionary with the specified key-value pair found
+        }
+    }
+    return false; // No dictionary with the specified key-value pair found
+}
+
 function setArgumentValue(argumentType, name, value) {
     var element = document.getElementsByName(argumentType + name)[0];
     if (!element) {
