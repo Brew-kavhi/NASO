@@ -264,3 +264,4 @@ class CaliforniaHousingDataset(DatasetLoaderInterface):
         Returns:
             list: A list of available datasets in TensorFlow Datasets.
         """
+        return self.dataset_list
