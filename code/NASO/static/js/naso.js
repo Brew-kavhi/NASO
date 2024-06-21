@@ -1,28 +1,28 @@
-        function addRunToComparisonView(id, name, runType, link) {
-            var container = $('#comparison_container');
-            var newContainer = $('<div>', {
-                class: 'border-bottom p-3 d-flex align-items-center justify-content-between'
-            });
-            newContainer.id = 'comparison_' + id + '_' + runType;
-            var linkElement = $("<a>", {
-                text: name,
-                href: link,
-                class: 'pr-3'
-            });
-            var deleteButton = $('<button>', {
-                class: 'bg-danger button',
-                click: removeComparison
-            });
-            deleteButton.attr('data-id', id);
-            var icon = $('<i>', {
-                class: 'fa fa-trash'
-            });
-            deleteButton.append(icon);
-            newContainer.append(linkElement);
-            newContainer.append(deleteButton);
-            container.append(newContainer);
+function addRunToComparisonView(id, name, runType, link) {
+    var container = $('#comparison_container');
+    var newContainer = $('<div>', {
+        class: 'border-bottom p-3 d-flex align-items-center justify-content-between'
+    });
+    newContainer.id = 'comparison_' + id + '_' + runType;
+    var linkElement = $("<a>", {
+        text: name,
+        href: link,
+        class: 'pr-3'
+    });
+    var deleteButton = $('<button>', {
+        class: 'bg-danger button',
+        click: removeComparison
+    });
+    deleteButton.attr('data-id', id);
+    var icon = $('<i>', {
+        class: 'fa fa-trash'
+    });
+    deleteButton.append(icon);
+    newContainer.append(linkElement);
+    newContainer.append(deleteButton);
+    container.append(newContainer);
 
-        }
+}
 
 function handleOptimizerChange(selectElement) {
     var selectedOptimizerId = $(selectElement).val();
