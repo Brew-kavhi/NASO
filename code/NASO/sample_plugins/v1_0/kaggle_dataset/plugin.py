@@ -1,6 +1,5 @@
 # from django.db imort transaction
 import os
-import zipfile
 
 import kaggle
 import matplotlib.pyplot as plt

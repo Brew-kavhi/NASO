@@ -1,13 +1,13 @@
 import os
+from functools import reduce
 from os import listdir
 from os.path import isfile, join
 
 import numpy as np
 import pandas as pd
-from functools import reduce
 import tensorflow as tf
-from sklearn.model_selection import train_test_split
 
+from datasets.helper_scripts.normalizations import compute_mean_and_std, z_normalize_ds
 from neural_architecture.models.dataset import DatasetLoader
 from plugins.interfaces.commands import InstallerInterface
 from plugins.interfaces.dataset import DatasetLoaderInterface
@@ -140,6 +140,10 @@ class OhioDiabetesDatasets(DatasetLoaderInterface):
         train_dataset = reduce(lambda ds1, ds2: ds1.concatenate(ds2), train_dataset)
         test_dataset = reduce(lambda ds1, ds2: ds1.concatenate(ds2), test_dataset)
         eval_dataset = reduce(lambda ds1, ds2: ds1.concatenate(ds2), eval_dataset)
+        mean, std = compute_mean_and_std(train_dataset)
+        train_dataset = z_normalize_ds(train_dataset, mean, std)
+        test_dataset = z_normalize_ds(test_dataset, mean, std)
+        eval_dataset = z_normalize_ds(eval_dataset, mean, std)
         return (train_dataset, test_dataset, eval_dataset)
 
     def _prepare_dataset(

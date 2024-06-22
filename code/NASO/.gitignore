@@ -4,6 +4,7 @@ neural_architecture/datasets/
 logs
 datasets/*
 !datasets/views/
+!datasets/helper_scripts/
 !datasets/templates/
 !datasets/urls.py
 static/templates/
