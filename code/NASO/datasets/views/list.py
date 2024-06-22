@@ -1,6 +1,3 @@
-import json
-import urllib
-
 from django.views.generic.base import TemplateView
 
 from naso.models.page import PageSetup
