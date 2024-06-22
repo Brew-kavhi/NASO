@@ -3,7 +3,7 @@ poetry.lock
 neural_architecture/datasets/
 logs
 datasets/*
-!dataets/views/
+!datasets/views/
 !datasets/templates/
 !datasets/urls.py
 static/templates/
