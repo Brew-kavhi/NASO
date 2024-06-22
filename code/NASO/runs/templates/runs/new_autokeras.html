@@ -35,10 +35,10 @@
         ];
         var callbackObjectiveOptions = [];
         var metricObjectiveOptions = new Map();
-        var savedWeights = {{metric_weights | safe}};
+        var savedWeights = {{metric_weights | safe | default:"{}"}};
 
         $(document).ready(function() {
-            metricWeights = new Map(Object.entries(savedWeights))
+            metricWeights = new Map(Object.entries(savedWeights));
             handleKerasTunerChange($('#{{form.tuner.auto_id}}'));
             handleKerasBlockChange($('#{{form.layers.auto_id}}'));
             handleMetricChange($('#{{form.metrics.auto_id}}'));
@@ -64,7 +64,7 @@
                     return false;
                 }
             }).focus(function() {
-                $(this).autocomplete('search', $(this).val())
+                $(this).autocomplete('search', $(this).val());
             });
 
             if ($('#id_objective').val() == 'metrics') {
