@@ -70,9 +70,11 @@
                    class="button is is-fullwidth is-info"
                    value='Speichern'>
         {% endif %}
-        <div class='d-flex mt-3' style='gap:1em'>
-            <img src="{% static image_url %}" alt="Neural Network Architecture">
-            <textarea style='width: 100%; font-family: monospace'>{{ text_representation}}</textarea>
-        </div>
+        {% if image_url %}
+            <div class='d-flex mt-3' style='gap:1em'>
+                <img src="{% static image_url %}" alt="Neural Network Architecture">
+                <textarea style='width: 100%; font-family: monospace'>{{ text_representation}}</textarea>
+            </div>
+        {% endif %}
     </form>
 {% endblock %}
