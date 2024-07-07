@@ -3,11 +3,13 @@ from functools import reduce
 from os import listdir
 from os.path import isfile, join
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 
 from datasets.helper_scripts.normalizations import compute_mean_and_std, z_normalize_ds
+from naso import settings
 from neural_architecture.models.dataset import DatasetLoader
 from plugins.interfaces.commands import InstallerInterface
 from plugins.interfaces.dataset import DatasetLoaderInterface
@@ -69,12 +71,50 @@ class OhioDiabetesDatasets(DatasetLoaderInterface):
     info: dict = {}
 
     def get_info(self, name, *args, **kwargs):
-        return {"descrption": "This is a diabetes dataset from university of Ohio."}
+        return {"description": "This is a diabetes dataset from university of Ohio."}
 
-    def get_sample_images(self, dataset_name="", num_examplse=9):
-        return ""
+    def get_sample_images(self, dataset_name="", num_examples=9):
+        filename = f"{dataset_name}.png"
+        static_dir = os.path.join(settings.BASE_DIR, "static/datasets")
+        os.makedirs(static_dir, exist_ok=True)
+        file_path = os.path.join(static_dir, filename)
+        if os.path.exists(file_path):
+            return f"datasets/{filename}"
+        # 1oad the dataset
+        train_dataset, _, _ = self.get_data(dataset_name, False, num_examples, False)
 
-    def get_data(self, name: str, as_supervised: bool, *args, **kwargs) -> tuple:
+        # Prepare the dataset for iteration
+        train_dataset = train_dataset.take(num_examples).batch(num_examples)
+        # Create an iterator
+        iterator = iter(train_dataset)
+        images, labels = next(iterator)
+
+        # Plotting the sample images
+        plt.figure(figsize=(10, 10))
+
+        for i in range(num_examples):
+            plt.subplot(int(num_examples**0.5), int(num_examples**0.5), i + 1)
+            x = images[i].numpy()
+            y = labels[i].numpy()
+            x_length = len(x)
+            y_length = len(y)
+            plt.plot(x, color="blue")
+            plt.plot(range(x_length, x_length + y_length), y, color="red")
+            plt.title(str(i))
+
+        plt.savefig(file_path)
+        plt.close()
+        return f"datasets/{filename}"
+
+    def get_data(
+        self,
+        name: str,
+        as_supervised: bool,
+        num_individuals=None,
+        normalize=True,
+        *args,
+        **kwargs,
+    ) -> tuple:
         """
         Loads and preprocesses the specified dataset.
 
@@ -91,16 +131,16 @@ class OhioDiabetesDatasets(DatasetLoaderInterface):
 
         if name == "Diabetes Dataset (3)":
             self.element_size = (3, 1)
-            return self.get_diabetes(3)
+            return self.get_diabetes(3, num_individuals, normalize)
         elif name == "Diabetes Dataset (5)":
             self.element_size = (5, 1)
-            return self.get_diabetes(5)
+            return self.get_diabetes(5, num_individuals, normalize)
         elif name == "Diabetes Dataset (7)":
             self.element_size = (7, 1)
-            return self.get_diabetes(7)
+            return self.get_diabetes(7, num_individuals, normalize)
         return (None, None, None)
 
-    def get_diabetes(self, sequence_length=3):
+    def get_diabetes(self, sequence_length=3, num_individuals=None, normalize=True):
         """
         The dataset is struuctured as follows:
         we have one column named _ts that stores timestamps in d-m-Y h:s:i format
@@ -108,32 +148,47 @@ class OhioDiabetesDatasets(DatasetLoaderInterface):
         The training data is given in files that contain ws-training
         """
         files = listdir(self.dataset_path)
+        num_examples = num_individuals
 
-        training_df_list = [
-            pd.read_csv(join(self.dataset_path, file))
+        training_files = [
+            file
             for file in files
             if isfile(join(self.dataset_path, file))
             and "training" in file
             and file.endswith(".csv")
         ]
-        testing_df_list = [
-            pd.read_csv(join(self.dataset_path, file))
+        testing_files = [
+            file
             for file in files
             if isfile(join(self.dataset_path, file))
             and "testing" in file
             and file.endswith(".csv")
         ]
+        if num_individuals:
+            num_examples = 1
+            training_files = training_files[:num_individuals]
+            testing_files = testing_files[:2]
+        training_df_list = [
+            pd.read_csv(join(self.dataset_path, file)) for file in training_files
+        ]
+        testing_df_list = [
+            pd.read_csv(join(self.dataset_path, file)) for file in testing_files
+        ]
 
         train_dataset = [
-            self._prepare_dataset(training_df, sequence_length)
+            self._prepare_dataset(
+                training_df, sequence_length, num_examples=num_examples
+            )
             for training_df in training_df_list
         ]
         test_dataset = [
-            self._prepare_dataset(testing_df, sequence_length)
+            self._prepare_dataset(
+                testing_df, sequence_length, num_examples=num_examples
+            )
             for testing_df in testing_df_list[: len(testing_df_list) // 2]
         ]
         eval_dataset = [
-            self._prepare_dataset(eval_df, sequence_length)
+            self._prepare_dataset(eval_df, sequence_length, num_examples=num_examples)
             for eval_df in testing_df_list[len(testing_df_list) // 2 :]
         ]
 
@@ -141,13 +196,19 @@ class OhioDiabetesDatasets(DatasetLoaderInterface):
         test_dataset = reduce(lambda ds1, ds2: ds1.concatenate(ds2), test_dataset)
         eval_dataset = reduce(lambda ds1, ds2: ds1.concatenate(ds2), eval_dataset)
         mean, std = compute_mean_and_std(train_dataset)
-        train_dataset = z_normalize_ds(train_dataset, mean, std)
-        test_dataset = z_normalize_ds(test_dataset, mean, std)
-        eval_dataset = z_normalize_ds(eval_dataset, mean, std)
+        if normalize:
+            train_dataset = z_normalize_ds(train_dataset, mean, std)
+            test_dataset = z_normalize_ds(test_dataset, mean, std)
+            eval_dataset = z_normalize_ds(eval_dataset, mean, std)
         return (train_dataset, test_dataset, eval_dataset)
 
     def _prepare_dataset(
-        self, df, sequence_length, prediction_length=9, interpolation="linear"
+        self,
+        df,
+        sequence_length,
+        prediction_length=9,
+        num_examples=None,
+        interpolation="spline",
     ):
         """
         params:
@@ -172,13 +233,15 @@ class OhioDiabetesDatasets(DatasetLoaderInterface):
 
         X, y = [], []
         for i in range(len(df) - sequence_length - prediction_length + 1):
-            if is_consecutive(df.index[i : i + sequence_length]):
+            if interpolation or is_consecutive(df.index[i : i + sequence_length]):
                 X.append(df["_value"].iloc[i : i + sequence_length].values)
                 y.append(
-                    df["_value"].iloc[
-                        i + sequence_length : i + sequence_length + prediction_length
-                    ]
+                    df["_value"]
+                    .iloc[i + sequence_length : i + sequence_length + prediction_length]
+                    .values
                 )
+                if num_examples and len(X) >= num_examples:
+                    break
         X, y = np.array(X), np.array(y)
         X = X.reshape((-1, sequence_length, 1))
         y = y.reshape((-1, prediction_length, 1))
