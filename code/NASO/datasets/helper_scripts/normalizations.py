@@ -38,7 +38,8 @@ def compute_mean_and_std(ds):
 def z_normalize_ds(ds, mean_targets, std_targets):
     def normalize(inputs, targets):
         norm_targets = (targets - mean_targets) / std_targets
-        return inputs, norm_targets
+        norm_inputs = (inputs - mean_targets) / std_targets
+        return norm_inputs, norm_targets
 
     return ds.map(lambda inputs, targets: normalize(inputs, targets))
 
