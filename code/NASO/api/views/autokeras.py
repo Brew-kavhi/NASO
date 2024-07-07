@@ -218,6 +218,7 @@ def get_trial_details_short(request, pk):
                     for metric_name in measure["metrics"]:
                         if (
                             metric_name in trial_json[trial_id]["min"]
+                            and trial_json[trial_id]["min"][metric_name]
                             and measure["metrics"][metric_name]
                             and measure["metrics"][metric_name]
                             < trial_json[trial_id]["min"][metric_name]
@@ -227,6 +228,7 @@ def get_trial_details_short(request, pk):
                             ][metric_name]
                         if (
                             metric_name in trial_json[trial_id]["max"]
+                            and trial_json[trial_id]["max"][metric_name]
                             and measure["metrics"][metric_name]
                             and measure["metrics"][metric_name]
                             > trial_json[trial_id]["max"][metric_name]
