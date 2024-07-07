@@ -81,7 +81,7 @@ class OhioDiabetesDatasets(DatasetLoaderInterface):
         if os.path.exists(file_path):
             return f"datasets/{filename}"
         # 1oad the dataset
-        train_dataset, _, _ = self.get_data(dataset_name, False, num_examples, False)
+        train_dataset, _, _ = self.get_data(dataset_name, False, num_examples, True)
 
         # Prepare the dataset for iteration
         train_dataset = train_dataset.take(num_examples).batch(num_examples)
