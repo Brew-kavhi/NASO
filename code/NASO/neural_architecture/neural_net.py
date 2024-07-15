@@ -266,7 +266,21 @@ class NeuralNetwork:
         self.training_config.final_metrics = eval_metric
         self.training_config.save()
 
-        self.predict(self.test_dataset.take(200).batch(1))
+        predictions = self.predict(self.test_dataset.take(200).batch(1))
+        shape_data = getattr(
+            self.training_config.dataset.dataset_loader.dataset_loader,
+            "shape_dataset",
+            None,
+        )
+        if callable(shape_data):
+            targets = []
+            for batch in self.test_dataset.take(200).batch(1):
+                targets.append(batch[1])
+            targets = tf.concat(targets, axis=0)
+            predictions = shape_data(predictions)
+            self.training_config.evaluation_data["predictions"] = predictions.tolist()
+            self.training_config.evaluation_data["targets"] = targets.numpy().tolist()
+            self.training_config.save()
 
     def predict(self, dataset):
         """
@@ -298,7 +312,7 @@ class NeuralNetwork:
         final_sparsity = 1.0 - final_model_size / self.training_config.model_size
         self.training_config.model_size = final_model_size
         self.training_config.save()
-        return predict_model.predict(
+        predictions = predict_model.predict(
             dataset,
             batch_size,
             verbose=2,
@@ -309,3 +323,5 @@ class NeuralNetwork:
             )
             + [EvaluationBaseCallback(self.training_config, final_sparsity)],
         )
+        predict_layer = list(predictions.keys())[-1]
+        return predictions[predict_layer]

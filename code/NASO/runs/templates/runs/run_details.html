@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load get_values %}
+{% load server_utils %}
 {% load crispy_forms_tags %}
 {% load static %}
 {% load  humanize %}
@@ -503,6 +504,9 @@
                                 {% endfor %}
                             {% endif %}
                         </div>
+                        <div class='row'>
+                            {% if run.evaluation_data.predictions and run.evaluation_data.targets %}<div id='predictions_visual'></div>{% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -562,6 +566,9 @@
         let allEpochs = [];
 
         document.addEventListener("DOMContentLoaded", () => {
+            {% if run.evaluation_data.predictions and run.evaluation_data.targets %}
+                {% visualization_code run.dataset.dataset_loader run.evaluation_data.predictions run.evaluation_data.targets %}
+            {% endif %}
             let canvas = document.getElementById("canvas").getContext('2d');
             graphChart = new Chart(canvas, {
                 type: 'line',

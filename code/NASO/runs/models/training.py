@@ -289,6 +289,8 @@ class Run(SafeDeleteModel):
         related_name="tensorflow_prediction_metrics",
     )
 
+    evaluation_data = models.JSONField(default={})
+
     gpu = models.CharField(max_length=20, default="/gpu:0")
     worker = models.CharField(max_length=70)
     compute_device = models.CharField(max_length=20, default="")
