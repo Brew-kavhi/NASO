@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
+from random import randrange
 from datasets.helper_scripts.normalizations import compute_mean_and_std, z_normalize_ds
 from naso import settings
 from neural_architecture.models.dataset import DatasetLoader
@@ -69,6 +70,7 @@ class OhioDiabetesDatasets(DatasetLoaderInterface):
     size = 0
     element_size = 0
     info: dict = {}
+    prediction_length = 9
 
     def get_info(self, name, *args, **kwargs):
         return {"description": "This is a diabetes dataset from university of Ohio."}
@@ -123,7 +125,7 @@ class OhioDiabetesDatasets(DatasetLoaderInterface):
             as_supervised (bool): Whether to load the dataset in supervised mode.
 
         Returns:
-            tuple: A tuple containing the train and test datasets.
+            tuple: A tuple containing the train and test and evaluation datasets.
         """
         self.dataset_path = os.path.dirname(os.path.abspath(__file__)) + "/data"
         if not os.path.exists(self.dataset_path):
@@ -202,11 +204,16 @@ class OhioDiabetesDatasets(DatasetLoaderInterface):
             eval_dataset = z_normalize_ds(eval_dataset, mean, std)
         return (train_dataset, test_dataset, eval_dataset)
 
+    def shape_dataset(self, data, size=None):
+        if not size:
+            size = self.prediction_length
+        return data.reshape((-1, size, 1))
+
     def _prepare_dataset(
         self,
         df,
         sequence_length,
-        prediction_length=9,
+        prediction_length=None,
         num_examples=None,
         interpolation="spline",
     ):
@@ -214,6 +221,8 @@ class OhioDiabetesDatasets(DatasetLoaderInterface):
         params:
          - interpolation: None, 'spline', 'linear', 'polynomial'
         """
+        if not prediction_length:
+            prediction_length = self.prediction_length
         df["_ts"] = pd.to_datetime(df["_ts"], format="%d-%m-%Y %H:%M:%S")
         df = df.sort_values(by="_ts")
         # Set 'timestamp' as the index
@@ -221,9 +230,13 @@ class OhioDiabetesDatasets(DatasetLoaderInterface):
 
         # Resample to 5-minute intervals and interpolate
         if interpolation:
-            df = df.resample("5min", origin="start").interpolate(
-                method=interpolation, order=3
-            )
+            df_resampled = df.resample("5min", origin="start").asfreq()
+
+            # Step 3: Interpolate the missing values
+            df_interpolated = df_resampled.interpolate(method="time")
+
+            # Optional: If you want to fill the remaining NaNs at the start/end, you can use:
+            df_interpolated = df_interpolated.ffill().bfill()
 
         def is_consecutive(timestamps, freq="5min"):
             expected = pd.date_range(
@@ -242,9 +255,9 @@ class OhioDiabetesDatasets(DatasetLoaderInterface):
                 )
                 if num_examples and len(X) >= num_examples:
                     break
-        X, y = np.array(X), np.array(y)
-        X = X.reshape((-1, sequence_length, 1))
-        y = y.reshape((-1, prediction_length, 1))
+        X, y = np.array(X, dtype=np.float64), np.array(y, dtype=np.float64)
+        X = self.shape_dataset(X, sequence_length)
+        y = self.shape_dataset(y)
         dataset = tf.data.Dataset.from_tensor_slices((X, y))
         return dataset
 
@@ -277,3 +290,103 @@ class OhioDiabetesDatasets(DatasetLoaderInterface):
             list: A list of available datasets in TensorFlow Datasets.
         """
         return self.dataset_list
+
+    def get_visualization_code(self, predictions, targets):
+        """
+        First getParent Element
+        Inside this create a canvas and get its 2d context.
+        With this create a new Chart and add the data to datasets.
+        """
+        code = """
+        let diabetesPredictionContainer = document.getElementById('predictions_visual');
+        let diabetesPredictionCanvas = document.createElement('canvas');
+        diabetesPredictionContainer.appendChild(diabetesPredictionCanvas);
+        diabetesPredictionCanvas.style.minWidth = '50vw';
+        diabetesPredictionCanvas.style.minHeight = '50vw';
+        diabetesPredictionCanvasContext = diabetesPredictionCanvas.getContext('2d');
+        let predictionChart = new Chart(diabetesPredictionCanvasContext, {
+            type: 'line',
+            data: {
+                labels: [
+        """
+        indizes = np.random.randint(
+            low=0, high=len(predictions), size=min(len(targets), 10)
+        )
+        for i in range(self.prediction_length):
+            code += "'" + str(i * 5) + "',"
+        code = code[:-1]
+        code += """
+                 ],
+                datasets: [
+        """
+        # now add the predictions
+        for index in indizes:
+            code += (
+                """{
+                    label: 'Predictions """
+                + str(index)
+                + """',
+                    tension: 0.1,
+                    borderColor : "#3cba9f",
+                    data:["""
+            )
+            for i in predictions[index]:
+                code += str(i[0]) + ","
+            code = code[:-1]
+            code += "]},"
+            code += (
+                """{
+                    label: 'Target """
+                + str(index)
+                + """',
+                    tension: 0.1,
+                    borderColor : "#374a5f",
+                    data:["""
+            )
+            for i in targets[index]:
+                code += str(i[0]) + ","
+            code = code[:-1]
+            code += "]},"
+        code = code[:-1]
+        code += (
+            """
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: {
+                            display: true,
+                            text: 'time [min]'
+                        }
+                    },
+                    y: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Blood Glucose'
+                        }
+                    }
+                },
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Sample """
+            + str(index)
+            + """'
+                    }
+                }
+            }
+        });
+        predictionChart.update();
+        """
+        )
+        return code
