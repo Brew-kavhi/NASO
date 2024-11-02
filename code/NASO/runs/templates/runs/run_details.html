@@ -112,6 +112,13 @@
                                 </p>
                             </div>
                         </div>
+                        <div class='row'>
+                            <canvas class='h-25 w-100'
+                                    style='max-height:100vh'
+                                    id='power_plot'
+                                    width="400"
+                                    height="400"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -566,6 +573,43 @@
         let allEpochs = [];
 
         document.addEventListener("DOMContentLoaded", () => {
+            let powerCanvas = document.getElementById("power_plot").getContext('2d');
+            powerCanvas = new Chart(powerCanvas, {
+                type: 'line',
+                data: {
+                    labels: {{ run.get_times }},
+                    datasets: [{
+                        data: {{ run.get_power_measurements }},
+                        label: "Power consumption"
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'time [s]'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Power' // Set the dynamic Y-axis title
+                            }
+                        }
+                    },
+                    plugins: {
+                        colors: {
+                            forceOverride: true
+                        }
+                    }
+                }
+            });
             {% if run.evaluation_data.predictions and run.evaluation_data.targets %}
                 {% visualization_code run.dataset.dataset_loader run.evaluation_data.predictions run.evaluation_data.targets %}
             {% endif %}
