@@ -530,6 +530,9 @@
                                            id='include_regression_check'>
                                     <label for='include_regression_check'>Include regression line</label>
                                 </div>
+                                <div>
+                                    <button class='btn btn-primary' onclick="downloadCSV()">Download as CSV</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -833,6 +836,22 @@
                         }
 
                     }
+                    var csvData = [['metric']];
+                    for(const key in runDatasets) {
+                        dataset = runDatasets[key];
+                        console.log(dataset['label']);
+                        csvData.push([
+                            dataset['label'], 
+                            ...dataset['data'].map((datapoint) =>{
+                                return datapoint['y'];
+                            })
+                        ]);
+                    }
+                    for(const f in csvData[1]) {
+                        csvData[0][f] = f;
+                    }
+                    csvData[0][0] = 'metric';
+                    window.autokerasData = csvData;
                     runOverviewChart.data.datasets = Object.values(runDatasets);
                     runOverviewChart.update();
 
@@ -1495,6 +1514,29 @@
             parentDiv.append('<label>Sort by</label>');
             parentDiv.append(select);
 
+        }
+
+        function downloadCSV(filename = '{{ run.model.project_name }}.csv') {
+            var arrayData = window.autokerasData;
+            // Step 1: Convert array of data to CSV format
+            const csvContent = arrayData.map(row => row.join(",")).join("\n");
+
+            // Step 2: Create a Blob from the CSV data
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+
+            // Step 3: Create a link element and set its href to the Blob URL
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+
+            // Step 4: Append the link to the body and trigger a click to start download
+            document.body.appendChild(a);
+            a.click();
+
+            // Step 5: Cleanup the DOM and revoke the object URL
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
     </script>
 {% endblock %}
