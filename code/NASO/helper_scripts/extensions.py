@@ -10,6 +10,16 @@ from runs.models.training import Run, TrainingMetric
 
 K = keras.backend
 
+def reconnect_jtop(jetson):
+    try:
+        if jetson:
+            jetson.close()  # Close the previous connection if any
+        jetson = jtop()    # Reconnect to jtop
+        jetson.start()
+        print("Reconnected to jtop server.")
+        return jetson
+    except Exception as e:
+        print(f"Failed to reconnect to jtop: {e}")
 
 def start_async_measuring(stop_event, run: Run, database_lock):
     task = asyncio.run(measure_power(stop_event, run))
@@ -18,15 +28,27 @@ def start_async_measuring(stop_event, run: Run, database_lock):
         run.save()
     return task
 
+def start_async_measurement_thread(coroutine, event, run, queue, interval=2, jetson=None):
+    loop = asyncio.new_event_loop()  # Create a new event loop in this thread
+    asyncio.set_event_loop(loop)     # Set the event loop for this thread
+    loop.run_until_complete(coroutine(event, run, queue, interval, jetson))
 
-async def measure_power(stop_event, run: Run):
+
+async def measure_power(stop_event, run: Run, queue, interval, jetson):
     power = []
-    while not stop_event.is_set():
-        if run.gpu.startswith("GPU"):
-            power.append(get_gpu_power_usage(run.gpu))
-        elif run.gpu.startswith("CPU"):
-            power.append(get_cpu_power_usage(run.gpu))
-        await asyncio.sleep(2)
+    await asyncio.sleep(0.001)
+    if not jetson:
+        jetson = reconnect_jtop(None)
+    try:
+        while not stop_event.is_set() and len(power) < 3:
+            if jetson.ok():
+                power.append(jetson.power['rail']['VDD_CPU_GPU_CV']['power']/1000)
+            print(f"Power measurement async, {interval}")
+            await asyncio.sleep(interval)
+    except Exception as e:
+        reconnect_jtop(jetson)
+    print("stop event is set")
+    queue.put(power)
     return power
 
 

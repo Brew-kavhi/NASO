@@ -1,4 +1,5 @@
 import threading
+import queue
 import time
 import traceback
 
@@ -8,7 +9,7 @@ import tensorflow as tf
 from loguru import logger
 
 from celery import shared_task
-from helper_scripts.extensions import start_async_measuring
+from helper_scripts.extensions import start_async_measurement_thread,measure_power
 from inference.helper_scripts.tensorflow import run_inference_from_run
 from naso.celery import restart_all_workers
 from neural_architecture.NetworkCallbacks.base_callback import BaseCallback
@@ -37,6 +38,7 @@ def run_neural_net(self, training_id, inference_workers):
         Exception: If there is a failure while training the network.
 
     """
+    logger.info(tf.executing_eagerly())
     restart_all_workers()
     self.update_state(state="PROGRESS", meta={"run_id": training_id})
     training = NetworkTraining.objects.get(pk=training_id)
@@ -51,21 +53,28 @@ def run_neural_net(self, training_id, inference_workers):
         batch_size=training.fit_parameters.batch_size,
     )
     stop_event = threading.Event()
+    measurement_queue = queue.Queue()
     database_lock = threading.Lock()
 
     try:
         with tf.device(training.gpu):
-            threading.Thread(
-                target=start_async_measuring,
-                args=(stop_event, training, database_lock),
-                daemon=True,
-            ).start()
+            thread = threading.Thread(
+                target=start_async_measurement_thread,
+                args=(measure_power, stop_event,training, measurement_queue)
+            )
+            thread.start()
             _nn = NeuralNetwork(training)
             _nn.run_from_config(training, update_call)
             self.update_state(state="SUCCESS")
             for worker in inference_workers:
-                queue, gpu = worker.split("|")
-                run_inference_from_run(training, gpu, queue)
+                worker_queue, gpu = worker.split("|")
+                run_inference_from_run(training, gpu, worker_queue)
+            logger.info("set stop event")
+            stop_event.set()
+            thread.join()
+            power = measurement_queue.get_nowait()
+            training.power_measurements = ",".join([str(p) for p in power])
+            training.save()
     except Exception:
         logger.error(
             "Failure while executing the keras model: " + traceback.format_exc()

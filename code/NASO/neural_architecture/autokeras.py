@@ -1,4 +1,5 @@
 import threading
+import queue
 import traceback
 from contextlib import redirect_stdout
 
@@ -7,7 +8,7 @@ from loguru import logger
 
 from celery import shared_task
 from helper_scripts.database import lock_safe_db_operation
-from helper_scripts.extensions import start_async_measuring
+from helper_scripts.extensions import start_async_measurement_thread,measure_power
 from inference.celery.run_inference import run_inference
 from inference.models.inference import Inference
 from naso.celery import restart_all_workers
@@ -48,17 +49,18 @@ def run_autokeras(self, run_id, inference_workers):
         timing_callback = TimingCallback()
         base_callback = BaseCallback(self, run, epochs=run.model.epochs, batch_size=32)
 
+        measurement_queue = queue.Queue()
         stop_event = threading.Event()
         database_lock = threading.Lock()
 
         try:
             with open("net.log", "w", encoding="UTF-8") as _f, redirect_stdout(_f):
                 autokeras_model.build_model(run)
-                threading.Thread(
-                    target=start_async_measuring,
-                    args=(stop_event, run, database_lock),
-                    daemon=True,
-                ).start()
+                thread = threading.Thread(
+                    target=start_async_measurement_thread,
+                    args=(measure_power, stop_event,run, measurement_queue)
+                )
+                thread.start()
                 if run.gpu.startswith("GPU"):
                     run.memory_usage = tf.config.experimental.get_memory_info(run.gpu)[
                         "current"
@@ -81,8 +83,8 @@ def run_autokeras(self, run_id, inference_workers):
             self.update_state(state="SUCCESS")
 
             for worker in inference_workers:
-                queue, gpu = worker.split("|")
-                run_inference_from_autokeras(run, gpu, queue)
+                worker_queue, gpu = worker.split("|")
+                run_inference_from_autokeras(run, gpu, worker_queue)
         except Exception:
             logger.error(
                 "Failure while executing the autokeras model: " + traceback.format_exc()
@@ -90,6 +92,10 @@ def run_autokeras(self, run_id, inference_workers):
             self.update_state(state="FAILED")
         finally:
             stop_event.set()
+            thread.join()
+            power = measurement_queue.get_nowait()
+            run.power_measurements = ",".join([str(p) for p in power])
+            run.save()
             tf.compat.v1.reset_default_graph()
 
 
