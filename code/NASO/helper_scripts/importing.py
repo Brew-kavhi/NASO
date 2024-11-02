@@ -1,7 +1,13 @@
 import ast
+import inspect
 import importlib
+from keras.src.layers.core import TFOpLambda
+import tensorflow as tf
 
 from loguru import logger
+
+def cast_to_dtype(x):
+    return tf.cast(x, dtype=tf.float32)  # Specify your desired dtype here
 
 
 def get_class(module_name: str, class_name: str):
@@ -19,6 +25,25 @@ def get_class(module_name: str, class_name: str):
     class_instance = getattr(module, class_name)
     return class_instance
 
+
+def build_arguments(constructor_parameters):
+    arguments = []
+    for param_name, param in constructor_parameters:
+        if not param_name == "self" and not param_name == "kwargs":
+            if (
+                param.default is not inspect.Parameter.empty
+                or param.annotation is not inspect.Parameter.empty
+            ):
+                arguments.append(
+                    {
+                        "name": param_name,
+                    }
+                )
+            else:
+                arguments.append(
+                    {"name": param_name, "default": "", "dtype": "unknown"}
+                )
+    return arguments
 
 def get_object(
     module_name: str, class_name: str, additional_arguments, required_arguments=None
@@ -38,8 +63,18 @@ def get_object(
     if required_arguments is None:
         required_arguments = []
     try:
+        if class_name == 'TFOpLambda':
+            return TFOpLambda(cast_to_dtype)
         module = importlib.import_module(module_name)
         class_instance = getattr(module, class_name)
+        constructor = inspect.signature(class_instance.__init__)
+        arguments = build_arguments(constructor.parameters.items())
+
+        names_required = {d['name'] for d in arguments}
+        names_found = {d['name'] for d in additional_arguments}
+        names_to_remove = names_found - names_required
+        additional_arguments = [d for d in additional_arguments if d['name'] not in names_to_remove]
+
         return class_instance(
             **get_arguments_as_dict(additional_arguments, required_arguments)
         )
