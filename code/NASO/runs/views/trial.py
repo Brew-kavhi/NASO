@@ -33,6 +33,7 @@ from runs.views.new_run import (
     build_metrics,
     get_pruning_parameters,
 )
+from tensorflow.keras.optimizers import Adam
 
 
 @shared_task(bind=True)
@@ -40,7 +41,7 @@ def memory_safe_model_load(self, run_id, trial_id):
     autokeras_run = AutoKerasRun.objects.get(pk=run_id)
     name = f"{autokeras_run.model.project_name}_trial_{str(trial_id)}"
     model = autokeras_run.model.load_trial(autokeras_run, trial_id)
-    optimizer = get_optimizer_instance(model.optimizer)
+    optimizer = get_optimizer_instance(Adam())
     network_config = build_network_config(name, model)
     restart_all_workers()
     return (optimizer.id, network_config.id)

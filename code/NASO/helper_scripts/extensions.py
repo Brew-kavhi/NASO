@@ -1,4 +1,6 @@
 import asyncio
+from jtop import jtop
+from tensorflow.keras.optimizers import Adam
 
 import keras
 import numpy as np
@@ -278,7 +280,6 @@ def custom_hypermodel_build(original_build_fn, run):
         if original_build_fn:
             model = original_build_fn(hyper_parameters)
             loss = model.loss
-            optimizer = model.optimizer
 
             model = run.model.build_pruning_model(model, include_last_layer=False)
             if run.model.clustering_options:
@@ -286,8 +287,8 @@ def custom_hypermodel_build(original_build_fn, run):
                     model, include_last_layer=False
                 )
             model.loss = loss
-            model.optimizer = optimizer
-            model.compile(optimizer, loss)
+            model.optimizer = Adam()
+            model.compile(Adam(), loss)
 
             return model
         raise ValueError("No build function provided")
