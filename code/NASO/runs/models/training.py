@@ -304,6 +304,14 @@ class Run(SafeDeleteModel):
     class Meta:
         abstract = True
 
+    def get_times(self):
+        times = [0]
+        last_time = 0
+        for i in self.power_measurements.split(","):
+            last_time += 2
+            times.append(last_time)
+        return times
+
     def save(self, *args, **kwargs):
         """
         Saves the current instance of the Run model to the database. If the git_hash attribute is not set, it will be

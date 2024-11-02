@@ -5,6 +5,8 @@ import keras_tuner
 from decouple import config
 from django.db import models
 from loguru import logger
+import json
+from keras_tuner.engine import hyperparameters as hp_module
 
 from helper_scripts.extensions import (
     custom_hypermodel_build,
@@ -399,7 +401,15 @@ class AutoKerasModel(BuildModelFromGraph, PrunableNetwork):
         """
         if not self.loaded_model:
             raise ValueError("load model first")
-        trial = self.loaded_model.tuner.oracle.trials[trial_id]
+        if len(self.loaded_model.tuner.oracle.trials) == 0:
+            with open(self.get_trial_hyperparameters_path(trial_id)) as f:
+                trial_data = json.load(f)
+                from collections import namedtuple
+                Trial = namedtuple('Trial','hyperparameters')
+                trial = Trial(hyperparameters=hp_module.HyperParameters.from_config(trial_data['hyperparameters']))
+        else:
+            print(self.loaded_model.tuner.oracle.trials)
+            trial = self.loaded_model.tuner.oracle.trials[trial_id]
         return trial
 
     def get_metrics(self):
@@ -594,7 +604,7 @@ class AutoKerasRun(Run):
 
         return energy
 
-    def get_times(self):
+    """def get_times(self):
         times = []
         last_time = 0
         for metric in self.metrics.all():
@@ -602,3 +612,4 @@ class AutoKerasRun(Run):
                 last_time += metric.metrics[0]["metrics"]["execution_time"]
                 times.append(last_time)
         return times
+    """
