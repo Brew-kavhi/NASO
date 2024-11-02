@@ -169,37 +169,38 @@ def custom_on_trial_end_decorator(original_on_trial_end, run, train_data, val_da
         callbacks = (
             [TimingCallback()] + run.model.get_callbacks(run) + [LoggingCallback()]
         )
+        log_metrics = []
+        if inference_model:
+            inference_model.evaluate(
+                dataset,
+                batch_size=batch_size,
+                verbose=2,
+                steps=None,
+                callbacks=callbacks,
+                return_dict=True,
+            )
 
-        inference_model.evaluate(
-            dataset,
-            batch_size=batch_size,
-            verbose=2,
-            steps=None,
-            callbacks=callbacks,
-            return_dict=True,
-        )
+            val_metrics = callbacks[-1].logs[0]
+            train_metrics = run.model.trial_model["metrics"][0]["metrics"]
 
-        val_metrics = callbacks[-1].logs[0]
-        train_metrics = run.model.trial_model["metrics"][0]["metrics"]
+            log_metrics = val_metrics
+            for metric in train_metrics:
+                if metric not in log_metrics:
+                    log_metrics[metric] = train_metrics[metric]
 
-        log_metrics = val_metrics
-        for metric in train_metrics:
-            if metric not in log_metrics:
-                log_metrics[metric] = train_metrics[metric]
-
-        metric = TrainingMetric(
-            epoch=run.model.epochs,
-            metrics=[
-                {
-                    "current": run.model.epochs,
-                    "run_id": run.id,
-                    "metrics": log_metrics,
-                    "trial_id": trial.trial_id,
-                },
-            ],
-        )
-        metric.save()
-        run.inference_metrics.add(metric)
+            metric = TrainingMetric(
+                epoch=run.model.epochs,
+                metrics=[
+                    {
+                        "current": run.model.epochs,
+                        "run_id": run.id,
+                        "metrics": log_metrics,
+                        "trial_id": trial.trial_id,
+                    },
+                ],
+            )
+            metric.save()
+            run.inference_metrics.add(metric)
 
         score = 0
         if run.model.objective == "metrics" and hasattr(run.model, "metric_weights"):
